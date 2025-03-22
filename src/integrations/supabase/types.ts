@@ -9,7 +9,406 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      actions: {
+        Row: {
+          action_type: string
+          allocated_amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          program_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_type: string
+          allocated_amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          program_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          allocated_amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          program_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_controls: {
+        Row: {
+          comments: string | null
+          control_date: string | null
+          control_type: string
+          controller: string
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          result: string
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: string | null
+          control_date?: string | null
+          control_type: string
+          controller: string
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          result: string
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: string | null
+          control_date?: string | null
+          control_type?: string
+          controller?: string
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          result?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      engagements: {
+        Row: {
+          approval_date: string | null
+          approved_amount: number | null
+          beneficiary: string
+          created_at: string | null
+          id: string
+          operation_id: string
+          priority: string
+          request_date: string | null
+          requested_amount: number
+          requested_by: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          approved_amount?: number | null
+          beneficiary: string
+          created_at?: string | null
+          id?: string
+          operation_id: string
+          priority?: string
+          request_date?: string | null
+          requested_amount: number
+          requested_by: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          approved_amount?: number | null
+          beneficiary?: string
+          created_at?: string | null
+          id?: string
+          operation_id?: string
+          priority?: string
+          request_date?: string | null
+          requested_amount?: number
+          requested_by?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagements_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ministries: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      operations: {
+        Row: {
+          action_id: string
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_id: string
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_id?: string
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operations_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          engagement_id: string
+          id: string
+          payment_date: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          engagement_id: string
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          engagement_id?: string
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      programs: {
+        Row: {
+          allocated: number
+          budget: number
+          created_at: string | null
+          description: string | null
+          fiscal_year: number
+          id: string
+          ministry_id: string | null
+          name: string
+          portfolio_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          allocated?: number
+          budget?: number
+          created_at?: string | null
+          description?: string | null
+          fiscal_year: number
+          id?: string
+          ministry_id?: string | null
+          name: string
+          portfolio_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allocated?: number
+          budget?: number
+          created_at?: string | null
+          description?: string | null
+          fiscal_year?: number
+          id?: string
+          ministry_id?: string | null
+          name?: string
+          portfolio_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programs_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          file_path: string | null
+          frequency: string
+          generated_date: string | null
+          id: string
+          report_type: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          file_path?: string | null
+          frequency: string
+          generated_date?: string | null
+          id?: string
+          report_type: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          file_path?: string | null
+          frequency?: string
+          generated_date?: string | null
+          id?: string
+          report_type?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          ministry_id: string | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          ministry_id?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          ministry_id?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

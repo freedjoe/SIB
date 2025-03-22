@@ -10,24 +10,31 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ReportCardProps {
+  id: string;
   title: string;
   description?: string;
   date: string;
   frequency: string;
   status: "ready" | "pending" | "error";
+  filePath?: string;
   className?: string;
+  onView?: (id: string) => void;
 }
 
 export function ReportCard({
+  id,
   title,
   description,
   date,
   frequency,
   status,
+  filePath,
   className,
+  onView,
 }: ReportCardProps) {
   const getStatusBadge = () => {
     switch (status) {
@@ -54,14 +61,25 @@ export function ReportCard({
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString('fr-FR', options);
+  const handleDownload = () => {
+    if (status !== "ready") {
+      toast.error("Ce rapport n'est pas encore prêt pour le téléchargement");
+      return;
+    }
+    
+    if (!filePath) {
+      toast.error("Aucun fichier disponible pour ce rapport");
+      return;
+    }
+    
+    // In a real app, this would download the file from Supabase Storage
+    toast.success(`Téléchargement du rapport : ${title}`);
+  };
+
+  const handleView = () => {
+    if (onView) {
+      onView(id);
+    }
   };
 
   return (
@@ -85,14 +103,23 @@ export function ReportCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="border-t pt-4">
+      <CardFooter className="border-t pt-4 flex flex-col gap-2">
         <Button
           className="w-full"
           variant={status === "ready" ? "default" : "outline"}
           disabled={status !== "ready"}
+          onClick={handleDownload}
         >
           <FileDown className="mr-2 h-4 w-4" />
           Télécharger
+        </Button>
+        <Button 
+          className="w-full" 
+          variant="outline"
+          onClick={handleView}
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          Voir les détails
         </Button>
       </CardFooter>
     </Card>

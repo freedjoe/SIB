@@ -1,6 +1,5 @@
-
-import { FileDown, FileText, ArrowDownWideNarrow } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X } from "lucide-react";
 import { 
   Dashboard, 
   DashboardHeader,
@@ -33,83 +32,146 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { ReportCard } from "@/components/reports/ReportCard";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for reports
-const reportsData = [
-  {
-    id: "report-1",
-    title: "Rapport d'Exécution Budgétaire",
-    description: "Rapport détaillé sur l'exécution du budget en cours",
-    date: "28 juillet 2023",
-    frequency: "Quotidien",
-    status: "ready",
-    type: "execution"
-  },
-  {
-    id: "report-2",
-    title: "Rapport d'Allocation par Ministère",
-    description: "Répartition des allocations budgétaires par ministère",
-    date: "22 juillet 2023",
-    frequency: "Hebdomadaire",
-    status: "ready",
-    type: "allocation"
-  },
-  {
-    id: "report-3",
-    title: "Rapport Financier Annuel",
-    description: "Bilan financier complet pour l'année fiscale",
-    date: "31 décembre 2022",
-    frequency: "Annuel",
-    status: "ready",
-    type: "annual"
-  },
-  {
-    id: "report-4",
-    title: "Exécution Budgétaire Mensuelle",
-    description: "Suivi mensuel de l'exécution du budget",
-    date: "31 juillet 2023",
-    frequency: "Mensuel",
-    status: "pending",
-    type: "execution"
-  },
-  {
-    id: "report-5",
-    title: "Exécution Budgétaire Trimestrielle",
-    description: "Suivi trimestriel de l'exécution du budget",
-    date: "30 juin 2023",
-    frequency: "Trimestriel",
-    status: "ready",
-    type: "execution"
-  },
-  {
-    id: "report-6",
-    title: "Répartition Budgétaire par Ministère",
-    description: "Analyse de la répartition du budget entre ministères",
-    date: "25 juillet 2023",
-    frequency: "Mensuel",
-    status: "ready",
-    type: "distribution"
-  }
-];
-
-// Helper function to format date
-const formatDate = (dateString: string) => {
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  };
-  return new Date(dateString).toLocaleDateString('fr-FR', options);
-};
+interface Report {
+  id: string;
+  title: string;
+  description?: string;
+  report_type: string;
+  frequency: string;
+  generated_date: string;
+  file_path?: string;
+  status: "ready" | "pending" | "error";
+}
 
 export default function ReportsPage() {
   const [reportTypeFilter, setReportTypeFilter] = useState<string>("all");
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchReports = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const formattedReports = data.map(report => ({
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          report_type: report.report_type,
+          frequency: report.frequency,
+          generated_date: new Date(report.generated_date).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          file_path: report.file_path,
+          status: report.status as "ready" | "pending" | "error"
+        }));
+        
+        setReports(formattedReports);
+      }
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      toast.error("Impossible de charger les rapports");
+      
+      // Fall back to mock data if API fails
+      setReports(mockReportsData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateReport = () => {
+    toast.success("Génération de rapport lancée. Vous serez notifié quand il sera prêt.");
+  };
+
+  const handleViewReport = (id: string) => {
+    const report = reports.find(r => r.id === id);
+    if (report) {
+      setSelectedReport(report);
+      setDialogOpen(true);
+    }
+  };
+
   const filteredReports = reportTypeFilter === "all" 
-    ? reportsData 
-    : reportsData.filter(report => report.type === reportTypeFilter);
+    ? reports 
+    : reports.filter(report => report.report_type === reportTypeFilter);
+
+  const mockReportsData: Report[] = [
+    {
+      id: "report-1",
+      title: "Rapport d'Exécution Budgétaire",
+      description: "Rapport détaillé sur l'exécution du budget en cours",
+      generated_date: "28 juillet 2023",
+      frequency: "Quotidien",
+      status: "ready",
+      report_type: "execution"
+    },
+    {
+      id: "report-2",
+      title: "Rapport d'Allocation par Ministère",
+      description: "Répartition des allocations budgétaires par ministère",
+      generated_date: "22 juillet 2023",
+      frequency: "Hebdomadaire",
+      status: "ready",
+      report_type: "allocation"
+    },
+    {
+      id: "report-3",
+      title: "Rapport Financier Annuel",
+      description: "Bilan financier complet pour l'année fiscale",
+      generated_date: "31 décembre 2022",
+      frequency: "Annuel",
+      status: "ready",
+      report_type: "annual"
+    },
+    {
+      id: "report-4",
+      title: "Exécution Budgétaire Mensuelle",
+      description: "Suivi mensuel de l'exécution du budget",
+      generated_date: "31 juillet 2023",
+      frequency: "Mensuel",
+      status: "pending",
+      report_type: "execution"
+    },
+    {
+      id: "report-5",
+      title: "Exécution Budgétaire Trimestrielle",
+      description: "Suivi trimestriel de l'exécution du budget",
+      generated_date: "30 juin 2023",
+      frequency: "Trimestriel",
+      status: "ready",
+      report_type: "execution"
+    },
+    {
+      id: "report-6",
+      title: "Répartition Budgétaire par Ministère",
+      description: "Analyse de la répartition du budget entre ministères",
+      generated_date: "25 juillet 2023",
+      frequency: "Mensuel",
+      status: "ready",
+      report_type: "distribution"
+    }
+  ];
 
   return (
     <Dashboard>
@@ -117,7 +179,7 @@ export default function ReportsPage() {
         title="Rapports" 
         description="Générez et téléchargez des rapports sur l'exécution budgétaire"
       >
-        <Button className="shadow-subtle">
+        <Button className="shadow-subtle" onClick={handleGenerateReport}>
           <FileDown className="mr-2 h-4 w-4" />
           Générer un rapport
         </Button>
@@ -157,18 +219,31 @@ export default function ReportsPage() {
         title="Rapports disponibles" 
         description="Consultez et téléchargez les rapports générés"
       >
-        <DashboardGrid columns={3}>
-          {filteredReports.map((report) => (
-            <ReportCard 
-              key={report.id}
-              title={report.title}
-              description={report.description}
-              date={report.date}
-              frequency={report.frequency}
-              status={report.status as "ready" | "pending" | "error"}
-            />
-          ))}
-        </DashboardGrid>
+        {loading ? (
+          <p className="text-center py-8">Chargement des rapports...</p>
+        ) : (
+          <DashboardGrid columns={3}>
+            {filteredReports.length > 0 ? (
+              filteredReports.map((report) => (
+                <ReportCard 
+                  key={report.id}
+                  id={report.id}
+                  title={report.title}
+                  description={report.description}
+                  date={report.generated_date}
+                  frequency={report.frequency}
+                  status={report.status}
+                  filePath={report.file_path}
+                  onView={handleViewReport}
+                />
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-muted-foreground">Aucun rapport ne correspond à vos critères de recherche</p>
+              </div>
+            )}
+          </DashboardGrid>
+        )}
       </DashboardSection>
 
       <DashboardSection
@@ -445,6 +520,81 @@ export default function ReportsPage() {
           </CardFooter>
         </Card>
       </DashboardSection>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Détails du rapport</DialogTitle>
+            <DialogDescription>
+              Informations complètes sur le rapport sélectionné
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedReport && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-4">
+                  <h3 className="text-lg font-medium">{selectedReport.title}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedReport.description}</p>
+                </div>
+                
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium">Type de rapport</h4>
+                  <p className="text-sm">{selectedReport.report_type}</p>
+                </div>
+                
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium">Fréquence</h4>
+                  <p className="text-sm">{selectedReport.frequency}</p>
+                </div>
+                
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium">Date de génération</h4>
+                  <p className="text-sm">{selectedReport.generated_date}</p>
+                </div>
+                
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium">Statut</h4>
+                  <div className="text-sm">
+                    {selectedReport.status === "ready" && (
+                      <Badge variant="outline" className="bg-green-100 text-green-800">Prêt</Badge>
+                    )}
+                    {selectedReport.status === "pending" && (
+                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800">En préparation</Badge>
+                    )}
+                    {selectedReport.status === "error" && (
+                      <Badge variant="outline" className="bg-red-100 text-red-800">Erreur</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDialogOpen(false)}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Fermer
+            </Button>
+            
+            {selectedReport && selectedReport.status === "ready" && (
+              <Button>
+                <FileDown className="mr-2 h-4 w-4" />
+                Télécharger
+              </Button>
+            )}
+            
+            <Button variant="secondary">
+              <FileSearch className="mr-2 h-4 w-4" />
+              Voir le contenu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dashboard>
   );
 }
+
