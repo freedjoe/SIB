@@ -233,7 +233,7 @@ export default function BudgetsPage() {
                   <SelectValue placeholder="Année" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les années</SelectItem>
+                  <SelectItem value="all">Toutes les années</SelectItem>
                   <SelectItem value="2023">2023</SelectItem>
                   <SelectItem value="2024">2024</SelectItem>
                 </SelectContent>
@@ -243,7 +243,7 @@ export default function BudgetsPage() {
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="draft">Brouillon</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="approved">Approuvé</SelectItem>
