@@ -132,7 +132,7 @@ const mockBudgets: Budget[] = [
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
-    currency: "XOF",
+    currency: "DZD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -142,8 +142,8 @@ export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [filteredBudgets, setFilteredBudgets] = useState<Budget[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [yearFilter, setYearFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     // Simulate API call
@@ -166,14 +166,14 @@ export default function BudgetsPage() {
     }
     
     // Filter by year
-    if (yearFilter) {
+    if (yearFilter && yearFilter !== "all") {
       result = result.filter(budget => 
         budget.year.toString() === yearFilter
       );
     }
     
     // Filter by status
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== "all") {
       result = result.filter(budget => 
         budget.status === statusFilter
       );
