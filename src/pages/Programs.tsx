@@ -223,11 +223,11 @@ export default function ProgramsPage() {
   useEffect(() => {
     let result = mockPrograms;
     
-    if (portfolioFilter) {
+    if (portfolioFilter && portfolioFilter !== "all") {
       result = result.filter(program => program.portfolioId === portfolioFilter);
     }
     
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== "all") {
       result = result.filter(program => program.status === statusFilter);
     }
     
@@ -281,7 +281,7 @@ export default function ProgramsPage() {
                       <SelectValue placeholder="Sélectionner un portefeuille" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous les portefeuilles</SelectItem>
+                      <SelectItem value="all">Tous les portefeuilles</SelectItem>
                       {mockPortfolios.map(portfolio => (
                         <SelectItem key={portfolio.id} value={portfolio.id}>
                           {portfolio.name}
@@ -294,7 +294,7 @@ export default function ProgramsPage() {
                       <SelectValue placeholder="Statut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous les statuts</SelectItem>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
                       <SelectItem value="active">En cours</SelectItem>
                       <SelectItem value="completed">Terminé</SelectItem>
                       <SelectItem value="planned">Planifié</SelectItem>
