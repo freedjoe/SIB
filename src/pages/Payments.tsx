@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dashboard, 
@@ -168,6 +167,42 @@ const mockPayments: Payment[] = [
   }
 ];
 
+// Helper function to get status badge - moved outside the component to be accessible everywhere
+const getStatusBadge = (status: Payment["status"]) => {
+  switch (status) {
+    case "pending":
+      return (
+        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400 gap-1">
+          <Clock className="h-3 w-3" />
+          <span>En attente</span>
+        </Badge>
+      );
+    case "approved":
+      return (
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400 gap-1">
+          <CheckCircle className="h-3 w-3" />
+          <span>Approuvé</span>
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400 gap-1">
+          <X className="h-3 w-3" />
+          <span>Rejeté</span>
+        </Badge>
+      );
+    case "paid":
+      return (
+        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400 gap-1">
+          <CheckCircle className="h-3 w-3" />
+          <span>Payé</span>
+        </Badge>
+      );
+    default:
+      return null;
+  }
+};
+
 // Calculate statistics
 const totalPayments = mockPayments.length;
 const totalPaidAmount = mockPayments
@@ -215,41 +250,6 @@ export default function PaymentsPage() {
   const filteredPayments = statusFilter 
     ? mockPayments.filter(payment => payment.status === statusFilter)
     : mockPayments;
-
-  const getStatusBadge = (status: Payment["status"]) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400 gap-1">
-            <Clock className="h-3 w-3" />
-            <span>En attente</span>
-          </Badge>
-        );
-      case "approved":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400 gap-1">
-            <CheckCircle className="h-3 w-3" />
-            <span>Approuvé</span>
-          </Badge>
-        );
-      case "rejected":
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400 gap-1">
-            <X className="h-3 w-3" />
-            <span>Rejeté</span>
-          </Badge>
-        );
-      case "paid":
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400 gap-1">
-            <CheckCircle className="h-3 w-3" />
-            <span>Payé</span>
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <Dashboard>
@@ -467,3 +467,4 @@ function PaymentTable({ payments }: PaymentTableProps) {
     </Card>
   );
 }
+
