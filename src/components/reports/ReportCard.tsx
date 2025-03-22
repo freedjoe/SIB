@@ -1,5 +1,4 @@
-
-import { FileDown, FileText, Clock, Eye } from "lucide-react";
+import { FileDown, FileText, Clock, Eye, Share2, Share } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -49,6 +48,7 @@ export function ReportCard({
   reportType,
 }: ReportCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const getStatusBadge = () => {
     switch (status) {
@@ -86,7 +86,6 @@ export function ReportCard({
       return;
     }
     
-    // In a real app, this would download the file from Supabase Storage
     toast.success(`Téléchargement du rapport : ${title}`);
   };
 
@@ -95,6 +94,23 @@ export function ReportCard({
       onView(id);
     } else {
       setIsDialogOpen(true);
+    }
+  };
+
+  const handleShare = (platform: string) => {
+    const reportUrl = `${window.location.origin}/reports/${id}`;
+    
+    switch (platform) {
+      case 'email':
+        window.open(`mailto:?subject=Rapport: ${title}&body=Voici le rapport "${title}": ${reportUrl}`);
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(reportUrl)
+          .then(() => toast.success("Lien copié dans le presse-papier"))
+          .catch(() => toast.error("Impossible de copier le lien"));
+        break;
+      default:
+        setIsShareOpen(false);
     }
   };
 
@@ -127,15 +143,50 @@ export function ReportCard({
           </div>
         </CardContent>
         <CardFooter className="border-t pt-4 flex flex-col gap-2">
-          <Button
-            className="w-full"
-            variant={status === "ready" ? "default" : "outline"}
-            disabled={status !== "ready"}
-            onClick={handleDownload}
-          >
-            <FileDown className="mr-2 h-4 w-4" />
-            Télécharger
-          </Button>
+          <div className="flex flex-row gap-2 w-full">
+            <Button
+              className="flex-1"
+              variant={status === "ready" ? "default" : "outline"}
+              disabled={status !== "ready"}
+              onClick={handleDownload}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Télécharger
+            </Button>
+            
+            <Popover open={isShareOpen} onOpenChange={setIsShareOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  disabled={status !== "ready"}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2">
+                <div className="grid gap-1">
+                  <h4 className="font-medium py-1 px-2">Partager le rapport</h4>
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start cursor-pointer" 
+                    onClick={() => handleShare('email')}
+                  >
+                    <Share className="mr-2 h-4 w-4" />
+                    Par email
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start cursor-pointer" 
+                    onClick={() => handleShare('copy')}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Copier le lien
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <Button 
             className="w-full" 
             variant="outline"
@@ -196,10 +247,16 @@ export function ReportCard({
               <Button variant="outline">Fermer</Button>
             </DialogClose>
             {status === "ready" && (
-              <Button onClick={handleDownload}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Télécharger
-              </Button>
+              <>
+                <Button onClick={() => handleShare('copy')}>
+                  <Share className="mr-2 h-4 w-4" />
+                  Partager
+                </Button>
+                <Button onClick={handleDownload}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Télécharger
+                </Button>
+              </>
             )}
           </div>
         </DialogContent>
