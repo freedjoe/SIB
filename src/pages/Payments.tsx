@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Dashboard, 
@@ -245,9 +246,9 @@ const formatDate = (dateString: string | null) => {
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const filteredPayments = statusFilter 
+  const filteredPayments = statusFilter !== "all" 
     ? mockPayments.filter(payment => payment.status === statusFilter)
     : mockPayments;
 
@@ -368,7 +369,7 @@ export default function PaymentsPage() {
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les statuts</SelectItem>
+                <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="pending">En attente</SelectItem>
                 <SelectItem value="approved">Approuvé</SelectItem>
                 <SelectItem value="rejected">Rejeté</SelectItem>
