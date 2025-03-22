@@ -187,16 +187,16 @@ const formatCurrency = (amount: number) => {
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const [searchTerm, setSearchTerm] = useState("");
-  const [programFilter, setProgramFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [programFilter, setProgramFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredOperations = mockOperations.filter(operation => {
     return (
       (searchTerm === "" || 
         operation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         operation.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (programFilter === "" || operation.programId === programFilter) &&
-      (statusFilter === "" || operation.status === statusFilter)
+      (programFilter === "all" || operation.programId === programFilter) &&
+      (statusFilter === "all" || operation.status === statusFilter)
     );
   });
 
@@ -265,7 +265,7 @@ export default function OperationsPage() {
                       <SelectValue placeholder="Programme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous les programmes</SelectItem>
+                      <SelectItem value="all">Tous les programmes</SelectItem>
                       {uniquePrograms.map(program => (
                         <SelectItem key={program.id} value={program.id}>
                           {program.name}
@@ -278,7 +278,7 @@ export default function OperationsPage() {
                       <SelectValue placeholder="Statut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous les statuts</SelectItem>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
                       <SelectItem value="in_progress">En cours</SelectItem>
                       <SelectItem value="completed">Terminé</SelectItem>
                       <SelectItem value="planned">Planifié</SelectItem>
