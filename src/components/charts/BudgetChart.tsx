@@ -17,55 +17,28 @@ interface BudgetItem {
 }
 
 interface BudgetChartProps {
-  title?: string;
-  data?: BudgetItem[];
+  title: string;
+  data: BudgetItem[];
   className?: string;
   showLegend?: boolean;
-  period?: string;
 }
 
-// Mock data for different periods
-const mockDataByPeriod = {
-  monthly: [
-    { name: "Infrastructure", value: 120000000, color: "#0ea5e9" },
-    { name: "Education", value: 85000000, color: "#22c55e" },
-    { name: "Healthcare", value: 95000000, color: "#f59e0b" },
-    { name: "Agriculture", value: 45000000, color: "#8b5cf6" },
-  ],
-  quarterly: [
-    { name: "Infrastructure", value: 350000000, color: "#0ea5e9" },
-    { name: "Education", value: 250000000, color: "#22c55e" },
-    { name: "Healthcare", value: 280000000, color: "#f59e0b" },
-    { name: "Agriculture", value: 120000000, color: "#8b5cf6" },
-  ],
-  annual: [
-    { name: "Infrastructure", value: 520000000, color: "#0ea5e9" },
-    { name: "Education", value: 380000000, color: "#22c55e" },
-    { name: "Healthcare", value: 420000000, color: "#f59e0b" },
-    { name: "Agriculture", value: 180000000, color: "#8b5cf6" },
-  ],
-};
-
 export function BudgetChart({
-  title = "Budget Allocation",
+  title,
   data,
   className,
   showLegend = true,
-  period = "monthly",
 }: BudgetChartProps) {
   const [chartData, setChartData] = useState<BudgetItem[]>([]);
 
-  // Use provided data or fallback to mock data based on period
+  // Animate chart data on mount
   useEffect(() => {
     setChartData([]);
-    const dataToUse = data || mockDataByPeriod[period as keyof typeof mockDataByPeriod] || [];
-    
     const timer = setTimeout(() => {
-      setChartData(dataToUse);
+      setChartData(data);
     }, 100);
-    
     return () => clearTimeout(timer);
-  }, [data, period]);
+  }, [data]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -96,7 +69,7 @@ export function BudgetChart({
                 animationBegin={0}
                 animationDuration={800}
               >
-                {chartData && chartData.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.color}
@@ -118,7 +91,7 @@ export function BudgetChart({
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {showLegend && chartData && chartData.length > 0 && (
+        {showLegend && (
           <div className="mt-4 grid grid-cols-2 gap-4">
             {chartData.map((item, index) => (
               <div key={index} className="flex items-center text-sm">
