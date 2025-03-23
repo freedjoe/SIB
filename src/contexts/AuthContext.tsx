@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ type AuthContextType = {
   isLoading: boolean;
   signOut: () => Promise<void>;
   isAdminUser: boolean;
+  userRole: 'admin' | 'user' | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,11 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
 
   useEffect(() => {
     const adminLoggedIn = localStorage.getItem("adminLoggedIn") === "true";
     if (adminLoggedIn) {
       setIsAdminUser(true);
+      setUserRole('admin');
       setUser({ 
         id: "admin",
         email: "admin@example.com",
@@ -36,6 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+        
+        // If we have a user, set default role
+        if (currentSession?.user) {
+          // We'll set a default role here, but in a real app
+          // this would likely come from the database
+          setUserRole('user');
+        } else {
+          setUserRole(null);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -43,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      // Set default role for existing user
+      if (currentSession?.user) {
+        setUserRole('user');
+      }
+      
       setIsLoading(false);
     });
 
@@ -53,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isAdminUser) {
       localStorage.removeItem("adminLoggedIn");
       setIsAdminUser(false);
+      setUserRole(null);
       setUser(null);
       navigate("/auth");
       return;
@@ -63,7 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signOut, isAdminUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      signOut, 
+      isAdminUser,
+      userRole 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,438 +1,486 @@
 
-import { useEffect, useState } from "react";
-import { 
-  Dashboard, 
-  DashboardHeader, 
-  DashboardSection,
-  DashboardGrid
-} from "@/components/layout/Dashboard";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { ChevronRight, FolderPlus, ClipboardEdit } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Edit, Eye, Trash2 } from "lucide-react";
+import { DataTable } from "@/components/common/DataTable";
 
-// Mock data
-interface Program {
-  id: string;
-  portfolioId: string;
-  name: string;
-  description: string;
-  allocatedAmount: number;
-  usedAmount: number;
-  progress: number;
-  actions: number;
-  operations: number;
-  status: "active" | "completed" | "planned";
-}
-
-interface Portfolio {
-  id: string;
-  name: string;
-  description: string;
-  totalAmount: number;
-  usedAmount: number;
-  programs: number;
-  ministryId: string;
-  ministryName: string;
-}
-
-const mockPrograms: Program[] = [
-  {
-    id: "prog1",
-    portfolioId: "port1",
-    name: "Programme d'Éducation Nationale",
-    description: "Amélioration de la qualité de l'éducation à tous les niveaux",
-    allocatedAmount: 750000000,
-    usedAmount: 480000000,
-    progress: 64,
-    actions: 8,
-    operations: 24,
-    status: "active"
-  },
-  {
-    id: "prog2",
-    portfolioId: "port2",
-    name: "Santé Publique",
-    description: "Renforcement du système de santé et lutte contre les maladies",
-    allocatedAmount: 580000000,
-    usedAmount: 390000000,
-    progress: 67,
-    actions: 6,
-    operations: 18,
-    status: "active"
-  },
-  {
-    id: "prog3",
-    portfolioId: "port3",
-    name: "Infrastructure Routière",
-    description: "Construction et entretien du réseau routier national",
-    allocatedAmount: 430000000,
-    usedAmount: 210000000,
-    progress: 49,
-    actions: 5,
-    operations: 12,
-    status: "active"
-  },
-  {
-    id: "prog4",
-    portfolioId: "port4",
-    name: "Développement Agricole",
-    description: "Soutien à l'agriculture et la sécurité alimentaire",
-    allocatedAmount: 380000000,
-    usedAmount: 145000000,
-    progress: 38,
-    actions: 7,
-    operations: 19,
-    status: "active"
-  },
-  {
-    id: "prog5",
-    portfolioId: "port5",
-    name: "Sécurité Nationale",
-    description: "Maintien de l'ordre et protection du territoire",
-    allocatedAmount: 410000000,
-    usedAmount: 290000000,
-    progress: 71,
-    actions: 4,
-    operations: 16,
-    status: "active"
-  },
-  {
-    id: "prog6",
-    portfolioId: "port1",
-    name: "Numérisation des Écoles",
-    description: "Équipement informatique des établissements scolaires",
-    allocatedAmount: 120000000,
-    usedAmount: 45000000,
-    progress: 38,
-    actions: 3,
-    operations: 8,
-    status: "active"
-  },
-  {
-    id: "prog7",
-    portfolioId: "port3",
-    name: "Pont Intercommunal",
-    description: "Construction d'un nouveau pont reliant deux provinces",
-    allocatedAmount: 280000000,
-    usedAmount: 0,
-    progress: 0,
-    actions: 4,
-    operations: 0,
-    status: "planned"
-  },
-  {
-    id: "prog8",
-    portfolioId: "port2",
-    name: "Campagne de Vaccination",
-    description: "Campagne nationale de vaccination contre les épidémies",
-    allocatedAmount: 150000000,
-    usedAmount: 150000000,
-    progress: 100,
-    actions: 2,
-    operations: 12,
-    status: "completed"
-  }
+// Mock data for programs
+const MOCK_PROGRAMS = [
+  { id: 1, name: "Road Network Renovation", portfolio: 1, portfolioName: "Transport Infrastructure", minister: "Transport", budget: "120,000,000", status: "active" },
+  { id: 2, name: "Railway Expansion", portfolio: 1, portfolioName: "Transport Infrastructure", minister: "Transport", budget: "80,000,000", status: "active" },
+  { id: 3, name: "E-Government Services", portfolio: 2, portfolioName: "Digital Transformation", minister: "Digital Economy", budget: "60,000,000", status: "active" },
+  { id: 4, name: "Digital Identity System", portfolio: 2, portfolioName: "Digital Transformation", minister: "Digital Economy", budget: "40,000,000", status: "active" },
+  { id: 5, name: "Affordable Housing Project", portfolio: 3, portfolioName: "Social Housing", minister: "Housing", budget: "150,000,000", status: "active" },
+  { id: 6, name: "Urban Apartments", portfolio: 3, portfolioName: "Social Housing", minister: "Housing", budget: "100,000,000", status: "active" },
+  { id: 7, name: "Desert Agriculture", portfolio: 4, portfolioName: "Agricultural Development", minister: "Agriculture", budget: "70,000,000", status: "active" },
+  { id: 8, name: "Water Resources Management", portfolio: 4, portfolioName: "Agricultural Development", minister: "Agriculture", budget: "40,000,000", status: "active" },
 ];
 
-const mockPortfolios: Portfolio[] = [
-  {
-    id: "port1",
-    name: "Portfolio Éducation",
-    description: "Regroupe tous les programmes éducatifs",
-    totalAmount: 870000000,
-    usedAmount: 525000000,
-    programs: 2,
-    ministryId: "m1",
-    ministryName: "Ministère de l'Éducation"
-  },
-  {
-    id: "port2",
-    name: "Portfolio Santé",
-    description: "Programmes de santé publique et prévention",
-    totalAmount: 730000000,
-    usedAmount: 540000000,
-    programs: 2,
-    ministryId: "m2",
-    ministryName: "Ministère de la Santé"
-  },
-  {
-    id: "port3",
-    name: "Portfolio Infrastructure",
-    description: "Développement des infrastructures de transport",
-    totalAmount: 710000000,
-    usedAmount: 210000000,
-    programs: 2,
-    ministryId: "m3",
-    ministryName: "Ministère des Transports"
-  },
-  {
-    id: "port4",
-    name: "Portfolio Agriculture",
-    description: "Soutien à l'agriculture et l'élevage",
-    totalAmount: 380000000,
-    usedAmount: 145000000,
-    programs: 1,
-    ministryId: "m4",
-    ministryName: "Ministère de l'Agriculture"
-  },
-  {
-    id: "port5",
-    name: "Portfolio Défense",
-    description: "Sécurité nationale et protection civile",
-    totalAmount: 410000000,
-    usedAmount: 290000000,
-    programs: 1,
-    ministryId: "m5",
-    ministryName: "Ministère de la Défense"
-  }
+// Mock data for portfolios
+const MOCK_PORTFOLIOS = [
+  { id: 1, name: "Transport Infrastructure" },
+  { id: 2, name: "Digital Transformation" },
+  { id: 3, name: "Social Housing" },
+  { id: 4, name: "Agricultural Development" },
+  { id: 5, name: "Healthcare Modernization" },
+  { id: 6, name: "Renewable Energy" },
+  { id: 7, name: "Education Reform" },
+  { id: 8, name: "Urban Renewal" },
 ];
 
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "XOF",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
+export default function Programs() {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-export default function ProgramsPage() {
-  const [portfolioFilter, setPortfolioFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
+  // Get portfolio filter from URL
+  const searchParams = new URLSearchParams(location.search);
+  const portfolioFilter = searchParams.get("portfolio");
 
+  const [programs, setPrograms] = useState(MOCK_PROGRAMS);
+  const [selectedProgram, setSelectedProgram] = useState<any>(null);
+  const [portfolios] = useState(MOCK_PORTFOLIOS);
+  const [formData, setFormData] = useState({
+    name: "",
+    portfolio: "",
+    minister: "",
+    budget: "",
+    status: "active"
+  });
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
+  // Filter programs based on portfolio if provided
+  const filteredPrograms = portfolioFilter
+    ? programs.filter(program => program.portfolio === parseInt(portfolioFilter))
+    : programs;
+
+  // Reset URL parameter when component unmounts or on manual clear
   useEffect(() => {
-    let result = mockPrograms;
-    
-    if (portfolioFilter && portfolioFilter !== "all") {
-      result = result.filter(program => program.portfolioId === portfolioFilter);
-    }
-    
-    if (statusFilter && statusFilter !== "all") {
-      result = result.filter(program => program.status === statusFilter);
-    }
-    
-    setFilteredPrograms(result);
-  }, [portfolioFilter, statusFilter]);
+    return () => {
+      // This runs when component unmounts
+      if (portfolioFilter) {
+        navigate("/programs", { replace: true });
+      }
+    };
+  }, []);
 
-  const getStatusBadge = (status: Program["status"]) => {
-    switch (status) {
-      case "active":
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">En cours</Badge>;
-      case "completed":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">Terminé</Badge>;
-      case "planned":
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">Planifié</Badge>;
-      default:
-        return null;
-    }
+  const clearPortfolioFilter = () => {
+    navigate("/programs", { replace: true });
   };
 
-  return (
-    <Dashboard>
-      <DashboardHeader 
-        title="Portefeuille des Programmes" 
-        description="Gérez les programmes et leurs actions associées"
-      >
-        <Button className="shadow-subtle">
-          <FolderPlus className="mr-2 h-4 w-4" />
-          Nouveau programme
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleAddProgram = () => {
+    if (!formData.name || !formData.portfolio || !formData.budget) {
+      toast.error(t("common.fillRequiredFields"));
+      return;
+    }
+
+    const selectedPortfolio = portfolios.find(p => p.id.toString() === formData.portfolio);
+    
+    const newProgram = {
+      id: programs.length + 1,
+      name: formData.name,
+      portfolio: parseInt(formData.portfolio),
+      portfolioName: selectedPortfolio?.name || "",
+      minister: formData.minister,
+      budget: formData.budget,
+      status: formData.status,
+    };
+
+    setPrograms([...programs, newProgram]);
+    toast.success(t("programs.addSuccess"));
+    setIsAddDialogOpen(false);
+    setFormData({ name: "", portfolio: "", minister: "", budget: "", status: "active" });
+  };
+
+  const handleEditProgram = () => {
+    if (!formData.name || !formData.portfolio || !formData.budget) {
+      toast.error(t("common.fillRequiredFields"));
+      return;
+    }
+
+    const selectedPortfolio = portfolios.find(p => p.id.toString() === formData.portfolio);
+    
+    const updatedPrograms = programs.map((program) =>
+      program.id === selectedProgram.id 
+        ? { 
+            ...program, 
+            name: formData.name,
+            portfolio: parseInt(formData.portfolio),
+            portfolioName: selectedPortfolio?.name || "",
+            minister: formData.minister,
+            budget: formData.budget,
+            status: formData.status,
+          } 
+        : program
+    );
+    
+    setPrograms(updatedPrograms);
+    toast.success(t("programs.updateSuccess"));
+    setIsEditDialogOpen(false);
+  };
+
+  const handleDeleteProgram = () => {
+    const updatedPrograms = programs.filter(
+      (program) => program.id !== selectedProgram.id
+    );
+    
+    setPrograms(updatedPrograms);
+    toast.success(t("programs.deleteSuccess"));
+  };
+
+  const openEditDialog = (program: any) => {
+    setSelectedProgram(program);
+    setFormData({
+      name: program.name,
+      portfolio: program.portfolio.toString(),
+      minister: program.minister,
+      budget: program.budget,
+      status: program.status,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openViewDialog = (program: any) => {
+    setSelectedProgram(program);
+    setIsViewDialogOpen(true);
+  };
+
+  const renderProgramStatus = (program: any) => (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      program.status === 'active' 
+        ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400'
+        : program.status === 'pending'
+        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400'
+        : 'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-400'
+    }`}>
+      {program.status}
+    </span>
+  );
+
+  const renderActionMenu = (program: any) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <span className="sr-only">{t("common.openMenu")}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+          >
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="19" r="1" />
+          </svg>
         </Button>
-      </DashboardHeader>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => openViewDialog(program)}>
+          <Eye className="mr-2 h-4 w-4" />
+          {t("common.view")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openEditDialog(program)}>
+          <Edit className="mr-2 h-4 w-4" />
+          {t("common.edit")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t("common.delete")}
+            </DropdownMenuItem>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("programs.deleteWarning")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setSelectedProgram(program);
+                  handleDeleteProgram();
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {t("common.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
-      <DashboardSection>
-        <Tabs defaultValue="programs" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="programs">Programmes</TabsTrigger>
-            <TabsTrigger value="portfolios">Portefeuilles</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="programs" className="animate-fade-in">
-            <Card className="budget-card mb-6">
-              <CardHeader>
-                <CardTitle className="text-base">Filtrer les programmes</CardTitle>
-                <CardDescription>
-                  Filtrez par portefeuille ou par statut
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Select value={portfolioFilter} onValueChange={setPortfolioFilter}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionner un portefeuille" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les portefeuilles</SelectItem>
-                      {mockPortfolios.map(portfolio => (
-                        <SelectItem key={portfolio.id} value={portfolio.id}>
-                          {portfolio.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      <SelectItem value="active">En cours</SelectItem>
-                      <SelectItem value="completed">Terminé</SelectItem>
-                      <SelectItem value="planned">Planifié</SelectItem>
-                    </SelectContent>
-                  </Select>
+  // Form for adding/editing programs
+  const ProgramForm = () => (
+    <div className="grid gap-4 py-4">
+      <div className="grid gap-2">
+        <Label htmlFor="name">{t("programs.name")} *</Label>
+        <Input
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="portfolio">{t("programs.portfolio")} *</Label>
+        <Select 
+          value={formData.portfolio} 
+          onValueChange={(value) => handleSelectChange("portfolio", value)}
+        >
+          <SelectTrigger id="portfolio">
+            <SelectValue placeholder={t("programs.selectPortfolio")} />
+          </SelectTrigger>
+          <SelectContent>
+            {portfolios.map((portfolio) => (
+              <SelectItem key={portfolio.id} value={portfolio.id.toString()}>
+                {portfolio.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="minister">{t("programs.minister")}</Label>
+        <Input
+          id="minister"
+          name="minister"
+          value={formData.minister}
+          onChange={handleInputChange}
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="budget">{t("programs.budget")} *</Label>
+        <Input
+          id="budget"
+          name="budget"
+          value={formData.budget}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="status">{t("common.status")}</Label>
+        <Select 
+          value={formData.status} 
+          onValueChange={(value) => handleSelectChange("status", value)}
+        >
+          <SelectTrigger id="status">
+            <SelectValue placeholder={t("common.selectStatus")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">{t("common.active")}</SelectItem>
+            <SelectItem value="pending">{t("common.pending")}</SelectItem>
+            <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t("programs.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("programs.description")}
+        </p>
+      </div>
+
+      {portfolioFilter && (
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center">
+            <span className="mr-2">{t("programs.filteredBy")}: {portfolios.find(p => p.id.toString() === portfolioFilter)?.name}</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-5 w-5 p-0" 
+              onClick={clearPortfolioFilter}
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <DataTable
+        title={t("programs.list")}
+        data={filteredPrograms}
+        columns={[
+          { key: "name", title: t("programs.name") },
+          { key: "portfolioName", title: t("programs.portfolio") },
+          { key: "minister", title: t("programs.minister") },
+          { 
+            key: "budget", 
+            title: t("programs.budget"),
+            render: (program) => `${program.budget} DZD`
+          },
+          { 
+            key: "status", 
+            title: t("common.status"),
+            render: renderProgramStatus,
+          },
+        ]}
+        searchKeys={["name", "portfolioName", "minister"]}
+        actionColumn={renderActionMenu}
+        addButton={{
+          title: t("programs.add"),
+          content: (
+            <>
+              <ProgramForm />
+              <DialogFooter>
+                <Button onClick={handleAddProgram}>{t("common.save")}</Button>
+              </DialogFooter>
+            </>
+          ),
+        }}
+      />
+
+      {/* Edit Program Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("programs.edit")}</DialogTitle>
+            <DialogDescription>
+              {t("programs.editDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <ProgramForm />
+          <DialogFooter>
+            <Button onClick={handleEditProgram}>{t("common.save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Program Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{t("programs.details")}</DialogTitle>
+            <DialogDescription>
+              {t("programs.detailsDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProgram && (
+            <div className="grid gap-6">
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-medium text-sm">{t("programs.name")}</h3>
+                    <p>{selectedProgram.name}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm">{t("programs.portfolio")}</h3>
+                    <p>{selectedProgram.portfolioName}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm">{t("programs.minister")}</h3>
+                    <p>{selectedProgram.minister}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm">{t("programs.budget")}</h3>
+                    <p>{selectedProgram.budget} DZD</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm">{t("common.status")}</h3>
+                    {renderProgramStatus(selectedProgram)}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            <DashboardGrid columns={2}>
-              {filteredPrograms.map(program => (
-                <Card 
-                  key={program.id} 
-                  className="budget-card transition-all duration-300 hover:shadow-elevation"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{program.name}</CardTitle>
-                      {getStatusBadge(program.status)}
-                    </div>
-                    <CardDescription>{program.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-muted-foreground">Progression</span>
-                          <span 
-                            className={cn(
-                              "text-sm font-medium",
-                              program.progress < 40 
-                                ? "text-budget-danger" 
-                                : program.progress < 70 
-                                  ? "text-budget-warning" 
-                                  : "text-budget-success"
-                            )}
-                          >
-                            {program.progress}%
-                          </span>
-                        </div>
-                        <Progress value={program.progress} className="h-2" />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget alloué</p>
-                          <p className="font-medium">{formatCurrency(program.allocatedAmount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget utilisé</p>
-                          <p className="font-medium">{formatCurrency(program.usedAmount)}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Actions</p>
-                          <p className="font-medium">{program.actions}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Opérations</p>
-                          <p className="font-medium">{program.operations}</p>
-                        </div>
-                      </div>
-                    </div>
+              <div>
+                <h3 className="font-medium mb-3">{t("programs.relatedActions")}</h3>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-center text-muted-foreground py-4">
+                      {t("programs.noActionsYet")}
+                    </p>
                   </CardContent>
-                  <CardFooter>
-                    <Button variant="ghost" size="sm" className="w-full justify-between">
-                      <span>Voir les détails</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
                 </Card>
-              ))}
-            </DashboardGrid>
-          </TabsContent>
-          
-          <TabsContent value="portfolios" className="animate-fade-in">
-            <DashboardGrid columns={2}>
-              {mockPortfolios.map(portfolio => (
-                <Card 
-                  key={portfolio.id} 
-                  className="budget-card transition-all duration-300 hover:shadow-elevation"
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsViewDialogOpen(false)}
                 >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{portfolio.name}</CardTitle>
-                    <CardDescription>{portfolio.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-muted-foreground">Utilisation du budget</span>
-                          <span className="text-sm font-medium">
-                            {Math.round((portfolio.usedAmount / portfolio.totalAmount) * 100)}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={Math.round((portfolio.usedAmount / portfolio.totalAmount) * 100)} 
-                          className="h-2" 
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget total</p>
-                          <p className="font-medium">{formatCurrency(portfolio.totalAmount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget utilisé</p>
-                          <p className="font-medium">{formatCurrency(portfolio.usedAmount)}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Ministère</p>
-                          <p className="font-medium">{portfolio.ministryName}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Programmes</p>
-                          <p className="font-medium">{portfolio.programs}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="ghost" size="sm" className="w-full justify-between">
-                      <span>Voir les programmes</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </DashboardGrid>
-          </TabsContent>
-        </Tabs>
-      </DashboardSection>
-    </Dashboard>
+                  {t("common.close")}
+                </Button>
+                <Button onClick={() => {
+                  setIsViewDialogOpen(false);
+                  openEditDialog(selectedProgram);
+                }}>
+                  {t("common.edit")}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

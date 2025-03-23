@@ -1,176 +1,182 @@
 
-import { BarChart3, CoinsIcon, DollarSign, TrendingDown, TrendingUp, PiggyBank, Wallet } from "lucide-react";
-import { 
-  Dashboard, 
-  DashboardHeader, 
-  DashboardGrid, 
-  DashboardSection 
-} from "@/components/layout/Dashboard";
-import { StatCard } from "@/components/ui-custom/StatCard";
-import { BudgetChart } from "@/components/charts/BudgetChart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import BudgetChart from "@/components/charts/BudgetChart";
+import { StatCard } from "@/components/ui-custom/StatCard";
+import { Activity, AlertTriangle, ArrowUpRight, Briefcase, CreditCard, DollarSign, LineChart, Users } from "lucide-react";
 
-// Mock data for the dashboard
-const budgetData = [
-  { name: "Ministère de l'Éducation", value: 1250000000, color: "#4338ca" },
-  { name: "Ministère de la Santé", value: 980000000, color: "#0ea5e9" },
-  { name: "Ministère des Transports", value: 750000000, color: "#14b8a6" },
-  { name: "Ministère de l'Agriculture", value: 620000000, color: "#10b981" },
-  { name: "Autres Ministères", value: 1400000000, color: "#8b5cf6" },
-];
+// Budget execution periods
+const PERIODS = ["monthly", "quarterly", "annual"];
 
-const engagementData = [
-  { name: "Engagés", value: 3100000000, color: "#4338ca" },
-  { name: "Non engagés", value: 1900000000, color: "#f43f5e" },
-];
+export default function Dashboard() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [activePeriod, setActivePeriod] = useState<string>("monthly");
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalBudget: "1,500,000,000",
+    allocatedBudget: "980,000,000",
+    remainingBudget: "520,000,000",
+    approvals: 12,
+    portfolios: 8,
+    programs: 24,
+    actions: 56,
+    operations: 86
+  });
 
-const programmesData = [
-  { 
-    name: "Programme d'Éducation Nationale",
-    allocation: 750000000,
-    spent: 480000000,
-    remaining: 270000000,
-    progress: 64,
-  },
-  {
-    name: "Santé Publique",
-    allocation: 580000000,
-    spent: 390000000,
-    remaining: 190000000,
-    progress: 67,
-  },
-  {
-    name: "Infrastructure Routière",
-    allocation: 430000000,
-    spent: 210000000,
-    remaining: 220000000,
-    progress: 49,
-  },
-  {
-    name: "Développement Agricole",
-    allocation: 380000000,
-    spent: 145000000,
-    remaining: 235000000,
-    progress: 38,
-  },
-];
+  // Simulate loading data from Supabase
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "XOF",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-export default function DashboardPage() {
   return (
-    <Dashboard>
-      <DashboardHeader 
-        title="Tableau de Bord" 
-        description="Vue d'ensemble de l'exécution budgétaire de l'État"
-      >
-        <Button className="shadow-subtle">
-          <BarChart3 className="mr-2 h-4 w-4" />
-          Rapport détaillé
-        </Button>
-      </DashboardHeader>
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("dashboard.welcome", { name: user?.email || "Admin" })}
+        </p>
+      </div>
 
-      <DashboardSection>
-        <DashboardGrid columns={4}>
-          <StatCard
-            title="Budget Total"
-            value={formatCurrency(5000000000)}
-            description="Budget de l'année fiscale en cours"
-            icon={<DollarSign className="h-4 w-4" />}
-            trend={{ value: 8.2, isPositive: true }}
-          />
-          <StatCard
-            title="Montant Engagé"
-            value={formatCurrency(3100000000)}
-            description="62% du budget total"
-            icon={<Wallet className="h-4 w-4" />}
-            trend={{ value: 12.5, isPositive: true }}
-          />
-          <StatCard
-            title="Montant Payé"
-            value={formatCurrency(2100000000)}
-            description="42% du budget total"
-            icon={<CoinsIcon className="h-4 w-4" />}
-            trend={{ value: 4.3, isPositive: true }}
-          />
-          <StatCard
-            title="Disponible"
-            value={formatCurrency(1900000000)}
-            description="38% du budget restant"
-            icon={<PiggyBank className="h-4 w-4" />}
-            trend={{ value: 9.1, isPositive: false }}
-          />
-        </DashboardGrid>
-      </DashboardSection>
-
-      <DashboardSection>
-        <DashboardGrid columns={2}>
-          <BudgetChart 
-            title="Répartition du Budget par Ministère" 
-            data={budgetData} 
-            className="h-full"
-          />
-          <BudgetChart 
-            title="État des Engagements" 
-            data={engagementData} 
-            className="h-full"
-          />
-        </DashboardGrid>
-      </DashboardSection>
-
-      <DashboardSection 
-        title="Exécution des Programmes" 
-        description="Suivi de l'exécution des principaux programmes budgétaires"
-      >
-        <Card className="budget-card">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Programmes Principaux</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {programmesData.map((program, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{program.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatCurrency(program.spent)} / {formatCurrency(program.allocation)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress 
-                      value={program.progress} 
-                      className="h-2"
-                    />
-                    <span 
-                      className={cn(
-                        "text-xs font-medium",
-                        program.progress < 40 
-                          ? "text-budget-danger" 
-                          : program.progress < 70 
-                            ? "text-budget-warning" 
-                            : "text-budget-success"
-                      )}
-                    >
-                      {program.progress}%
-                    </span>
-                  </div>
-                </div>
+      {/* Budget execution tracking */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div className="space-y-1">
+            <CardTitle>{t("dashboard.budgetExecution")}</CardTitle>
+            <CardDescription>
+              {t("dashboard.budgetExecutionDescription")}
+            </CardDescription>
+          </div>
+          <Tabs 
+            value={activePeriod} 
+            onValueChange={setActivePeriod}
+            className="w-[400px]"
+          >
+            <TabsList className="grid grid-cols-3">
+              {PERIODS.map((period) => (
+                <TabsTrigger key={period} value={period}>
+                  {t(`dashboard.period.${period}`)}
+                </TabsTrigger>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardSection>
-    </Dashboard>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <BudgetChart period={activePeriod} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t("dashboard.totalBudget")}
+          value={`${stats.totalBudget} DZD`}
+          description={t("dashboard.totalBudgetDesc")}
+          icon={<DollarSign className="text-blue-600" />}
+        />
+        <StatCard
+          title={t("dashboard.allocatedBudget")}
+          value={`${stats.allocatedBudget} DZD`}
+          description={t("dashboard.allocatedDesc")}
+          icon={<CreditCard className="text-green-600" />}
+        />
+        <StatCard
+          title={t("dashboard.remainingBudget")}
+          value={`${stats.remainingBudget} DZD`}
+          description={t("dashboard.remainingDesc")}
+          icon={<LineChart className="text-yellow-600" />}
+        />
+        <StatCard
+          title={t("dashboard.pendingApprovals")}
+          value={stats.approvals.toString()}
+          description={t("dashboard.approvalsDesc")}
+          icon={<AlertTriangle className="text-red-600" />}
+        />
+      </div>
+
+      {/* Programs & Portfolios */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t("dashboard.portfolios")}
+          value={stats.portfolios.toString()}
+          description={t("dashboard.portfoliosDesc")}
+          icon={<Briefcase className="text-purple-600" />}
+        />
+        <StatCard
+          title={t("dashboard.programs")}
+          value={stats.programs.toString()}
+          description={t("dashboard.programsDesc")}
+          icon={<Users className="text-indigo-600" />}
+        />
+        <StatCard
+          title={t("dashboard.actions")}
+          value={stats.actions.toString()}
+          description={t("dashboard.actionsDesc")}
+          icon={<ArrowUpRight className="text-emerald-600" />}
+        />
+        <StatCard
+          title={t("dashboard.operations")}
+          value={stats.operations.toString()}
+          description={t("dashboard.operationsDesc")}
+          icon={<Activity className="text-pink-600" />}
+        />
+      </div>
+
+      {/* Recent activities */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("dashboard.recentActivities")}</CardTitle>
+          <CardDescription>
+            {t("dashboard.recentActivitiesDesc")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p>{t("common.loading")}</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">{t("dashboard.activity.date")}</th>
+                    <th className="text-left py-3 px-4">{t("dashboard.activity.user")}</th>
+                    <th className="text-left py-3 px-4">{t("dashboard.activity.action")}</th>
+                    <th className="text-left py-3 px-4">{t("dashboard.activity.details")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b hover:bg-muted/50">
+                      <td className="py-3 px-4">{new Date().toLocaleDateString()}</td>
+                      <td className="py-3 px-4">User {i + 1}</td>
+                      <td className="py-3 px-4">{["Created", "Updated", "Approved", "Rejected", "Deleted"][i]}</td>
+                      <td className="py-3 px-4">
+                        {["Budget allocation", "Program update", "Engagement approval", "Payment request", "Operation deletion"][i]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button variant="outline">{t("common.viewAll")}</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
