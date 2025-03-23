@@ -1,0 +1,62 @@
+
+{
+  "app": {
+    "title": "نظام الإدارة المتكاملة للميزانية",
+    "login": {
+      "title": "تسجيل الدخول",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "forgotPassword": "نسيت كلمة المرور؟",
+      "login": "تسجيل الدخول",
+      "noAccount": "ليس لديك حساب؟",
+      "signup": "تسجيل"
+    },
+    "signup": {
+      "title": "إنشاء حساب",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "signup": "تسجيل",
+      "haveAccount": "لديك حساب بالفعل؟",
+      "login": "تسجيل الدخول"
+    },
+    "navigation": {
+      "dashboard": "لوحة المعلومات",
+      "budgets": "الميزانيات",
+      "programs": "البرامج",
+      "portfolios": "المحافظ",
+      "actions": "الإجراءات",
+      "operations": "العمليات",
+      "engagements": "الالتزامات",
+      "payments": "المدفوعات",
+      "reports": "التقارير",
+      "controlsAudits": "الضوابط والتدقيق",
+      "settings": "الإعدادات"
+    },
+    "buttons": {
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "add": "إضافة",
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "close": "إغلاق",
+      "confirm": "تأكيد",
+      "download": "تنزيل",
+      "share": "مشاركة"
+    },
+    "common": {
+      "search": "بحث...",
+      "notifications": "الإشعارات",
+      "profile": "الملف الشخصي",
+      "help": "المساعدة",
+      "logout": "تسجيل الخروج",
+      "darkMode": "الوضع الداكن",
+      "lightMode": "الوضع الفاتح",
+      "language": "اللغة",
+      "settings": "الإعدادات"
+    }
+  }
+}

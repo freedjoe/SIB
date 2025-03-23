@@ -1,6 +1,7 @@
 
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   BarChart3,
   BookOpenText,
@@ -12,6 +13,9 @@ import {
   PackagePlus,
   PieChart,
   Settings,
+  Briefcase,
+  FileText,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +29,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger
 } from "@/components/ui/sidebar";
 import Logo from "@/components/logo/Logo";
 import { Button } from "@/components/ui/button";
@@ -40,61 +43,74 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   description?: string;
-  subItems?: NavItem[];
 }
 
-const mainNavItems: NavItem[] = [
-  {
-    label: "Tableau de bord",
-    href: "/",
-    icon: LayoutDashboard,
-    description: "Vue d'ensemble du budget",
-  },
-  {
-    label: "Budgets",
-    href: "/budgets",
-    icon: BarChart3,
-    description: "Gestion des budgets",
-  },
-  {
-    label: "Programmes",
-    href: "/programs",
-    icon: Layers,
-    description: "Portefeuille des programmes",
-  },
-  {
-    label: "Actions",
-    href: "/actions",
-    icon: ClipboardList,
-    description: "Gestion des actions",
-  },
-  {
-    label: "Opérations",
-    href: "/operations",
-    icon: FileCog,
-    description: "Gestion des opérations",
-  },
-  {
-    label: "Engagements",
-    href: "/engagements",
-    icon: PackagePlus,
-    description: "Autorisations d'engagement",
-  },
-  {
-    label: "Paiements",
-    href: "/payments",
-    icon: PieChart,
-    description: "Crédits de paiement",
-  },
-  {
-    label: "Rapports",
-    href: "/reports",
-    icon: BookOpenText,
-    description: "Rapports et analyses",
-  },
-];
-
 export function MainNav() {
+  const { t } = useTranslation();
+
+  const mainNavItems: NavItem[] = [
+    {
+      label: t("app.navigation.dashboard"),
+      href: "/",
+      icon: LayoutDashboard,
+      description: "Vue d'ensemble du budget",
+    },
+    {
+      label: t("app.navigation.budgets"),
+      href: "/budgets",
+      icon: BarChart3,
+      description: "Gestion des budgets",
+    },
+    {
+      label: t("app.navigation.portfolios"),
+      href: "/portfolios",
+      icon: Briefcase,
+      description: "Portefeuille des programmes",
+    },
+    {
+      label: t("app.navigation.programs"),
+      href: "/programs",
+      icon: Layers,
+      description: "Gestion des programmes",
+    },
+    {
+      label: t("app.navigation.actions"),
+      href: "/actions",
+      icon: ClipboardList,
+      description: "Gestion des actions",
+    },
+    {
+      label: t("app.navigation.operations"),
+      href: "/operations",
+      icon: FileCog,
+      description: "Gestion des opérations",
+    },
+    {
+      label: t("app.navigation.engagements"),
+      href: "/engagements",
+      icon: PackagePlus,
+      description: "Autorisations d'engagement",
+    },
+    {
+      label: t("app.navigation.payments"),
+      href: "/payments",
+      icon: PieChart,
+      description: "Crédits de paiement",
+    },
+    {
+      label: t("app.navigation.reports"),
+      href: "/reports",
+      icon: BookOpenText,
+      description: "Rapports et analyses",
+    },
+    {
+      label: t("app.navigation.controlsAudits"),
+      href: "/audit",
+      icon: Shield,
+      description: "Contrôles et audits",
+    },
+  ];
+
   return (
     <Sidebar>
       <SidebarHeader className="flex-1">
@@ -106,6 +122,7 @@ export function MainNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel>SIGB</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -139,9 +156,12 @@ export function MainNav() {
               variant="outline"
               size="icon"
               className="w-full flex items-center justify-center gap-2"
+              asChild
             >
-              <Settings className="h-4 w-4" />
-              <span>Paramètres</span>
+              <NavLink to="/settings">
+                <Settings className="h-4 w-4" />
+                <span>{t("app.navigation.settings")}</span>
+              </NavLink>
             </Button>
           </TooltipTrigger>
           <TooltipContent>

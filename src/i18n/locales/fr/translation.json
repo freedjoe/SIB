@@ -1,0 +1,62 @@
+
+{
+  "app": {
+    "title": "SIGB - Système Intégré de Gestion Budgétaire",
+    "login": {
+      "title": "Connexion",
+      "email": "Email",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "login": "Se connecter",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "signup": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer un compte",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Email",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "signup": "S'inscrire",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "login": "Se connecter"
+    },
+    "navigation": {
+      "dashboard": "Tableau de bord",
+      "budgets": "Budgets",
+      "programs": "Programmes",
+      "portfolios": "Portefeuilles",
+      "actions": "Actions",
+      "operations": "Opérations",
+      "engagements": "Engagements",
+      "payments": "Paiements",
+      "reports": "Rapports",
+      "controlsAudits": "Contrôles & Audits",
+      "settings": "Paramètres"
+    },
+    "buttons": {
+      "view": "Voir",
+      "edit": "Éditer",
+      "delete": "Supprimer",
+      "add": "Ajouter",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "close": "Fermer",
+      "confirm": "Confirmer",
+      "download": "Télécharger",
+      "share": "Partager"
+    },
+    "common": {
+      "search": "Rechercher...",
+      "notifications": "Notifications",
+      "profile": "Profil",
+      "help": "Aide",
+      "logout": "Déconnexion",
+      "darkMode": "Mode sombre",
+      "lightMode": "Mode clair",
+      "language": "Langue",
+      "settings": "Paramètres"
+    }
+  }
+}

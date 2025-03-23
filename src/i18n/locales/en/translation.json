@@ -1,0 +1,62 @@
+
+{
+  "app": {
+    "title": "IBMS - Integrated Budget Management System",
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "login": "Login",
+      "noAccount": "Don't have an account?",
+      "signup": "Sign up"
+    },
+    "signup": {
+      "title": "Create an account",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "signup": "Sign up",
+      "haveAccount": "Already have an account?",
+      "login": "Login"
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "budgets": "Budgets",
+      "programs": "Programs",
+      "portfolios": "Portfolios",
+      "actions": "Actions",
+      "operations": "Operations",
+      "engagements": "Engagements",
+      "payments": "Payments",
+      "reports": "Reports",
+      "controlsAudits": "Controls & Audits",
+      "settings": "Settings"
+    },
+    "buttons": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "add": "Add",
+      "cancel": "Cancel",
+      "save": "Save",
+      "close": "Close",
+      "confirm": "Confirm",
+      "download": "Download",
+      "share": "Share"
+    },
+    "common": {
+      "search": "Search...",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "help": "Help",
+      "logout": "Logout",
+      "darkMode": "Dark Mode",
+      "lightMode": "Light Mode",
+      "language": "Language",
+      "settings": "Settings"
+    }
+  }
+}
