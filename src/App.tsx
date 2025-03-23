@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   const { user } = useAuth();
   
-  // Redirect to dashboard if already logged in
+  // Redirect to dashboard if already logged in - this works for normal Supabase auth
   useEffect(() => {
     if (user && window.location.pathname === "/auth") {
       window.location.href = "/";
@@ -53,7 +53,15 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/auth" element={<Auth />} />
+      {/* For /auth route, check if admin login happened through localStorage */}
+      <Route 
+        path="/auth" 
+        element={
+          localStorage.getItem("adminLoggedIn") === "true" ? 
+          <Navigate to="/" replace /> : 
+          <Auth />
+        } 
+      />
       
       <Route element={
         <ProtectedRoute>

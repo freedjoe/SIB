@@ -46,8 +46,9 @@ export default function Auth() {
     try {
       // Test login for admin/admin
       if (loginForm.email === "admin" && loginForm.password === "admin") {
+        localStorage.setItem("adminLoggedIn", "true");
         toast.success("Bienvenue Admin !");
-        setTimeout(() => navigate("/"), 1000);
+        navigate("/");
         return;
       }
 
