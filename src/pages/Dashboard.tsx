@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import BudgetChart from "@/components/charts/BudgetChart";
+import { BudgetChart } from "@/components/charts/BudgetChart";
 import { StatCard } from "@/components/ui-custom/StatCard";
 import { Activity, AlertTriangle, ArrowUpRight, Briefcase, CreditCard, DollarSign, LineChart, Users } from "lucide-react";
 
