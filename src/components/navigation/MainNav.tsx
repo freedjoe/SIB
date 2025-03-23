@@ -114,16 +114,11 @@ export function MainNav() {
   return (
     <Sidebar>
       <SidebarHeader className="flex-1">
-        <div className="h-16 flex items-center px-4">
+        <div className="h-16 flex flex-col items-center px-4">
           <NavLink to="/" className="flex items-center">
             <Logo />
           </NavLink>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>SIGB</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <div className="w-full mt-4 border-t pt-4">
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
@@ -146,8 +141,11 @@ export function MainNav() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        {/* The main navigation has been moved to the header */}
       </SidebarContent>
       <SidebarFooter className="border-t pt-4 px-3">
         <Tooltip>

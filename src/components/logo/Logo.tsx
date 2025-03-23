@@ -16,7 +16,7 @@ const Logo = ({ className, size = "md" }: LogoProps) => {
   return (
     <div className={cn("flex items-center", className)}>
       <span className={cn("font-semibold tracking-tight", sizeClasses[size])}>
-        Budget<span className="font-light text-primary">ERP</span>
+        <span className="font-bold">SIGB</span>
       </span>
     </div>
   );
