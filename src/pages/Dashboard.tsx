@@ -72,7 +72,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <BudgetChart period={activePeriod} />
+            <BudgetChart 
+              period={activePeriod} 
+              title={t("dashboard.budgetAllocation")}
+            />
           </div>
         </CardContent>
       </Card>
