@@ -3,7 +3,7 @@
 // We should create a new component for the report generation dialog and update the page to use it.
 
 import { useState, useEffect } from "react";
-import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X, Calendar, FilePlus, ChartBar, FileEdit, Trash2, Eye } from "lucide-react";
+import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X, Calendar, FilePlus, ChartBar, FileEdit, Trash2, Eye, Save } from "lucide-react";
 import { 
   Dashboard, 
   DashboardHeader,
