@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dashboard, 
@@ -43,10 +42,14 @@ import {
   Clock, 
   X, 
   ArrowRightLeft,
-  Eye
+  Eye,
+  Plus,
+  FileEdit,
+  Trash2
 } from "lucide-react";
+import { PaymentDialog } from "@/components/dialogs/PaymentDialog";
+import { toast } from "@/components/ui/use-toast";
 
-// Mock data
 interface Payment {
   id: string;
   engagementId: string;
@@ -168,7 +171,14 @@ const mockPayments: Payment[] = [
   }
 ];
 
-// Helper function to get status badge - moved outside the component to be accessible everywhere
+const mockEngagements = [
+  { id: "e1", ref: "ENG/2023/001", operation: "Construction École Primaire de Koné", beneficiary: "Entreprise ABC Construction" },
+  { id: "e2", ref: "ENG/2023/008", operation: "Équipement Hôpital Central", beneficiary: "MedEquip International" },
+  { id: "e3", ref: "ENG/2023/012", operation: "Rénovation Route Nationale 1", beneficiary: "Routes & Ponts SA" },
+  { id: "e4", ref: "ENG/2023/025", operation: "Formation des Enseignants", beneficiary: "Institut de Formation Pédagogique" },
+  { id: "e5", ref: "ENG/2023/030", operation: "Campagne de Vaccination", beneficiary: "Santé Pour Tous" },
+];
+
 const getStatusBadge = (status: Payment["status"]) => {
   switch (status) {
     case "pending":
@@ -204,26 +214,6 @@ const getStatusBadge = (status: Payment["status"]) => {
   }
 };
 
-// Calculate statistics
-const totalPayments = mockPayments.length;
-const totalPaidAmount = mockPayments
-  .filter(p => p.status === "paid")
-  .reduce((sum, p) => sum + p.amount, 0);
-const totalPendingAmount = mockPayments
-  .filter(p => p.status === "pending" || p.status === "approved")
-  .reduce((sum, p) => sum + p.amount, 0);
-const totalRejectedAmount = mockPayments
-  .filter(p => p.status === "rejected")
-  .reduce((sum, p) => sum + p.amount, 0);
-
-// Chart data
-const paymentStatusData = [
-  { name: "Payé", value: totalPaidAmount, color: "#10b981" },
-  { name: "En attente", value: totalPendingAmount, color: "#f59e0b" },
-  { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" }
-];
-
-// Helper function to format currency
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -233,7 +223,6 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Helper function to format date
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "-";
   const date = new Date(dateString);
@@ -247,10 +236,133 @@ const formatDate = (dateString: string | null) => {
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
+
+  const totalPayments = payments.length;
+  const totalPaidAmount = payments
+    .filter(p => p.status === "paid")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalPendingAmount = payments
+    .filter(p => p.status === "pending" || p.status === "approved")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalRejectedAmount = payments
+    .filter(p => p.status === "rejected")
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const paymentStatusData = [
+    { name: "Payé", value: totalPaidAmount, color: "#10b981" },
+    { name: "En attente", value: totalPendingAmount, color: "#f59e0b" },
+    { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" }
+  ];
 
   const filteredPayments = statusFilter !== "all" 
-    ? mockPayments.filter(payment => payment.status === statusFilter)
-    : mockPayments;
+    ? payments.filter(payment => payment.status === statusFilter)
+    : payments;
+
+  const handleOpenAddDialog = () => {
+    setCurrentPayment(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (payment: Payment) => {
+    setCurrentPayment(payment);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleOpenViewDialog = (payment: Payment) => {
+    setCurrentPayment(payment);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (payment: Payment) => {
+    setCurrentPayment(payment);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleAddPayment = (paymentData: Partial<Payment>) => {
+    if (!paymentData.engagementId || !paymentData.amount) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const engagement = mockEngagements.find(e => e.id === paymentData.engagementId);
+    
+    if (!engagement) {
+      toast({
+        title: "Erreur",
+        description: "Engagement invalide.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newPayment: Payment = {
+      id: `p${payments.length + 9}`,
+      engagementId: paymentData.engagementId,
+      engagementRef: engagement.ref,
+      operationId: `op${Math.floor(Math.random() * 8) + 1}`,
+      operationName: engagement.operation,
+      amount: Number(paymentData.amount),
+      requestDate: paymentData.requestDate || new Date().toISOString().split("T")[0],
+      paymentDate: null,
+      status: "pending",
+      beneficiary: engagement.beneficiary,
+      description: paymentData.description || ""
+    };
+
+    setPayments([...payments, newPayment]);
+    setIsAddDialogOpen(false);
+    toast({
+      title: "Paiement ajouté",
+      description: `Le paiement pour "${newPayment.operationName}" a été ajouté avec succès.`,
+    });
+  };
+
+  const handleEditPayment = (paymentData: Partial<Payment>) => {
+    if (!currentPayment) return;
+
+    const updatedPayments = payments.map(p => 
+      p.id === currentPayment.id 
+        ? { 
+            ...p, 
+            amount: Number(paymentData.amount) || p.amount, 
+            requestDate: paymentData.requestDate || p.requestDate,
+            status: paymentData.status || p.status,
+            paymentDate: paymentData.status === "paid" ? new Date().toISOString().split("T")[0] : p.paymentDate,
+            description: paymentData.description || p.description
+          } 
+        : p
+    );
+
+    setPayments(updatedPayments);
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Paiement modifié",
+      description: `Le paiement pour "${currentPayment.operationName}" a été modifié avec succès.`,
+    });
+  };
+
+  const handleDeletePayment = () => {
+    if (!currentPayment) return;
+
+    const updatedPayments = payments.filter(p => p.id !== currentPayment.id);
+    setPayments(updatedPayments);
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Paiement supprimé",
+      description: `Le paiement pour "${currentPayment.operationName}" a été supprimé avec succès.`,
+    });
+  };
 
   return (
     <Dashboard>
@@ -258,8 +370,8 @@ export default function PaymentsPage() {
         title="Gestion des Paiements" 
         description="Suivez et gérez les crédits de paiement (CP) et les décaissements"
       >
-        <Button className="shadow-subtle">
-          <CreditCard className="mr-2 h-4 w-4" />
+        <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
+          <Plus className="mr-2 h-4 w-4" />
           Nouveau paiement
         </Button>
       </DashboardHeader>
@@ -307,7 +419,7 @@ export default function PaymentsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
-                {mockPayments.slice(0, 4).map((payment, idx) => (
+                {payments.slice(0, 4).map((payment, idx) => (
                   <div key={idx} className="flex items-start gap-4">
                     <div className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-full",
@@ -379,93 +491,106 @@ export default function PaymentsPage() {
           </div>
           
           <TabsContent value="all" className="animate-fade-in">
-            <PaymentTable payments={filteredPayments} />
+            <PaymentTable 
+              payments={filteredPayments} 
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getStatusBadge={getStatusBadge}
+              onView={handleOpenViewDialog}
+              onEdit={handleOpenEditDialog}
+              onDelete={handleOpenDeleteDialog}
+            />
           </TabsContent>
           
           <TabsContent value="pending" className="animate-fade-in">
-            <PaymentTable payments={mockPayments.filter(p => p.status === "pending")} />
+            <PaymentTable 
+              payments={payments.filter(p => p.status === "pending")} 
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getStatusBadge={getStatusBadge}
+              onView={handleOpenViewDialog}
+              onEdit={handleOpenEditDialog}
+              onDelete={handleOpenDeleteDialog}
+            />
           </TabsContent>
           
           <TabsContent value="approved" className="animate-fade-in">
-            <PaymentTable payments={mockPayments.filter(p => p.status === "approved")} />
+            <PaymentTable 
+              payments={payments.filter(p => p.status === "approved")} 
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getStatusBadge={getStatusBadge}
+              onView={handleOpenViewDialog}
+              onEdit={handleOpenEditDialog}
+              onDelete={handleOpenDeleteDialog}
+            />
           </TabsContent>
           
           <TabsContent value="paid" className="animate-fade-in">
-            <PaymentTable payments={mockPayments.filter(p => p.status === "paid")} />
+            <PaymentTable 
+              payments={payments.filter(p => p.status === "paid")} 
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getStatusBadge={getStatusBadge}
+              onView={handleOpenViewDialog}
+              onEdit={handleOpenEditDialog}
+              onDelete={handleOpenDeleteDialog}
+            />
           </TabsContent>
         </Tabs>
       </DashboardSection>
+
+      <PaymentDialog
+        type="add"
+        payment={null}
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSave={handleAddPayment}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        engagements={mockEngagements}
+        getStatusBadge={getStatusBadge}
+      />
+
+      <PaymentDialog
+        type="edit"
+        payment={currentPayment}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleEditPayment}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        engagements={mockEngagements}
+        getStatusBadge={getStatusBadge}
+      />
+
+      <PaymentDialog
+        type="view"
+        payment={currentPayment}
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        onSave={() => {}}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        engagements={mockEngagements}
+        getStatusBadge={getStatusBadge}
+      />
+
+      <PaymentDialog
+        type="delete"
+        payment={currentPayment}
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onSave={() => {}}
+        onDelete={handleDeletePayment}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        engagements={mockEngagements}
+        getStatusBadge={getStatusBadge}
+      />
     </Dashboard>
   );
 }
 
-// Payment table component
-interface PaymentTableProps {
-  payments: Payment[];
-}
-
-function PaymentTable({ payments }: PaymentTableProps) {
-  return (
-    <Card className="budget-card">
-      <CardHeader>
-        <CardTitle>Liste des Paiements</CardTitle>
-        <CardDescription>
-          {payments.length} paiement{payments.length !== 1 ? 's' : ''} trouvé{payments.length !== 1 ? 's' : ''}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Référence</TableHead>
-                <TableHead>Opération</TableHead>
-                <TableHead>Bénéficiaire</TableHead>
-                <TableHead>Date de demande</TableHead>
-                <TableHead>Date de paiement</TableHead>
-                <TableHead className="text-right">Montant</TableHead>
-                <TableHead className="text-right">Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.length > 0 ? (
-                payments.map((payment) => (
-                  <TableRow key={payment.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{payment.engagementRef}</TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate" title={payment.operationName}>
-                        {payment.operationName}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate" title={payment.beneficiary}>
-                        {payment.beneficiary}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(payment.requestDate)}</TableCell>
-                    <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
-                    <TableCell className="text-right">{getStatusBadge(payment.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    Aucun paiement trouvé.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+interface
 

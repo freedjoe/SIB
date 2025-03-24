@@ -32,7 +32,17 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { FileCog, SearchIcon, Eye } from "lucide-react";
+import { FileCog, SearchIcon, Eye, Plus, FileEdit, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 // Mock data
 interface Operation {
@@ -184,13 +194,49 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Mock data for actions dropdown
+const mockActions = [
+  { id: "a1", name: "Infrastructures Scolaires" },
+  { id: "a2", name: "Qualité de l'Enseignement" },
+  { id: "a5", name: "Équipements Sanitaires" },
+  { id: "a6", name: "Prévention Sanitaire" },
+  { id: "a8", name: "Entretien Routier" },
+  { id: "a9", name: "Nouvelles Infrastructures" },
+  { id: "a12", name: "Soutien aux Agriculteurs" },
+  { id: "a13", name: "Infrastructure Agricole" },
+];
+
+// Mock data for programs dropdown
+const mockPrograms = [
+  { id: "prog1", name: "Programme d'Éducation Nationale" },
+  { id: "prog2", name: "Santé Publique" },
+  { id: "prog3", name: "Infrastructure Routière" },
+  { id: "prog4", name: "Développement Agricole" },
+];
+
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [programFilter, setProgramFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [operations, setOperations] = useState<Operation[]>(mockOperations);
+  
+  // Dialog states
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [currentOperation, setCurrentOperation] = useState<Operation | null>(null);
+  const [newOperation, setNewOperation] = useState<Partial<Operation>>({
+    name: "",
+    description: "",
+    actionId: "",
+    programId: "",
+    allocatedAmount: 0,
+    status: "planned"
+  });
 
-  const filteredOperations = mockOperations.filter(operation => {
+  const filteredOperations = operations.filter(operation => {
     return (
       (searchTerm === "" || 
         operation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,13 +259,157 @@ export default function OperationsPage() {
     }
   };
 
-  const uniquePrograms = Array.from(new Set(mockOperations.map(op => op.programId))).map(id => {
-    const operation = mockOperations.find(op => op.programId === id);
+  const uniquePrograms = Array.from(new Set(operations.map(op => op.programId))).map(id => {
+    const operation = operations.find(op => op.programId === id);
     return {
       id: operation?.programId || "",
       name: operation?.programName || ""
     };
   });
+
+  // Handler functions
+  const handleOpenAddDialog = () => {
+    setNewOperation({
+      name: "",
+      description: "",
+      actionId: "",
+      programId: "",
+      allocatedAmount: 0,
+      status: "planned"
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (operation: Operation) => {
+    setCurrentOperation(operation);
+    setNewOperation({
+      name: operation.name,
+      description: operation.description,
+      actionId: operation.actionId,
+      programId: operation.programId,
+      allocatedAmount: operation.allocatedAmount,
+      status: operation.status
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleOpenViewDialog = (operation: Operation) => {
+    setCurrentOperation(operation);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (operation: Operation) => {
+    setCurrentOperation(operation);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleAddOperation = () => {
+    if (!newOperation.name || !newOperation.actionId || !newOperation.programId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const actionDetails = mockActions.find(a => a.id === newOperation.actionId);
+    const programDetails = mockPrograms.find(p => p.id === newOperation.programId);
+
+    if (!actionDetails || !programDetails) {
+      toast({
+        title: "Erreur",
+        description: "Action ou programme invalide.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const operation: Operation = {
+      id: `op${operations.length + 9}`,
+      name: newOperation.name,
+      description: newOperation.description || "",
+      actionId: newOperation.actionId,
+      actionName: actionDetails.name,
+      programId: newOperation.programId,
+      programName: programDetails.name,
+      allocatedAmount: Number(newOperation.allocatedAmount) || 0,
+      usedAmount: 0,
+      progress: 0,
+      engagements: 0,
+      payments: 0,
+      status: newOperation.status as "planned" | "in_progress" | "completed",
+    };
+
+    setOperations([...operations, operation]);
+    setIsAddDialogOpen(false);
+    toast({
+      title: "Opération ajoutée",
+      description: `L'opération "${operation.name}" a été ajoutée avec succès.`,
+    });
+  };
+
+  const handleEditOperation = () => {
+    if (!currentOperation) return;
+
+    if (!newOperation.name || !newOperation.actionId || !newOperation.programId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const actionDetails = mockActions.find(a => a.id === newOperation.actionId);
+    const programDetails = mockPrograms.find(p => p.id === newOperation.programId);
+
+    if (!actionDetails || !programDetails) {
+      toast({
+        title: "Erreur",
+        description: "Action ou programme invalide.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedOperations = operations.map((op) =>
+      op.id === currentOperation.id
+        ? {
+            ...op,
+            name: newOperation.name!,
+            description: newOperation.description || "",
+            actionId: newOperation.actionId!,
+            actionName: actionDetails.name,
+            programId: newOperation.programId!,
+            programName: programDetails.name,
+            allocatedAmount: Number(newOperation.allocatedAmount) || 0,
+            status: newOperation.status as "planned" | "in_progress" | "completed",
+          }
+        : op
+    );
+
+    setOperations(updatedOperations);
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Opération modifiée",
+      description: `L'opération "${currentOperation.name}" a été modifiée avec succès.`,
+    });
+  };
+
+  const handleDeleteOperation = () => {
+    if (!currentOperation) return;
+
+    const updatedOperations = operations.filter(
+      (op) => op.id !== currentOperation.id
+    );
+    setOperations(updatedOperations);
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Opération supprimée",
+      description: `L'opération "${currentOperation.name}" a été supprimée avec succès.`,
+    });
+  };
 
   return (
     <Dashboard>
@@ -227,8 +417,8 @@ export default function OperationsPage() {
         title="Gestion des Opérations" 
         description="Suivez et gérez les opérations dans le cadre des actions budgétaires"
       >
-        <Button className="shadow-subtle">
-          <FileCog className="mr-2 h-4 w-4" />
+        <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
+          <Plus className="mr-2 h-4 w-4" />
           Nouvelle opération
         </Button>
       </DashboardHeader>
@@ -358,9 +548,29 @@ export default function OperationsPage() {
                             </TableCell>
                             <TableCell className="text-right">{getStatusBadge(operation.status)}</TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenViewDialog(operation)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenEditDialog(operation)}
+                                >
+                                  <FileEdit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenDeleteDialog(operation)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
@@ -405,6 +615,367 @@ export default function OperationsPage() {
           </TabsContent>
         </Tabs>
       </DashboardSection>
+
+      {/* Add Operation Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter une nouvelle opération</DialogTitle>
+            <DialogDescription>
+              Complétez le formulaire pour ajouter une nouvelle opération.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nom
+              </Label>
+              <Input
+                id="name"
+                className="col-span-3"
+                value={newOperation.name || ""}
+                onChange={(e) =>
+                  setNewOperation({ ...newOperation, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="description"
+                className="col-span-3"
+                value={newOperation.description || ""}
+                onChange={(e) =>
+                  setNewOperation({ ...newOperation, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="program" className="text-right">
+                Programme
+              </Label>
+              <Select
+                value={newOperation.programId}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, programId: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un programme" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockPrograms.map((program) => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="action" className="text-right">
+                Action
+              </Label>
+              <Select
+                value={newOperation.actionId}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, actionId: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une action" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockActions.map((action) => (
+                    <SelectItem key={action.id} value={action.id}>
+                      {action.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="amount" className="text-right">
+                Montant alloué
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                className="col-span-3"
+                value={newOperation.allocatedAmount || ""}
+                onChange={(e) =>
+                  setNewOperation({
+                    ...newOperation,
+                    allocatedAmount: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Statut
+              </Label>
+              <Select
+                value={newOperation.status}
+                onValueChange={(value) =>
+                  setNewOperation({
+                    ...newOperation,
+                    status: value as "planned" | "in_progress" | "completed",
+                  })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planned">Planifié</SelectItem>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="completed">Terminé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleAddOperation}>Ajouter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Operation Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier l'opération</DialogTitle>
+            <DialogDescription>
+              Modifiez les détails de l'opération.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Nom
+              </Label>
+              <Input
+                id="edit-name"
+                className="col-span-3"
+                value={newOperation.name || ""}
+                onChange={(e) =>
+                  setNewOperation({ ...newOperation, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="edit-description"
+                className="col-span-3"
+                value={newOperation.description || ""}
+                onChange={(e) =>
+                  setNewOperation({ ...newOperation, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-program" className="text-right">
+                Programme
+              </Label>
+              <Select
+                value={newOperation.programId}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, programId: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un programme" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockPrograms.map((program) => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-action" className="text-right">
+                Action
+              </Label>
+              <Select
+                value={newOperation.actionId}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, actionId: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une action" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockActions.map((action) => (
+                    <SelectItem key={action.id} value={action.id}>
+                      {action.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-amount" className="text-right">
+                Montant alloué
+              </Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                className="col-span-3"
+                value={newOperation.allocatedAmount || ""}
+                onChange={(e) =>
+                  setNewOperation({
+                    ...newOperation,
+                    allocatedAmount: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-status" className="text-right">
+                Statut
+              </Label>
+              <Select
+                value={newOperation.status}
+                onValueChange={(value) =>
+                  setNewOperation({
+                    ...newOperation,
+                    status: value as "planned" | "in_progress" | "completed",
+                  })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planned">Planifié</SelectItem>
+                  <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="completed">Terminé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleEditOperation}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Operation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette opération? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          {currentOperation && (
+            <div className="py-4">
+              <p>
+                <strong>Nom:</strong> {currentOperation.name}
+              </p>
+              <p>
+                <strong>Programme:</strong> {currentOperation.programName}
+              </p>
+              <p>
+                <strong>Action:</strong> {currentOperation.actionName}
+              </p>
+              <p>
+                <strong>Budget alloué:</strong> {formatCurrency(currentOperation.allocatedAmount)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteOperation}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Operation Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Détails de l'opération</DialogTitle>
+          </DialogHeader>
+          {currentOperation && (
+            <div className="py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Nom:</div>
+                <div>{currentOperation.name}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Description:</div>
+                <div>{currentOperation.description}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Programme:</div>
+                <div>{currentOperation.programName}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Action:</div>
+                <div>{currentOperation.actionName}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Budget alloué:</div>
+                <div>{formatCurrency(currentOperation.allocatedAmount)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Budget utilisé:</div>
+                <div>{formatCurrency(currentOperation.usedAmount)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Progression:</div>
+                <div>{currentOperation.progress}%</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Engagements:</div>
+                <div>{currentOperation.engagements}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Paiements:</div>
+                <div>{currentOperation.payments}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Statut:</div>
+                <div>{getStatusBadge(currentOperation.status)}</div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dashboard>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
@@ -171,7 +170,7 @@ export default function Engagements() {
     demande_par: "",
     date: new Date().toISOString().split("T")[0],
   });
-  const [approvalAmount, setApprovalAmount] = useState<number | "">("");
+  const [approvalAmount, setApprovalAmount] = useState<number | "">(0);
 
   // Filter engagements based on search term
   const filteredEngagements = engagements.filter(
@@ -331,7 +330,7 @@ export default function Engagements() {
       ? parseFloat(approvalAmount) 
       : approvalAmount;
 
-    if (isNaN(amount)) {
+    if (isNaN(Number(amount))) {
       toast({
         title: "Erreur",
         description: "Veuillez entrer un montant valide.",
@@ -344,8 +343,8 @@ export default function Engagements() {
       engagement.id === currentEngagement.id
         ? {
             ...engagement,
-            montant_approuve: amount,
-            statut: "Approuvé",
+            montant_approuve: Number(amount),
+            statut: "Approuvé" as const,
           }
         : engagement
     );
@@ -365,7 +364,7 @@ export default function Engagements() {
         ? {
             ...e,
             montant_approuve: 0,
-            statut: "Rejeté",
+            statut: "Rejeté" as const,
           }
         : e
     );
@@ -425,6 +424,7 @@ export default function Engagements() {
     }
   };
 
+  
   return (
     <Dashboard className="p-6">
       <DashboardHeader
@@ -958,76 +958,4 @@ export default function Engagements() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">Statut:</div>
-                <div>{getStatusBadge(currentEngagement.statut)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Date:</div>
-                <div>{formatDate(currentEngagement.date)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Priorité:</div>
-                <div>{getPriorityBadge(currentEngagement.priorite)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Demandé par:</div>
-                <div>{currentEngagement.demande_par}</div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Approve Engagement Dialog */}
-      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Approuver l'engagement</DialogTitle>
-            <DialogDescription>
-              Entrez le montant à approuver pour cet engagement.
-            </DialogDescription>
-          </DialogHeader>
-          {currentEngagement && (
-            <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Opération:</div>
-                <div>{currentEngagement.operation}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Bénéficiaire:</div>
-                <div>{currentEngagement.beneficiaire}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Montant demandé:</div>
-                <div>{formatCurrency(currentEngagement.montant_demande)}</div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="approval-amount" className="text-right col-span-1">
-                  Montant à approuver
-                </Label>
-                <Input
-                  id="approval-amount"
-                  type="number"
-                  className="col-span-3"
-                  value={approvalAmount}
-                  onChange={(e) => setApprovalAmount(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsApproveDialogOpen(false)}
-            >
-              Annuler
-            </Button>
-            <Button onClick={handleApproveEngagement}>Approuver</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Dashboard>
-  );
-}
+                <div>{getStatus
