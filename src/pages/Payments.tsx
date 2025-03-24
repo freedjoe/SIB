@@ -233,6 +233,97 @@ const formatDate = (dateString: string | null) => {
   }).format(date);
 };
 
+interface PaymentTableProps {
+  payments: Payment[];
+  formatCurrency: (amount: number) => string;
+  formatDate: (dateString: string | null) => string;
+  getStatusBadge: (status: Payment["status"]) => React.ReactNode;
+  onView: (payment: Payment) => void;
+  onEdit: (payment: Payment) => void;
+  onDelete: (payment: Payment) => void;
+}
+
+function PaymentTable({ 
+  payments, 
+  formatCurrency, 
+  formatDate, 
+  getStatusBadge,
+  onView,
+  onEdit,
+  onDelete
+}: PaymentTableProps) {
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Référence</TableHead>
+              <TableHead>Opération</TableHead>
+              <TableHead>Bénéficiaire</TableHead>
+              <TableHead className="text-right">Montant</TableHead>
+              <TableHead>Date demande</TableHead>
+              <TableHead>Date paiement</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {payments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-4">
+                  Aucun paiement trouvé
+                </TableCell>
+              </TableRow>
+            ) : (
+              payments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>{payment.engagementRef}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {payment.operationName}
+                  </TableCell>
+                  <TableCell>{payment.beneficiary}</TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency(payment.amount)}
+                  </TableCell>
+                  <TableCell>{formatDate(payment.requestDate)}</TableCell>
+                  <TableCell>{formatDate(payment.paymentDate)}</TableCell>
+                  <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onView(payment)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(payment)}
+                      >
+                        <FileEdit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(payment)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -591,6 +682,3 @@ export default function PaymentsPage() {
     </Dashboard>
   );
 }
-
-interface
-
