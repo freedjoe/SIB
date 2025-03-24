@@ -11,7 +11,8 @@ import {
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter 
 } from "@/components/ui/card";
 import { 
   Table, 
@@ -30,8 +31,18 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { FilePlus, SearchIcon } from "lucide-react";
+import { FilePlus, SearchIcon, FileEdit, Trash2, Eye } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 // Mock data
 interface Budget {
@@ -130,7 +141,7 @@ const mockBudgets: Budget[] = [
 
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return new Intl.NumberFormat("fr-DZ", {
     style: "currency",
     currency: "DZD",
     minimumFractionDigits: 0,
@@ -144,6 +155,19 @@ export default function BudgetsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  // Modal states
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
+  const [newBudgetData, setNewBudgetData] = useState<Partial<Budget>>({
+    year: new Date().getFullYear(),
+    status: "draft",
+    totalAmount: 0,
+    allocatedAmount: 0
+  });
 
   useEffect(() => {
     // Simulate API call
@@ -197,13 +221,134 @@ export default function BudgetsPage() {
     }
   };
 
+  // Modal handlers
+  const handleOpenAddDialog = () => {
+    setNewBudgetData({
+      year: new Date().getFullYear(),
+      status: "draft",
+      totalAmount: 0,
+      allocatedAmount: 0
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (budget: Budget) => {
+    setCurrentBudget(budget);
+    setNewBudgetData({
+      year: budget.year,
+      ministryId: budget.ministryId,
+      ministryName: budget.ministryName,
+      totalAmount: budget.totalAmount,
+      allocatedAmount: budget.allocatedAmount,
+      status: budget.status
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleOpenViewDialog = (budget: Budget) => {
+    setCurrentBudget(budget);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (budget: Budget) => {
+    setCurrentBudget(budget);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // CRUD operations
+  const handleAddBudget = () => {
+    if (!newBudgetData.ministryName || !newBudgetData.year) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newBudget: Budget = {
+      id: `b${budgets.length + 10}`,
+      year: newBudgetData.year || new Date().getFullYear(),
+      ministryId: newBudgetData.ministryId || `m${budgets.length + 10}`,
+      ministryName: newBudgetData.ministryName || "",
+      totalAmount: newBudgetData.totalAmount || 0,
+      allocatedAmount: 0,
+      status: "draft"
+    };
+
+    setBudgets([...budgets, newBudget]);
+    setIsAddDialogOpen(false);
+    toast({
+      title: "Budget ajouté",
+      description: `Le budget pour "${newBudget.ministryName}" a été ajouté avec succès.`,
+    });
+  };
+
+  const handleEditBudget = () => {
+    if (!currentBudget) return;
+
+    if (!newBudgetData.ministryName) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedBudgets = budgets.map(budget => 
+      budget.id === currentBudget.id 
+        ? { 
+            ...budget,
+            year: newBudgetData.year || budget.year,
+            ministryName: newBudgetData.ministryName || budget.ministryName,
+            totalAmount: newBudgetData.totalAmount || budget.totalAmount,
+            allocatedAmount: newBudgetData.allocatedAmount || budget.allocatedAmount,
+            status: newBudgetData.status || budget.status
+          } 
+        : budget
+    );
+
+    setBudgets(updatedBudgets);
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Budget modifié",
+      description: `Le budget pour "${currentBudget.ministryName}" a été modifié avec succès.`,
+    });
+  };
+
+  const handleDeleteBudget = () => {
+    if (!currentBudget) return;
+
+    const updatedBudgets = budgets.filter(budget => budget.id !== currentBudget.id);
+    setBudgets(updatedBudgets);
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Budget supprimé",
+      description: `Le budget pour "${currentBudget.ministryName}" a été supprimé avec succès.`,
+    });
+  };
+
+  // Mock ministries for select dropdown
+  const ministries = [
+    "Ministère de l'Éducation",
+    "Ministère de la Santé",
+    "Ministère des Transports",
+    "Ministère de l'Agriculture",
+    "Ministère de la Défense",
+    "Ministère de la Justice",
+    "Ministère des Affaires Étrangères",
+    "Ministère des Finances",
+    "Ministère de l'Intérieur"
+  ];
+
   return (
     <Dashboard>
       <DashboardHeader 
         title="Gestion des Budgets" 
         description="Créez, modifiez et suivez les budgets des ministères"
       >
-        <Button className="shadow-subtle">
+        <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
           <FilePlus className="mr-2 h-4 w-4" />
           Nouveau budget
         </Button>
@@ -273,6 +418,7 @@ export default function BudgetsPage() {
                     <TableHead className="text-right">Montant Total</TableHead>
                     <TableHead className="text-right">Montant Alloué</TableHead>
                     <TableHead className="text-right">Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -287,11 +433,36 @@ export default function BudgetsPage() {
                         <TableCell className="text-right">{formatCurrency(budget.totalAmount)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(budget.allocatedAmount)}</TableCell>
                         <TableCell className="text-right">{getStatusBadge(budget.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenViewDialog(budget)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenEditDialog(budget)}
+                            >
+                              <FileEdit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDeleteDialog(budget)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         Aucun budget trouvé.
                       </TableCell>
                     </TableRow>
@@ -302,6 +473,287 @@ export default function BudgetsPage() {
           </CardContent>
         </Card>
       </DashboardSection>
+
+      {/* Add Budget Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau budget</DialogTitle>
+            <DialogDescription>
+              Complétez le formulaire pour créer un nouveau budget.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="ministry" className="text-right">
+                Ministère
+              </Label>
+              <Select
+                value={newBudgetData.ministryName}
+                onValueChange={(value) =>
+                  setNewBudgetData({ ...newBudgetData, ministryName: value, ministryId: `m${Math.floor(Math.random() * 100)}` })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un ministère" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ministries.map((ministry) => (
+                    <SelectItem key={ministry} value={ministry}>
+                      {ministry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="year" className="text-right">
+                Année
+              </Label>
+              <Select
+                value={newBudgetData.year?.toString()}
+                onValueChange={(value) =>
+                  setNewBudgetData({ ...newBudgetData, year: parseInt(value) })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une année" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2023">2023</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="amount" className="text-right">
+                Montant Total
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                className="col-span-3"
+                value={newBudgetData.totalAmount || ""}
+                onChange={(e) =>
+                  setNewBudgetData({
+                    ...newBudgetData,
+                    totalAmount: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleAddBudget}>Ajouter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Budget Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le budget</DialogTitle>
+            <DialogDescription>
+              Modifiez les détails du budget.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-ministry" className="text-right">
+                Ministère
+              </Label>
+              <Select
+                value={newBudgetData.ministryName}
+                onValueChange={(value) =>
+                  setNewBudgetData({ ...newBudgetData, ministryName: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un ministère" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ministries.map((ministry) => (
+                    <SelectItem key={ministry} value={ministry}>
+                      {ministry}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-year" className="text-right">
+                Année
+              </Label>
+              <Select
+                value={newBudgetData.year?.toString()}
+                onValueChange={(value) =>
+                  setNewBudgetData({ ...newBudgetData, year: parseInt(value) })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une année" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2023">2023</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-amount" className="text-right">
+                Montant Total
+              </Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                className="col-span-3"
+                value={newBudgetData.totalAmount || ""}
+                onChange={(e) =>
+                  setNewBudgetData({
+                    ...newBudgetData,
+                    totalAmount: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-allocated" className="text-right">
+                Montant Alloué
+              </Label>
+              <Input
+                id="edit-allocated"
+                type="number"
+                className="col-span-3"
+                value={newBudgetData.allocatedAmount || ""}
+                onChange={(e) =>
+                  setNewBudgetData({
+                    ...newBudgetData,
+                    allocatedAmount: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-status" className="text-right">
+                Statut
+              </Label>
+              <Select
+                value={newBudgetData.status}
+                onValueChange={(value) =>
+                  setNewBudgetData({ 
+                    ...newBudgetData, 
+                    status: value as "draft" | "pending" | "approved" | "rejected" 
+                  })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="approved">Approuvé</SelectItem>
+                  <SelectItem value="rejected">Rejeté</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleEditBudget}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Budget Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Détails du budget</DialogTitle>
+          </DialogHeader>
+          {currentBudget && (
+            <div className="py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Ministère:</div>
+                <div>{currentBudget.ministryName}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Année:</div>
+                <div>{currentBudget.year}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Montant Total:</div>
+                <div>{formatCurrency(currentBudget.totalAmount)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Montant Alloué:</div>
+                <div>{formatCurrency(currentBudget.allocatedAmount)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Statut:</div>
+                <div>{getStatusBadge(currentBudget.status)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">ID:</div>
+                <div>{currentBudget.id}</div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Budget Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce budget? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          {currentBudget && (
+            <div className="py-4">
+              <p>
+                <strong>Ministère:</strong> {currentBudget.ministryName}
+              </p>
+              <p>
+                <strong>Année:</strong> {currentBudget.year}
+              </p>
+              <p>
+                <strong>Montant Total:</strong> {formatCurrency(currentBudget.totalAmount)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteBudget}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dashboard>
   );
 }

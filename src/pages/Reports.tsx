@@ -1,5 +1,9 @@
+
+// The Reports page is too long to include in full here, but we'll need to add functionality.
+// We should create a new component for the report generation dialog and update the page to use it.
+
 import { useState, useEffect } from "react";
-import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X } from "lucide-react";
+import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X, Calendar, FilePlus, ChartBar, FileEdit, Trash2, Eye } from "lucide-react";
 import { 
   Dashboard, 
   DashboardHeader,
@@ -33,10 +37,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { ReportCard } from "@/components/reports/ReportCard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Report {
   id: string;
@@ -55,6 +62,14 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [newReportData, setNewReportData] = useState<Partial<Report>>({
+    report_type: "execution",
+    frequency: "monthly",
+    status: "pending"
+  });
   
   useEffect(() => {
     fetchReports();
@@ -63,35 +78,48 @@ export default function ReportsPage() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        const formattedReports = data.map(report => ({
-          id: report.id,
-          title: report.title,
-          description: report.description,
-          report_type: report.report_type,
-          frequency: report.frequency,
-          generated_date: new Date(report.generated_date).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          file_path: report.file_path,
-          status: report.status as "ready" | "pending" | "error"
-        }));
+      // Attempt to fetch from Supabase, but fallback to mock data if it fails
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select('*');
         
-        setReports(formattedReports);
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          const formattedReports = data.map(report => ({
+            id: report.id,
+            title: report.title,
+            description: report.description,
+            report_type: report.report_type,
+            frequency: report.frequency,
+            generated_date: new Date(report.generated_date).toLocaleDateString('fr-DZ', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            file_path: report.file_path,
+            status: report.status as "ready" | "pending" | "error"
+          }));
+          
+          setReports(formattedReports);
+          return;
+        }
+      } catch (apiError) {
+        console.error('Error fetching reports from API:', apiError);
       }
+      
+      // Fallback to mock data
+      setReports(mockReportsData);
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error("Impossible de charger les rapports");
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les rapports",
+        variant: "destructive",
+      });
       
       // Fall back to mock data if API fails
       setReports(mockReportsData);
@@ -101,7 +129,13 @@ export default function ReportsPage() {
   };
 
   const handleGenerateReport = () => {
-    toast.success("Génération de rapport lancée. Vous serez notifié quand il sera prêt.");
+    setNewReportData({
+      report_type: "execution",
+      frequency: "monthly",
+      status: "pending",
+      generated_date: new Date().toISOString()
+    });
+    setIsAddDialogOpen(true);
   };
 
   const handleViewReport = (id: string) => {
@@ -110,6 +144,122 @@ export default function ReportsPage() {
       setSelectedReport(report);
       setDialogOpen(true);
     }
+  };
+
+  const handleAddReport = () => {
+    if (!newReportData.title) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate a random ID for the new report
+    const newReport: Report = {
+      id: `report-${reports.length + 1}`,
+      title: newReportData.title!,
+      description: newReportData.description,
+      report_type: newReportData.report_type!,
+      frequency: newReportData.frequency!,
+      generated_date: new Date().toLocaleDateString('fr-DZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      status: "pending"
+    };
+
+    setReports([...reports, newReport]);
+    setIsAddDialogOpen(false);
+    
+    // Simulate report generation
+    setTimeout(() => {
+      const updatedReports = [...reports, newReport].map(r => 
+        r.id === newReport.id 
+          ? { ...r, status: "ready" as const } 
+          : r
+      );
+      setReports(updatedReports);
+      
+      toast({
+        title: "Rapport généré",
+        description: `Le rapport "${newReport.title}" a été généré avec succès.`,
+      });
+    }, 3000);
+  };
+
+  const handleEditReport = (id: string) => {
+    const report = reports.find(r => r.id === id);
+    if (report) {
+      setSelectedReport(report);
+      setNewReportData({
+        title: report.title,
+        description: report.description,
+        report_type: report.report_type,
+        frequency: report.frequency
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleDeleteReport = (id: string) => {
+    const report = reports.find(r => r.id === id);
+    if (report) {
+      setSelectedReport(report);
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const handleUpdateReport = () => {
+    if (!selectedReport || !newReportData.title) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedReports = reports.map(r => 
+      r.id === selectedReport.id 
+        ? { 
+            ...r, 
+            title: newReportData.title!,
+            description: newReportData.description,
+            report_type: newReportData.report_type!,
+            frequency: newReportData.frequency!
+          } 
+        : r
+    );
+
+    setReports(updatedReports);
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Rapport modifié",
+      description: `Le rapport "${newReportData.title}" a été modifié avec succès.`,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedReport) return;
+
+    const updatedReports = reports.filter(r => r.id !== selectedReport.id);
+    setReports(updatedReports);
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Rapport supprimé",
+      description: `Le rapport "${selectedReport.title}" a été supprimé avec succès.`,
+    });
+  };
+
+  const handleDownloadReport = (report: Report) => {
+    // Simulate report download
+    toast({
+      title: "Téléchargement démarré",
+      description: `Le rapport "${report.title}" est en cours de téléchargement.`,
+    });
   };
 
   const filteredReports = reportTypeFilter === "all" 
@@ -173,6 +323,21 @@ export default function ReportsPage() {
     }
   ];
 
+  const reportTypeTitles: Record<string, string> = {
+    execution: "Exécution Budgétaire",
+    allocation: "Allocation",
+    annual: "Rapport Annuel",
+    distribution: "Répartition"
+  };
+
+  const frequencyOptions = [
+    { label: "Quotidien", value: "daily" },
+    { label: "Hebdomadaire", value: "weekly" },
+    { label: "Mensuel", value: "monthly" },
+    { label: "Trimestriel", value: "quarterly" },
+    { label: "Annuel", value: "annual" }
+  ];
+
   return (
     <Dashboard>
       <DashboardHeader 
@@ -180,7 +345,7 @@ export default function ReportsPage() {
         description="Générez et téléchargez des rapports sur l'exécution budgétaire"
       >
         <Button className="shadow-subtle" onClick={handleGenerateReport}>
-          <FileDown className="mr-2 h-4 w-4" />
+          <FilePlus className="mr-2 h-4 w-4" />
           Générer un rapport
         </Button>
       </DashboardHeader>
@@ -234,7 +399,10 @@ export default function ReportsPage() {
                   frequency={report.frequency}
                   status={report.status}
                   filePath={report.file_path}
-                  onView={handleViewReport}
+                  onView={() => handleViewReport(report.id)}
+                  onEdit={() => handleEditReport(report.id)}
+                  onDelete={() => handleDeleteReport(report.id)}
+                  onDownload={() => handleDownloadReport(report)}
                 />
               ))
             ) : (
@@ -521,6 +689,213 @@ export default function ReportsPage() {
         </Card>
       </DashboardSection>
 
+      {/* Add Report Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Générer un nouveau rapport</DialogTitle>
+            <DialogDescription>
+              Sélectionnez le type de rapport que vous souhaitez générer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Titre
+              </Label>
+              <Input
+                id="title"
+                className="col-span-3"
+                value={newReportData.title || ""}
+                onChange={(e) => setNewReportData({ ...newReportData, title: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                className="col-span-3"
+                value={newReportData.description || ""}
+                onChange={(e) => setNewReportData({ ...newReportData, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="report-type" className="text-right">
+                Type de rapport
+              </Label>
+              <Select
+                value={newReportData.report_type}
+                onValueChange={(value) => setNewReportData({ ...newReportData, report_type: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="execution">Exécution Budgétaire</SelectItem>
+                  <SelectItem value="allocation">Allocation par Ministère</SelectItem>
+                  <SelectItem value="annual">Rapport Financier Annuel</SelectItem>
+                  <SelectItem value="distribution">Répartition Budgétaire</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="frequency" className="text-right">
+                Fréquence
+              </Label>
+              <Select
+                value={newReportData.frequency}
+                onValueChange={(value) => setNewReportData({ ...newReportData, frequency: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une fréquence" />
+                </SelectTrigger>
+                <SelectContent>
+                  {frequencyOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleAddReport}>
+              <ChartBar className="mr-2 h-4 w-4" />
+              Générer le rapport
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Report Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le rapport</DialogTitle>
+            <DialogDescription>
+              Modifier les détails du rapport
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-title" className="text-right">
+                Titre
+              </Label>
+              <Input
+                id="edit-title"
+                className="col-span-3"
+                value={newReportData.title || ""}
+                onChange={(e) => setNewReportData({ ...newReportData, title: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="edit-description"
+                className="col-span-3"
+                value={newReportData.description || ""}
+                onChange={(e) => setNewReportData({ ...newReportData, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-report-type" className="text-right">
+                Type de rapport
+              </Label>
+              <Select
+                value={newReportData.report_type}
+                onValueChange={(value) => setNewReportData({ ...newReportData, report_type: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="execution">Exécution Budgétaire</SelectItem>
+                  <SelectItem value="allocation">Allocation par Ministère</SelectItem>
+                  <SelectItem value="annual">Rapport Financier Annuel</SelectItem>
+                  <SelectItem value="distribution">Répartition Budgétaire</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-frequency" className="text-right">
+                Fréquence
+              </Label>
+              <Select
+                value={newReportData.frequency}
+                onValueChange={(value) => setNewReportData({ ...newReportData, frequency: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une fréquence" />
+                </SelectTrigger>
+                <SelectContent>
+                  {frequencyOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleUpdateReport}>
+              <Save className="mr-2 h-4 w-4" />
+              Enregistrer les modifications
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Report Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce rapport ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="py-4">
+              <p>
+                <strong>Titre:</strong> {selectedReport.title}
+              </p>
+              {selectedReport.description && (
+                <p>
+                  <strong>Description:</strong> {selectedReport.description}
+                </p>
+              )}
+              <p>
+                <strong>Type:</strong> {reportTypeTitles[selectedReport.report_type] || selectedReport.report_type}
+              </p>
+              <p>
+                <strong>Date de génération:</strong> {selectedReport.generated_date}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Report Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -540,7 +915,7 @@ export default function ReportsPage() {
                 
                 <div className="col-span-2">
                   <h4 className="text-sm font-medium">Type de rapport</h4>
-                  <p className="text-sm">{selectedReport.report_type}</p>
+                  <p className="text-sm">{reportTypeTitles[selectedReport.report_type] || selectedReport.report_type}</p>
                 </div>
                 
                 <div className="col-span-2">
@@ -581,7 +956,7 @@ export default function ReportsPage() {
             </Button>
             
             {selectedReport && selectedReport.status === "ready" && (
-              <Button>
+              <Button onClick={() => handleDownloadReport(selectedReport)}>
                 <FileDown className="mr-2 h-4 w-4" />
                 Télécharger
               </Button>
@@ -597,4 +972,3 @@ export default function ReportsPage() {
     </Dashboard>
   );
 }
-
