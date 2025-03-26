@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -10,13 +9,13 @@ const Logo = ({ className, size = "md" }: LogoProps) => {
   const sizeClasses = {
     sm: "text-lg",
     md: "text-xl",
-    lg: "text-2xl"
+    lg: "text-2xl",
   };
 
   return (
     <div className={cn("flex items-center", className)}>
       <span className={cn("font-semibold tracking-tight", sizeClasses[size])}>
-        <span className="font-bold">SIGB</span>
+        <span className="font-bold">SIB</span>
       </span>
     </div>
   );

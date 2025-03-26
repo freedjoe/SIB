@@ -1,52 +1,15 @@
 import { useState } from "react";
-import { 
-  Dashboard, 
-  DashboardHeader, 
-  DashboardSection,
-  DashboardGrid
-} from "@/components/layout/Dashboard";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
+import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/ui-custom/StatCard";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { cn } from "@/lib/utils";
-import { 
-  CreditCard, 
-  FileCheck, 
-  Calendar, 
-  CheckCircle, 
-  Clock, 
-  X, 
-  ArrowRightLeft,
-  Eye,
-  Plus,
-  FileEdit,
-  Trash2
-} from "lucide-react";
+import { CreditCard, FileCheck, Calendar, CheckCircle, Clock, X, ArrowRightLeft, Eye, Plus, FileEdit, Trash2 } from "lucide-react";
 import { PaymentDialog } from "@/components/dialogs/PaymentDialog";
 import { toast } from "@/components/ui/use-toast";
 
@@ -76,7 +39,7 @@ const mockPayments: Payment[] = [
     paymentDate: "2023-05-20",
     status: "paid",
     beneficiary: "Entreprise ABC Construction",
-    description: "Premier paiement pour travaux de fondation"
+    description: "Premier paiement pour travaux de fondation",
   },
   {
     id: "p2",
@@ -89,7 +52,7 @@ const mockPayments: Payment[] = [
     paymentDate: "2023-07-30",
     status: "paid",
     beneficiary: "Entreprise ABC Construction",
-    description: "Deuxième paiement pour travaux de structure"
+    description: "Deuxième paiement pour travaux de structure",
   },
   {
     id: "p3",
@@ -102,7 +65,7 @@ const mockPayments: Payment[] = [
     paymentDate: "2023-06-18",
     status: "paid",
     beneficiary: "MedEquip International",
-    description: "Paiement pour fourniture d'équipements médicaux"
+    description: "Paiement pour fourniture d'équipements médicaux",
   },
   {
     id: "p4",
@@ -115,7 +78,7 @@ const mockPayments: Payment[] = [
     paymentDate: "2023-08-28",
     status: "paid",
     beneficiary: "Routes & Ponts SA",
-    description: "Premier paiement pour travaux de terrassement"
+    description: "Premier paiement pour travaux de terrassement",
   },
   {
     id: "p5",
@@ -128,7 +91,7 @@ const mockPayments: Payment[] = [
     paymentDate: null,
     status: "approved",
     beneficiary: "Entreprise ABC Construction",
-    description: "Troisième paiement pour travaux de finition"
+    description: "Troisième paiement pour travaux de finition",
   },
   {
     id: "p6",
@@ -141,7 +104,7 @@ const mockPayments: Payment[] = [
     paymentDate: null,
     status: "pending",
     beneficiary: "Institut de Formation Pédagogique",
-    description: "Paiement pour services de formation"
+    description: "Paiement pour services de formation",
   },
   {
     id: "p7",
@@ -154,7 +117,7 @@ const mockPayments: Payment[] = [
     paymentDate: null,
     status: "rejected",
     beneficiary: "Santé Pour Tous",
-    description: "Paiement pour vaccins et matériel médical"
+    description: "Paiement pour vaccins et matériel médical",
   },
   {
     id: "p8",
@@ -167,8 +130,8 @@ const mockPayments: Payment[] = [
     paymentDate: null,
     status: "pending",
     beneficiary: "Routes & Ponts SA",
-    description: "Deuxième paiement pour travaux de revêtement"
-  }
+    description: "Deuxième paiement pour travaux de revêtement",
+  },
 ];
 
 const mockEngagements = [
@@ -215,9 +178,9 @@ const getStatusBadge = (status: Payment["status"]) => {
 };
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return new Intl.NumberFormat("fr-DZ", {
     style: "currency",
-    currency: "XOF",
+    currency: "DZD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -229,7 +192,7 @@ const formatDate = (dateString: string | null) => {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
     month: "2-digit",
-    year: "numeric"
+    year: "numeric",
   }).format(date);
 };
 
@@ -243,15 +206,7 @@ interface PaymentTableProps {
   onDelete: (payment: Payment) => void;
 }
 
-function PaymentTable({ 
-  payments, 
-  formatCurrency, 
-  formatDate, 
-  getStatusBadge,
-  onView,
-  onEdit,
-  onDelete
-}: PaymentTableProps) {
+function PaymentTable({ payments, formatCurrency, formatDate, getStatusBadge, onView, onEdit, onDelete }: PaymentTableProps) {
   return (
     <Card>
       <CardContent className="pt-4">
@@ -279,37 +234,21 @@ function PaymentTable({
               payments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>{payment.engagementRef}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {payment.operationName}
-                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">{payment.operationName}</TableCell>
                   <TableCell>{payment.beneficiary}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(payment.amount)}
-                  </TableCell>
+                  <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
                   <TableCell>{formatDate(payment.requestDate)}</TableCell>
                   <TableCell>{formatDate(payment.paymentDate)}</TableCell>
                   <TableCell>{getStatusBadge(payment.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onView(payment)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onView(payment)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(payment)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onEdit(payment)}>
                         <FileEdit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(payment)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(payment)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -328,7 +267,7 @@ export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [payments, setPayments] = useState<Payment[]>(mockPayments);
-  
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -336,25 +275,17 @@ export default function PaymentsPage() {
   const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
 
   const totalPayments = payments.length;
-  const totalPaidAmount = payments
-    .filter(p => p.status === "paid")
-    .reduce((sum, p) => sum + p.amount, 0);
-  const totalPendingAmount = payments
-    .filter(p => p.status === "pending" || p.status === "approved")
-    .reduce((sum, p) => sum + p.amount, 0);
-  const totalRejectedAmount = payments
-    .filter(p => p.status === "rejected")
-    .reduce((sum, p) => sum + p.amount, 0);
+  const totalPaidAmount = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
+  const totalPendingAmount = payments.filter((p) => p.status === "pending" || p.status === "approved").reduce((sum, p) => sum + p.amount, 0);
+  const totalRejectedAmount = payments.filter((p) => p.status === "rejected").reduce((sum, p) => sum + p.amount, 0);
 
   const paymentStatusData = [
     { name: "Payé", value: totalPaidAmount, color: "#10b981" },
     { name: "En attente", value: totalPendingAmount, color: "#f59e0b" },
-    { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" }
+    { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" },
   ];
 
-  const filteredPayments = statusFilter !== "all" 
-    ? payments.filter(payment => payment.status === statusFilter)
-    : payments;
+  const filteredPayments = statusFilter !== "all" ? payments.filter((payment) => payment.status === statusFilter) : payments;
 
   const handleOpenAddDialog = () => {
     setCurrentPayment(null);
@@ -386,8 +317,8 @@ export default function PaymentsPage() {
       return;
     }
 
-    const engagement = mockEngagements.find(e => e.id === paymentData.engagementId);
-    
+    const engagement = mockEngagements.find((e) => e.id === paymentData.engagementId);
+
     if (!engagement) {
       toast({
         title: "Erreur",
@@ -408,7 +339,7 @@ export default function PaymentsPage() {
       paymentDate: null,
       status: "pending",
       beneficiary: engagement.beneficiary,
-      description: paymentData.description || ""
+      description: paymentData.description || "",
     };
 
     setPayments([...payments, newPayment]);
@@ -422,16 +353,16 @@ export default function PaymentsPage() {
   const handleEditPayment = (paymentData: Partial<Payment>) => {
     if (!currentPayment) return;
 
-    const updatedPayments = payments.map(p => 
-      p.id === currentPayment.id 
-        ? { 
-            ...p, 
-            amount: Number(paymentData.amount) || p.amount, 
+    const updatedPayments = payments.map((p) =>
+      p.id === currentPayment.id
+        ? {
+            ...p,
+            amount: Number(paymentData.amount) || p.amount,
             requestDate: paymentData.requestDate || p.requestDate,
             status: paymentData.status || p.status,
             paymentDate: paymentData.status === "paid" ? new Date().toISOString().split("T")[0] : p.paymentDate,
-            description: paymentData.description || p.description
-          } 
+            description: paymentData.description || p.description,
+          }
         : p
     );
 
@@ -446,7 +377,7 @@ export default function PaymentsPage() {
   const handleDeletePayment = () => {
     if (!currentPayment) return;
 
-    const updatedPayments = payments.filter(p => p.id !== currentPayment.id);
+    const updatedPayments = payments.filter((p) => p.id !== currentPayment.id);
     setPayments(updatedPayments);
     setIsDeleteDialogOpen(false);
     toast({
@@ -457,10 +388,7 @@ export default function PaymentsPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader 
-        title="Gestion des Paiements" 
-        description="Suivez et gérez les crédits de paiement (CP) et les décaissements"
-      >
+      <DashboardHeader title="Gestion des Paiements" description="Suivez et gérez les crédits de paiement (CP) et les décaissements">
         <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau paiement
@@ -498,11 +426,7 @@ export default function PaymentsPage() {
 
       <DashboardSection>
         <DashboardGrid columns={2}>
-          <BudgetChart 
-            title="Répartition des Paiements par Statut" 
-            data={paymentStatusData} 
-            className="h-full"
-          />
+          <BudgetChart title="Répartition des Paiements par Statut" data={paymentStatusData} className="h-full" />
           <Card className="budget-card h-full">
             <CardHeader>
               <CardTitle className="text-base font-medium">Activité Récente</CardTitle>
@@ -512,37 +436,39 @@ export default function PaymentsPage() {
               <div className="space-y-5">
                 {payments.slice(0, 4).map((payment, idx) => (
                   <div key={idx} className="flex items-start gap-4">
-                    <div className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full",
-                      payment.status === 'paid' ? "bg-green-100 text-green-600" :
-                      payment.status === 'pending' ? "bg-yellow-100 text-yellow-600" :
-                      payment.status === 'approved' ? "bg-blue-100 text-blue-600" :
-                      "bg-red-100 text-red-600"
-                    )}>
-                      {payment.status === 'paid' ? <CheckCircle className="h-5 w-5" /> :
-                       payment.status === 'pending' ? <Clock className="h-5 w-5" /> :
-                       payment.status === 'approved' ? <FileCheck className="h-5 w-5" /> :
-                       <X className="h-5 w-5" />}
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full",
+                        payment.status === "paid"
+                          ? "bg-green-100 text-green-600"
+                          : payment.status === "pending"
+                            ? "bg-yellow-100 text-yellow-600"
+                            : payment.status === "approved"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-red-100 text-red-600"
+                      )}
+                    >
+                      {payment.status === "paid" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : payment.status === "pending" ? (
+                        <Clock className="h-5 w-5" />
+                      ) : payment.status === "approved" ? (
+                        <FileCheck className="h-5 w-5" />
+                      ) : (
+                        <X className="h-5 w-5" />
+                      )}
                     </div>
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {payment.operationName}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {payment.description}
-                      </p>
+                      <p className="text-sm font-medium leading-none">{payment.operationName}</p>
+                      <p className="text-sm text-muted-foreground">{payment.description}</p>
                       <div className="flex items-center gap-2 pt-1">
                         <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(payment.requestDate)}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{formatDate(payment.requestDate)}</span>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{formatCurrency(payment.amount)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {payment.beneficiary.slice(0, 15)}...
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{payment.beneficiary.slice(0, 15)}...</p>
                     </div>
                   </div>
                 ))}
@@ -566,7 +492,7 @@ export default function PaymentsPage() {
               <TabsTrigger value="approved">Approuvés</TabsTrigger>
               <TabsTrigger value="paid">Payés</TabsTrigger>
             </TabsList>
-            
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filtrer par statut" />
@@ -580,10 +506,10 @@ export default function PaymentsPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <TabsContent value="all" className="animate-fade-in">
-            <PaymentTable 
-              payments={filteredPayments} 
+            <PaymentTable
+              payments={filteredPayments}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
               getStatusBadge={getStatusBadge}
@@ -592,10 +518,10 @@ export default function PaymentsPage() {
               onDelete={handleOpenDeleteDialog}
             />
           </TabsContent>
-          
+
           <TabsContent value="pending" className="animate-fade-in">
-            <PaymentTable 
-              payments={payments.filter(p => p.status === "pending")} 
+            <PaymentTable
+              payments={payments.filter((p) => p.status === "pending")}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
               getStatusBadge={getStatusBadge}
@@ -604,10 +530,10 @@ export default function PaymentsPage() {
               onDelete={handleOpenDeleteDialog}
             />
           </TabsContent>
-          
+
           <TabsContent value="approved" className="animate-fade-in">
-            <PaymentTable 
-              payments={payments.filter(p => p.status === "approved")} 
+            <PaymentTable
+              payments={payments.filter((p) => p.status === "approved")}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
               getStatusBadge={getStatusBadge}
@@ -616,10 +542,10 @@ export default function PaymentsPage() {
               onDelete={handleOpenDeleteDialog}
             />
           </TabsContent>
-          
+
           <TabsContent value="paid" className="animate-fade-in">
-            <PaymentTable 
-              payments={payments.filter(p => p.status === "paid")} 
+            <PaymentTable
+              payments={payments.filter((p) => p.status === "paid")}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
               getStatusBadge={getStatusBadge}

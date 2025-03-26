@@ -1,4 +1,3 @@
-
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,11 +7,8 @@ export default function Help() {
 
   return (
     <Dashboard className="p-6">
-      <DashboardHeader 
-        title="Aide & Support"
-        description="Guides, tutoriels et assistance pour SIGB"
-      />
-      
+      <DashboardHeader title="Aide & Support" description="Guides, tutoriels et assistance pour SIB" />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
@@ -21,11 +17,11 @@ export default function Help() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Accédez à des guides détaillés sur l'utilisation de chaque module et fonctionnalité du système SIGB.
+              Accédez à des guides détaillés sur l'utilisation de chaque module et fonctionnalité du système SIB.
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>FAQs</CardTitle>
@@ -33,11 +29,11 @@ export default function Help() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Trouvez des réponses aux questions les plus courantes concernant la gestion budgétaire et l'utilisation de SIGB.
+              Trouvez des réponses aux questions les plus courantes concernant la gestion budgétaire et l'utilisation de SIB.
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Support technique</CardTitle>

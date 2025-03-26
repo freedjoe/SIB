@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -7,23 +6,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { MainNav } from "@/components/navigation/MainNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { 
-  Search, 
-  Bell, 
-  User, 
-  Settings, 
-  HelpCircle, 
-  LogOut,
-  Moon,
-  Sun,
-} from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { Search, Bell, User, Settings, HelpCircle, LogOut, Moon, Sun } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -59,37 +43,28 @@ export function AppLayout() {
         <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
           <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/90 backdrop-blur-sm px-6">
             <SidebarTrigger />
-            
+
             {/* Search Bar */}
-            <div className={cn(
-              "flex-1 transition-all duration-300 overflow-hidden",
-              searchOpen ? "max-w-2xl" : "max-w-0"
-            )}>
+            <div className={cn("flex-1 transition-all duration-300 overflow-hidden", searchOpen ? "max-w-2xl" : "max-w-0")}>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  className="pl-9 w-full" 
-                  placeholder={t("app.common.search")} 
-                  onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-                />
+                <Input className="pl-9 w-full" placeholder={t("app.common.search")} onBlur={() => setTimeout(() => setSearchOpen(false), 200)} />
               </div>
             </div>
-            
+
             <div className="ml-auto flex items-center gap-4">
               {!searchOpen && (
                 <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)}>
                   <Search className="h-5 w-5" />
                 </Button>
               )}
-              
+
               {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
-                      3
-                    </Badge>
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">3</Badge>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
@@ -131,32 +106,29 @@ export function AppLayout() {
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               {/* Theme Toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleTheme}
                 title={theme === "dark" ? t("app.common.lightMode") : t("app.common.darkMode")}
               >
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              
+
               {/* Language Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="font-semibold">
-                    {languageOptions.find(lang => lang.value === language)?.flag}
+                    {languageOptions.find((lang) => lang.value === language)?.flag}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {languageOptions.map((lang) => (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       key={lang.value}
-                      className={cn(
-                        "cursor-pointer", 
-                        language === lang.value && "bg-accent"
-                      )}
+                      className={cn("cursor-pointer", language === lang.value && "bg-accent")}
                       onClick={() => setLanguage(lang.value as any)}
                     >
                       <span className="mr-2">{lang.flag}</span>
@@ -165,7 +137,7 @@ export function AppLayout() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -214,9 +186,7 @@ export function AppLayout() {
           </main>
           <footer className="border-t py-4 px-6">
             <div className="flex justify-between items-center">
-              <div className="text-xs text-muted-foreground">
-                © {new Date().getFullYear()} SIGB. Tous droits réservés.
-              </div>
+              <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} SIB. Tous droits réservés.</div>
               <div className="text-xs text-muted-foreground">Version 1.0.0</div>
             </div>
           </footer>

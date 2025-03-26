@@ -1,27 +1,9 @@
-
 import { useState } from "react";
 import { Shield, FileDown, Search } from "lucide-react";
-import { 
-  Dashboard, 
-  DashboardHeader, 
-  DashboardSection 
-} from "@/components/layout/Dashboard";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +16,7 @@ const auditControlsData = [
     type: "Contrôle de régularité",
     entity: "Programme d'Education",
     controller: "Ahmed Benali",
-    result: "conforme"
+    result: "conforme",
   },
   {
     id: "control-2",
@@ -42,7 +24,7 @@ const auditControlsData = [
     type: "Contrôle de performance",
     entity: "Engagement #E2023-156",
     controller: "Fatima Zahra",
-    result: "anomalie"
+    result: "anomalie",
   },
   {
     id: "control-3",
@@ -50,7 +32,7 @@ const auditControlsData = [
     type: "Contrôle budgétaire",
     entity: "Paiement #P2023-089",
     controller: "Karim Messoudi",
-    result: "partiellement"
+    result: "partiellement",
   },
   {
     id: "control-4",
@@ -58,7 +40,7 @@ const auditControlsData = [
     type: "Contrôle de régularité",
     entity: "Programme de Santé",
     controller: "Leila Mansouri",
-    result: "conforme"
+    result: "conforme",
   },
   {
     id: "control-5",
@@ -66,7 +48,7 @@ const auditControlsData = [
     type: "Contrôle de performance",
     entity: "Engagement #E2023-132",
     controller: "Mohammed El Khatib",
-    result: "conforme"
+    result: "conforme",
   },
 ];
 
@@ -75,91 +57,105 @@ const auditLogsData = [
   {
     id: "log-1",
     timestamp: "2023-07-28T14:35:42",
-    user: "admin@sigb.dz",
+    user: "admin@sib.dz",
     action: "Modification de budget",
     details: "Budget modifié pour le Ministère de l'Éducation",
-    ipAddress: "192.168.1.105"
+    ipAddress: "192.168.1.105",
   },
   {
     id: "log-2",
     timestamp: "2023-07-28T12:18:23",
-    user: "finance@sigb.dz",
+    user: "finance@sib.dz",
     action: "Approbation d'engagement",
     details: "Engagement #E2023-167 approuvé",
-    ipAddress: "192.168.1.112"
+    ipAddress: "192.168.1.112",
   },
   {
     id: "log-3",
     timestamp: "2023-07-27T16:45:10",
-    user: "admin@sigb.dz",
+    user: "admin@sib.dz",
     action: "Création d'utilisateur",
-    details: "Nouvel utilisateur créé: controle@sigb.dz",
-    ipAddress: "192.168.1.105"
+    details: "Nouvel utilisateur créé: controle@sib.dz",
+    ipAddress: "192.168.1.105",
   },
   {
     id: "log-4",
     timestamp: "2023-07-27T10:22:51",
-    user: "operation@sigb.dz",
+    user: "operation@sib.dz",
     action: "Création d'opération",
     details: "Nouvelle opération créée dans le Programme d'Infrastructure",
-    ipAddress: "192.168.1.118"
+    ipAddress: "192.168.1.118",
   },
   {
     id: "log-5",
     timestamp: "2023-07-26T14:08:32",
-    user: "admin@sigb.dz",
+    user: "admin@sib.dz",
     action: "Modification de rôle",
-    details: "Rôle modifié pour finance@sigb.dz: Contrôleur -> Administrateur",
-    ipAddress: "192.168.1.105"
+    details: "Rôle modifié pour finance@sib.dz: Contrôleur -> Administrateur",
+    ipAddress: "192.168.1.105",
   },
 ];
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   };
-  return new Date(dateString).toLocaleDateString('fr-FR', options);
+  return new Date(dateString).toLocaleDateString("fr-FR", options);
 };
 
 // Helper function to format timestamp
 const formatTimestamp = (timestamp: string) => {
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   };
-  return new Date(timestamp).toLocaleDateString('fr-FR', options);
+  return new Date(timestamp).toLocaleDateString("fr-FR", options);
 };
 
 export default function AuditPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  
-  const filteredControls = auditControlsData.filter(control => 
-    control.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    control.controller.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    control.type.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const filteredControls = auditControlsData.filter(
+    (control) =>
+      control.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      control.controller.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      control.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
-  const filteredLogs = auditLogsData.filter(log => 
-    log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.details.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const filteredLogs = auditLogsData.filter(
+    (log) =>
+      log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.details.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getResultBadge = (result: string) => {
     switch (result) {
       case "conforme":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">Conforme</Badge>;
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
+            Conforme
+          </Badge>
+        );
       case "anomalie":
-        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">Anomalie détectée</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
+            Anomalie détectée
+          </Badge>
+        );
       case "partiellement":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">Partiellement conforme</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
+            Partiellement conforme
+          </Badge>
+        );
       default:
         return null;
     }
@@ -167,10 +163,7 @@ export default function AuditPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader 
-        title="Contrôles & Audits" 
-        description="Suivez les contrôles financiers et consultez les logs d'audit"
-      >
+      <DashboardHeader title="Contrôles & Audits" description="Suivez les contrôles financiers et consultez les logs d'audit">
         <Button className="shadow-subtle">
           <FileDown className="mr-2 h-4 w-4" />
           Exporter les logs
@@ -181,9 +174,7 @@ export default function AuditPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">Rechercher</CardTitle>
-            <CardDescription>
-              Recherchez dans les contrôles et les logs d'audit
-            </CardDescription>
+            <CardDescription>Recherchez dans les contrôles et les logs d'audit</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="relative">
@@ -209,9 +200,7 @@ export default function AuditPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Contrôles Financiers</CardTitle>
-                <CardDescription>
-                  Liste des contrôles financiers effectués sur le système
-                </CardDescription>
+                <CardDescription>Liste des contrôles financiers effectués sur le système</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -257,9 +246,7 @@ export default function AuditPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Logs d'Audit</CardTitle>
-                <CardDescription>
-                  Historique des actions effectuées sur le système
-                </CardDescription>
+                <CardDescription>Historique des actions effectuées sur le système</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>

@@ -1,55 +1,14 @@
-
 import { useState } from "react";
 import { User, Save, Lock, Globe, Building, Users, BookOpen, Plus, FileEdit, Trash2, Eye } from "lucide-react";
-import { 
-  Dashboard, 
-  DashboardHeader, 
-  DashboardSection,
-  DashboardGrid
-} from "@/components/layout/Dashboard";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle, 
-  CardFooter 
-} from "@/components/ui/card";
+import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
@@ -95,32 +54,32 @@ const mockMinistries: Ministry[] = [
     id: "m1",
     code: "MEDU",
     name: "Ministère de l'Éducation Nationale",
-    createdAt: "2023-01-15"
+    createdAt: "2023-01-15",
   },
   {
     id: "m2",
     code: "MSANTE",
     name: "Ministère de la Santé",
-    createdAt: "2023-01-15"
+    createdAt: "2023-01-15",
   },
   {
     id: "m3",
     code: "MTRANS",
     name: "Ministère des Transports",
-    createdAt: "2023-01-15"
+    createdAt: "2023-01-15",
   },
   {
     id: "m4",
     code: "MAGRI",
     name: "Ministère de l'Agriculture",
-    createdAt: "2023-01-15"
+    createdAt: "2023-01-15",
   },
   {
     id: "m5",
     code: "MDEF",
     name: "Ministère de la Défense",
-    createdAt: "2023-01-15"
-  }
+    createdAt: "2023-01-15",
+  },
 ];
 
 // Mock data for companies
@@ -132,7 +91,7 @@ const mockCompanies: Company[] = [
     registrationNumber: "RC123456789",
     contactPerson: "Ahmed Benali",
     email: "contact@abc-construction.dz",
-    phone: "+213555123456"
+    phone: "+213555123456",
   },
   {
     id: "c2",
@@ -141,7 +100,7 @@ const mockCompanies: Company[] = [
     registrationNumber: "RC987654321",
     contactPerson: "Sarah Hamdi",
     email: "info@medequip.dz",
-    phone: "+213555789123"
+    phone: "+213555789123",
   },
   {
     id: "c3",
@@ -150,8 +109,8 @@ const mockCompanies: Company[] = [
     registrationNumber: "RC456789123",
     contactPerson: "Karim Meziane",
     email: "contact@routesponts.dz",
-    phone: "+213555456789"
-  }
+    phone: "+213555456789",
+  },
 ];
 
 // Mock data for roles
@@ -160,26 +119,26 @@ const mockRoles: Role[] = [
     id: "r1",
     name: "Administrateur",
     description: "Accès complet à toutes les fonctionnalités du système",
-    permissions: ["create", "read", "update", "delete", "approve", "report"]
+    permissions: ["create", "read", "update", "delete", "approve", "report"],
   },
   {
     id: "r2",
     name: "Gestionnaire",
     description: "Gestion des budgets, programmes et opérations",
-    permissions: ["create", "read", "update", "approve"]
+    permissions: ["create", "read", "update", "approve"],
   },
   {
     id: "r3",
     name: "Utilisateur",
     description: "Consultation des données sans modification",
-    permissions: ["read"]
+    permissions: ["read"],
   },
   {
     id: "r4",
     name: "Auditeur",
     description: "Contrôle et vérification des opérations",
-    permissions: ["read", "report"]
-  }
+    permissions: ["read", "report"],
+  },
 ];
 
 // Mock data for users
@@ -188,8 +147,8 @@ const mockUsers: User[] = [
     id: "u1",
     firstName: "Admin",
     lastName: "User",
-    email: "admin@sigb.dz",
-    role: "Administrateur"
+    email: "admin@sib.dz",
+    role: "Administrateur",
   },
   {
     id: "u2",
@@ -198,7 +157,7 @@ const mockUsers: User[] = [
     email: "karima.hadj@edu.dz",
     role: "Gestionnaire",
     ministryId: "m1",
-    ministryName: "Ministère de l'Éducation Nationale"
+    ministryName: "Ministère de l'Éducation Nationale",
   },
   {
     id: "u3",
@@ -207,8 +166,8 @@ const mockUsers: User[] = [
     email: "mohamed.cherif@sante.dz",
     role: "Gestionnaire",
     ministryId: "m2",
-    ministryName: "Ministère de la Santé"
-  }
+    ministryName: "Ministère de la Santé",
+  },
 ];
 
 // Helper function to format date
@@ -217,20 +176,20 @@ const formatDate = (dateString: string) => {
   return new Intl.DateTimeFormat("fr-DZ", {
     day: "numeric",
     month: "long",
-    year: "numeric"
+    year: "numeric",
   }).format(date);
 };
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [activeDataTab, setActiveDataTab] = useState("ministries");
-  
+
   // State for basic data
   const [ministries, setMinistries] = useState<Ministry[]>(mockMinistries);
   const [companies, setCompanies] = useState<Company[]>(mockCompanies);
   const [roles, setRoles] = useState<Role[]>(mockRoles);
   const [users, setUsers] = useState<User[]>(mockUsers);
-  
+
   // Modal states
   const [isMinistryDialogOpen, setIsMinistryDialogOpen] = useState(false);
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
@@ -241,15 +200,15 @@ export default function SettingsPage() {
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "delete">("add");
-  
+
   // Forms
   const profileForm = useForm({
     defaultValues: {
       firstName: "Admin",
       lastName: "User",
-      email: "admin@sigb.dz",
+      email: "admin@sib.dz",
       role: "admin",
-    }
+    },
   });
 
   const passwordForm = useForm({
@@ -257,7 +216,7 @@ export default function SettingsPage() {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
-    }
+    },
   });
 
   const languageForm = useForm({
@@ -265,14 +224,14 @@ export default function SettingsPage() {
       language: "fr",
       currency: "DZD",
       dateFormat: "DD/MM/YYYY",
-    }
+    },
   });
 
   const ministryForm = useForm({
     defaultValues: {
       code: "",
       name: "",
-    }
+    },
   });
 
   const companyForm = useForm({
@@ -283,7 +242,7 @@ export default function SettingsPage() {
       contactPerson: "",
       email: "",
       phone: "",
-    }
+    },
   });
 
   const roleForm = useForm({
@@ -291,7 +250,7 @@ export default function SettingsPage() {
       name: "",
       description: "",
       permissions: [] as string[],
-    }
+    },
   });
 
   const userForm = useForm({
@@ -301,7 +260,7 @@ export default function SettingsPage() {
       email: "",
       role: "",
       ministryId: "",
-    }
+    },
   });
 
   // Form submit handlers
@@ -375,9 +334,7 @@ export default function SettingsPage() {
         description: `Le ministère "${data.name}" a été ajouté avec succès.`,
       });
     } else if (dialogMode === "edit" && currentMinistry) {
-      const updatedMinistries = ministries.map(m => 
-        m.id === currentMinistry.id ? { ...m, code: data.code, name: data.name } : m
-      );
+      const updatedMinistries = ministries.map((m) => (m.id === currentMinistry.id ? { ...m, code: data.code, name: data.name } : m));
       setMinistries(updatedMinistries);
       toast({
         title: "Ministère modifié",
@@ -389,7 +346,7 @@ export default function SettingsPage() {
 
   const handleDeleteMinistry = () => {
     if (!currentMinistry) return;
-    const updatedMinistries = ministries.filter(m => m.id !== currentMinistry.id);
+    const updatedMinistries = ministries.filter((m) => m.id !== currentMinistry.id);
     setMinistries(updatedMinistries);
     setIsMinistryDialogOpen(false);
     toast({
@@ -455,9 +412,7 @@ export default function SettingsPage() {
         description: `L'entreprise "${data.name}" a été ajoutée avec succès.`,
       });
     } else if (dialogMode === "edit" && currentCompany) {
-      const updatedCompanies = companies.map(c => 
-        c.id === currentCompany.id ? { ...c, ...data } : c
-      );
+      const updatedCompanies = companies.map((c) => (c.id === currentCompany.id ? { ...c, ...data } : c));
       setCompanies(updatedCompanies);
       toast({
         title: "Entreprise modifiée",
@@ -469,7 +424,7 @@ export default function SettingsPage() {
 
   const handleDeleteCompany = () => {
     if (!currentCompany) return;
-    const updatedCompanies = companies.filter(c => c.id !== currentCompany.id);
+    const updatedCompanies = companies.filter((c) => c.id !== currentCompany.id);
     setCompanies(updatedCompanies);
     setIsCompanyDialogOpen(false);
     toast({
@@ -526,9 +481,7 @@ export default function SettingsPage() {
         description: `Le rôle "${data.name}" a été ajouté avec succès.`,
       });
     } else if (dialogMode === "edit" && currentRole) {
-      const updatedRoles = roles.map(r => 
-        r.id === currentRole.id ? { ...r, ...data } : r
-      );
+      const updatedRoles = roles.map((r) => (r.id === currentRole.id ? { ...r, ...data } : r));
       setRoles(updatedRoles);
       toast({
         title: "Rôle modifié",
@@ -540,7 +493,7 @@ export default function SettingsPage() {
 
   const handleDeleteRole = () => {
     if (!currentRole) return;
-    const updatedRoles = roles.filter(r => r.id !== currentRole.id);
+    const updatedRoles = roles.filter((r) => r.id !== currentRole.id);
     setRoles(updatedRoles);
     setIsRoleDialogOpen(false);
     toast({
@@ -589,7 +542,7 @@ export default function SettingsPage() {
 
   const handleSaveUser = (data: any) => {
     if (dialogMode === "add") {
-      const ministry = ministries.find(m => m.id === data.ministryId);
+      const ministry = ministries.find((m) => m.id === data.ministryId);
       const newUser: User = {
         id: `u${users.length + 1}`,
         firstName: data.firstName,
@@ -605,13 +558,15 @@ export default function SettingsPage() {
         description: `L'utilisateur "${data.firstName} ${data.lastName}" a été ajouté avec succès.`,
       });
     } else if (dialogMode === "edit" && currentUser) {
-      const ministry = ministries.find(m => m.id === data.ministryId);
-      const updatedUsers = users.map(u => 
-        u.id === currentUser.id ? { 
-          ...u,
-          ...data,
-          ministryName: ministry?.name 
-        } : u
+      const ministry = ministries.find((m) => m.id === data.ministryId);
+      const updatedUsers = users.map((u) =>
+        u.id === currentUser.id
+          ? {
+              ...u,
+              ...data,
+              ministryName: ministry?.name,
+            }
+          : u
       );
       setUsers(updatedUsers);
       toast({
@@ -624,7 +579,7 @@ export default function SettingsPage() {
 
   const handleDeleteUser = () => {
     if (!currentUser) return;
-    const updatedUsers = users.filter(u => u.id !== currentUser.id);
+    const updatedUsers = users.filter((u) => u.id !== currentUser.id);
     setUsers(updatedUsers);
     setIsUserDialogOpen(false);
     toast({
@@ -667,10 +622,7 @@ export default function SettingsPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader 
-        title="Paramètres" 
-        description="Gérez vos préférences et votre compte utilisateur"
-      />
+      <DashboardHeader title="Paramètres" description="Gérez vos préférences et votre compte utilisateur" />
 
       <DashboardSection>
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -680,14 +632,12 @@ export default function SettingsPage() {
             <TabsTrigger value="localization">Localisation</TabsTrigger>
             <TabsTrigger value="basicData">Données de Base</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Profil Utilisateur</CardTitle>
-                <CardDescription>
-                  Gérez vos informations personnelles
-                </CardDescription>
+                <CardDescription>Gérez vos informations personnelles</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...profileForm}>
@@ -751,9 +701,7 @@ export default function SettingsPage() {
                               <SelectItem value="user">Utilisateur</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormDescription>
-                            Le rôle détermine vos permissions dans le système
-                          </FormDescription>
+                          <FormDescription>Le rôle détermine vos permissions dans le système</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -769,14 +717,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="security" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Sécurité</CardTitle>
-                <CardDescription>
-                  Gérez votre mot de passe et les paramètres de sécurité
-                </CardDescription>
+                <CardDescription>Gérez votre mot de passe et les paramètres de sécurité</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...passwordForm}>
@@ -803,9 +749,7 @@ export default function SettingsPage() {
                           <FormControl>
                             <Input placeholder="Nouveau mot de passe" type="password" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Le mot de passe doit contenir au moins 8 caractères
-                          </FormDescription>
+                          <FormDescription>Le mot de passe doit contenir au moins 8 caractères</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -834,14 +778,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="localization" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Localisation</CardTitle>
-                <CardDescription>
-                  Configurez vos préférences régionales et linguistiques
-                </CardDescription>
+                <CardDescription>Configurez vos préférences régionales et linguistiques</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...languageForm}>
@@ -923,14 +865,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="basicData" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Données de Base</CardTitle>
-                <CardDescription>
-                  Gérez les données de référence du système
-                </CardDescription>
+                <CardDescription>Gérez les données de référence du système</CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="ministries" value={activeDataTab} onValueChange={setActiveDataTab}>
@@ -940,7 +880,7 @@ export default function SettingsPage() {
                     <TabsTrigger value="roles">Rôles</TabsTrigger>
                     <TabsTrigger value="users">Utilisateurs</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="ministries">
                     <div className="flex justify-end mb-4">
                       <Button onClick={handleOpenAddMinistryDialog}>
@@ -965,25 +905,13 @@ export default function SettingsPage() {
                             <TableCell>{formatDate(ministry.createdAt)}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenViewMinistryDialog(ministry)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenViewMinistryDialog(ministry)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenEditMinistryDialog(ministry)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditMinistryDialog(ministry)}>
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDeleteMinistryDialog(ministry)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteMinistryDialog(ministry)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -993,7 +921,7 @@ export default function SettingsPage() {
                       </TableBody>
                     </Table>
                   </TabsContent>
-                  
+
                   <TabsContent value="companies">
                     <div className="flex justify-end mb-4">
                       <Button onClick={handleOpenAddCompanyDialog}>
@@ -1020,25 +948,13 @@ export default function SettingsPage() {
                             <TableCell>{company.contactPerson}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenViewCompanyDialog(company)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenViewCompanyDialog(company)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenEditCompanyDialog(company)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditCompanyDialog(company)}>
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDeleteCompanyDialog(company)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteCompanyDialog(company)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -1048,7 +964,7 @@ export default function SettingsPage() {
                       </TableBody>
                     </Table>
                   </TabsContent>
-                  
+
                   <TabsContent value="roles">
                     <div className="flex justify-end mb-4">
                       <Button onClick={handleOpenAddRoleDialog}>
@@ -1071,31 +987,17 @@ export default function SettingsPage() {
                             <TableCell>{role.name}</TableCell>
                             <TableCell>{role.description}</TableCell>
                             <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {renderPermissionBadges(role.permissions)}
-                              </div>
+                              <div className="flex flex-wrap gap-1">{renderPermissionBadges(role.permissions)}</div>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenViewRoleDialog(role)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenViewRoleDialog(role)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenEditRoleDialog(role)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditRoleDialog(role)}>
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDeleteRoleDialog(role)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteRoleDialog(role)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -1105,7 +1007,7 @@ export default function SettingsPage() {
                       </TableBody>
                     </Table>
                   </TabsContent>
-                  
+
                   <TabsContent value="users">
                     <div className="flex justify-end mb-4">
                       <Button onClick={handleOpenAddUserDialog}>
@@ -1132,25 +1034,13 @@ export default function SettingsPage() {
                             <TableCell>{user.ministryName || "-"}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenViewUserDialog(user)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenViewUserDialog(user)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenEditUserDialog(user)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditUserDialog(user)}>
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenDeleteUserDialog(user)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteUserDialog(user)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -1172,16 +1062,22 @@ export default function SettingsPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "add" ? "Ajouter un ministère" :
-               dialogMode === "edit" ? "Modifier le ministère" :
-               dialogMode === "view" ? "Détails du ministère" :
-               "Supprimer le ministère"}
+              {dialogMode === "add"
+                ? "Ajouter un ministère"
+                : dialogMode === "edit"
+                  ? "Modifier le ministère"
+                  : dialogMode === "view"
+                    ? "Détails du ministère"
+                    : "Supprimer le ministère"}
             </DialogTitle>
             <DialogDescription>
-              {dialogMode === "add" ? "Complétez le formulaire pour créer un nouveau ministère." :
-               dialogMode === "edit" ? "Modifiez les détails du ministère." :
-               dialogMode === "view" ? "Informations détaillées sur le ministère." :
-               "Êtes-vous sûr de vouloir supprimer ce ministère? Cette action est irréversible."}
+              {dialogMode === "add"
+                ? "Complétez le formulaire pour créer un nouveau ministère."
+                : dialogMode === "edit"
+                  ? "Modifiez les détails du ministère."
+                  : dialogMode === "view"
+                    ? "Informations détaillées sur le ministère."
+                    : "Êtes-vous sûr de vouloir supprimer ce ministère? Cette action est irréversible."}
             </DialogDescription>
           </DialogHeader>
 
@@ -1209,7 +1105,7 @@ export default function SettingsPage() {
                 <strong>Nom:</strong> {currentMinistry.name}
               </p>
             </div>
-          ) : (dialogMode === "add" || dialogMode === "edit") ? (
+          ) : dialogMode === "add" || dialogMode === "edit" ? (
             <Form {...ministryForm}>
               <form onSubmit={ministryForm.handleSubmit(handleSaveMinistry)}>
                 <div className="grid gap-4 py-4">
@@ -1241,16 +1137,10 @@ export default function SettingsPage() {
                   />
                 </div>
                 <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsMinistryDialogOpen(false)}
-                    type="button"
-                  >
+                  <Button variant="outline" onClick={() => setIsMinistryDialogOpen(false)} type="button">
                     Annuler
                   </Button>
-                  <Button type="submit">
-                    {dialogMode === "add" ? "Ajouter" : "Enregistrer"}
-                  </Button>
+                  <Button type="submit">{dialogMode === "add" ? "Ajouter" : "Enregistrer"}</Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -1262,10 +1152,7 @@ export default function SettingsPage() {
                 <Button onClick={() => setIsMinistryDialogOpen(false)}>Fermer</Button>
               ) : (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsMinistryDialogOpen(false)}
-                  >
+                  <Button variant="outline" onClick={() => setIsMinistryDialogOpen(false)}>
                     Annuler
                   </Button>
                   <Button variant="destructive" onClick={handleDeleteMinistry}>

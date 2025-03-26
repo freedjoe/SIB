@@ -1,12 +1,5 @@
-
 import { useState, useEffect } from "react";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip as RechartsTooltip,
-} from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +16,7 @@ interface BudgetChartProps {
   showLegend?: boolean;
 }
 
-export function BudgetChart({
-  title,
-  data,
-  className,
-  showLegend = true,
-}: BudgetChartProps) {
+export function BudgetChart({ title, data, className, showLegend = true }: BudgetChartProps) {
   const [chartData, setChartData] = useState<BudgetItem[]>([]);
 
   // Animate chart data on mount
@@ -41,9 +29,9 @@ export function BudgetChart({
   }, [data]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return new Intl.NumberFormat("fr-DZ", {
       style: "currency",
-      currency: "XOF",
+      currency: "DZD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -70,11 +58,7 @@ export function BudgetChart({
                 animationDuration={800}
               >
                 {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    stroke="transparent"
-                  />
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                 ))}
               </Pie>
               <RechartsTooltip
@@ -95,14 +79,9 @@ export function BudgetChart({
           <div className="mt-4 grid grid-cols-2 gap-4">
             {chartData.map((item, index) => (
               <div key={index} className="flex items-center text-sm">
-                <div
-                  className="h-3 w-3 rounded-full mr-2"
-                  style={{ backgroundColor: item.color }}
-                />
+                <div className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: item.color }} />
                 <span className="text-muted-foreground">{item.name}</span>
-                <span className="ml-auto font-medium">
-                  {formatCurrency(item.value)}
-                </span>
+                <span className="ml-auto font-medium">{formatCurrency(item.value)}</span>
               </div>
             ))}
           </div>

@@ -1,7 +1,6 @@
-
 {
   "app": {
-    "title": "SIGB - Système Intégré de Gestion Budgétaire",
+    "title": "SIB - Système d’Information Budgétaire",
     "login": {
       "title": "Connexion",
       "email": "Email",
