@@ -518,10 +518,10 @@ export default function ProgramsPage() {
 
       <DashboardSection>
         <Tabs defaultValue="portfolios" className="w-full">
-          <TabsList className="mb-6">
+          {/*<TabsList className="mb-6">
             <TabsTrigger value="portfolios">Portefeuilles</TabsTrigger>
             <TabsTrigger value="programs">Programmes</TabsTrigger>
-          </TabsList>
+          </TabsList>*/}
 
           <TabsContent value="portfolios" className="animate-fade-in">
             <div className="flex justify-end mb-4">

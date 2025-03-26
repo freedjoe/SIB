@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -29,23 +28,26 @@ const queryClient = new QueryClient();
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
-  
+  const { user, session, isLoading } = useAuth();
+
   // Redirect to dashboard if already logged in - this works for normal Supabase auth
   useEffect(() => {
+    console.log("User:", user);
+    console.log("Session:", session);
+    console.log("Is Loading:", isLoading);
     if (user && window.location.pathname === "/auth") {
       window.location.href = "/";
     }
@@ -54,20 +56,15 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* For /auth route, check if admin login happened through localStorage */}
-      <Route 
-        path="/auth" 
+      <Route path="/auth" element={localStorage.getItem("adminLoggedIn") === "true" ? <Navigate to="/" replace /> : <Auth />} />
+
+      <Route
         element={
-          localStorage.getItem("adminLoggedIn") === "true" ? 
-          <Navigate to="/" replace /> : 
-          <Auth />
-        } 
-      />
-      
-      <Route element={
-        <ProtectedRoute>
-          <AppLayout />
-        </ProtectedRoute>
-      }>
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Dashboard />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/programs" element={<Programs />} />
@@ -81,7 +78,7 @@ const AppRoutes = () => {
         <Route path="/settings/*" element={<Settings />} />
         <Route path="/help" element={<Help />} />
       </Route>
-      
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

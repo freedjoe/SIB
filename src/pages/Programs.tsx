@@ -517,11 +517,11 @@ export default function ProgramsPage() {
       <DashboardHeader title="Portefeuille des Programmes" description="Gérez les programmes et leurs actions associées"></DashboardHeader>
 
       <DashboardSection>
-        <Tabs defaultValue="portfolios" className="w-full">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="programs" className="w-full">
+          {/*<TabsList className="mb-6">
             <TabsTrigger value="portfolios">Portefeuilles</TabsTrigger>
             <TabsTrigger value="programs">Programmes</TabsTrigger>
-          </TabsList>
+          </TabsList>*/}
 
           <TabsContent value="portfolios" className="animate-fade-in">
             <div className="flex justify-end mb-4">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -7,14 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Logo from "@/components/logo/Logo";
 
@@ -116,28 +108,18 @@ export default function Auth() {
             <TabsTrigger value="login">{t("app.login.title")}</TabsTrigger>
             <TabsTrigger value="signup">{t("app.signup.title")}</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="login">
             <Card>
               <form onSubmit={handleLogin}>
                 <CardHeader>
                   <CardTitle>{t("app.login.title")}</CardTitle>
-                  <CardDescription>
-                    {t("app.login.description")}
-                  </CardDescription>
+                  <CardDescription>{t("app.login.description")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("app.login.email")}</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="text"
-                      placeholder="admin"
-                      required
-                      value={loginForm.email}
-                      onChange={handleLoginChange}
-                    />
+                    <Input id="email" name="email" type="text" placeholder="admin" required value={loginForm.email} onChange={handleLoginChange} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -165,60 +147,32 @@ export default function Auth() {
               </form>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="signup">
             <Card>
               <form onSubmit={handleSignup}>
                 <CardHeader>
                   <CardTitle>{t("app.signup.title")}</CardTitle>
-                  <CardDescription>
-                    {t("app.signup.description")}
-                  </CardDescription>
+                  <CardDescription>{t("app.signup.description")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">{t("app.signup.firstName")}</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        required
-                        value={signupForm.firstName}
-                        onChange={handleSignupChange}
-                      />
+                      <Input id="firstName" name="firstName" required value={signupForm.firstName} onChange={handleSignupChange} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">{t("app.signup.lastName")}</Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        required
-                        value={signupForm.lastName}
-                        onChange={handleSignupChange}
-                      />
+                      <Input id="lastName" name="lastName" required value={signupForm.lastName} onChange={handleSignupChange} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signupEmail">{t("app.signup.email")}</Label>
-                    <Input
-                      id="signupEmail"
-                      name="email"
-                      type="email"
-                      required
-                      value={signupForm.email}
-                      onChange={handleSignupChange}
-                    />
+                    <Input id="signupEmail" name="email" type="email" required value={signupForm.email} onChange={handleSignupChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signupPassword">{t("app.signup.password")}</Label>
-                    <Input
-                      id="signupPassword"
-                      name="password"
-                      type="password"
-                      required
-                      value={signupForm.password}
-                      onChange={handleSignupChange}
-                    />
+                    <Input id="signupPassword" name="password" type="password" required value={signupForm.password} onChange={handleSignupChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">{t("app.signup.confirmPassword")}</Label>
