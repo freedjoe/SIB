@@ -40,7 +40,7 @@ export default function Auth() {
       if (loginForm.email === "admin" && loginForm.password === "admin") {
         localStorage.setItem("adminLoggedIn", "true");
         toast.success("Bienvenue Admin !");
-        navigate("/");
+        window.location.href = "/";
         return;
       }
 

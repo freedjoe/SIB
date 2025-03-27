@@ -28,12 +28,13 @@ const queryClient = new QueryClient();
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
+  const adminLoggedIn = localStorage.getItem("adminLoggedIn") === "true";
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (!user) {
+  if (!user && !adminLoggedIn) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -48,15 +49,27 @@ const AppRoutes = () => {
     console.log("User:", user);
     console.log("Session:", session);
     console.log("Is Loading:", isLoading);
-    if (user && window.location.pathname === "/auth") {
+    console.log("Admin logged in:", localStorage.getItem("adminLoggedIn"));
+    
+    // Check both regular auth and admin auth
+    if ((user || localStorage.getItem("adminLoggedIn") === "true") && window.location.pathname === "/auth") {
       window.location.href = "/";
     }
-  }, [user]);
+  }, [user, isLoading]);
+
+  // Show loading spinner while checking auth status
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
     <Routes>
-      {/* For /auth route, check if admin login happened through localStorage */}
-      <Route path="/auth" element={localStorage.getItem("adminLoggedIn") === "true" ? <Navigate to="/" replace /> : <Auth />} />
+      {/* For /auth route, check if logged in */}
+      <Route path="/auth" element={
+        user || localStorage.getItem("adminLoggedIn") === "true" 
+          ? <Navigate to="/" replace /> 
+          : <Auth />
+      } />
 
       <Route
         element={
