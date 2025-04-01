@@ -7,7 +7,7 @@ import {
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
+import i18n from './i18n/index';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 

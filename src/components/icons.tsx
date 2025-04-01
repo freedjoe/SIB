@@ -18,7 +18,7 @@ import {
   ChevronDown,
   ChartLine,
   HelpCircle,
-  FileContract 
+  FileSignature
 } from "lucide-react"
 
 export const Icons = {
@@ -43,7 +43,7 @@ export const Icons = {
   briefcase: Briefcase,
   hammer: Hammer,
   construction: Construction,
-  "file-contract": FileContract,
+  "file-contract": FileSignature,  // Changed from FileContract to FileSignature
   "credit-card": CreditCard,
   "chart-line": ChartLine,
   "file-text": FileText,

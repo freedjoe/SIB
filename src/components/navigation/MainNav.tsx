@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useLocation, Link } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -95,7 +96,7 @@ export function MainNav() {
   return (
     <div className="flex w-full shrink-0 items-center space-x-4">
       <Link to="/" className="hidden items-center space-x-2 md:flex">
-        <Icons.logo className="h-6 w-6" />
+        <Icons.logo />
         <span className="font-bold">SIGB</span>
       </Link>
       <nav className="hidden md:flex">
