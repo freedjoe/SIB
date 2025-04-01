@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -17,7 +18,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { theme, setTheme, language, setLanguage } = useSettings();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -34,6 +35,12 @@ export function AppLayout() {
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleSignOut = () => {
+    if (window.authNavigation) {
+      window.authNavigation.signOut();
+    }
   };
 
   return (
@@ -173,7 +180,7 @@ export function AppLayout() {
                     {t("app.common.help")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>
+                  <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     {t("app.common.logout")}
                   </DropdownMenuItem>

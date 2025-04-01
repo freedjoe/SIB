@@ -4,7 +4,7 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-// Define the ThemeProviderProps interface manually
+// Define the ThemeProviderProps interface manually with the correct typing for attribute
 interface ThemeProviderProps {
   children: React.ReactNode;
   defaultTheme?: string;
@@ -13,7 +13,7 @@ interface ThemeProviderProps {
   enableColorScheme?: boolean;
   forcedTheme?: string;
   disableTransitionOnChange?: boolean;
-  attribute?: string;
+  attribute?: string | string[];
 }
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {

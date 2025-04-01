@@ -3,6 +3,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  useNavigate
 } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -29,14 +30,38 @@ import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
 import ExpenseForecastsPage from "./pages/ExpenseForecasts";
 
+// Create an AuthNavigation component to handle navigation after auth actions
+const AuthNavigation = () => {
+  const navigate = useNavigate();
+  const { signOut: authSignOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await authSignOut(() => {
+      navigate("/auth");
+    });
+  };
+
+  // Update auth context with navigation capability
+  useEffect(() => {
+    // Expose the navigation function globally for auth context
+    window.authNavigation = {
+      signOut: handleSignOut,
+      navigateTo: navigate
+    };
+  }, [navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="sigb-theme">
       <I18nextProvider i18n={i18n}>
-        <AuthProvider>
-          <SettingsProvider>
-            <Toaster />
-            <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
+            <AuthNavigation />
+            <SettingsProvider>
+              <Toaster />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -57,12 +82,26 @@ function App() {
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </SettingsProvider>
-        </AuthProvider>
+            </SettingsProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </I18nextProvider>
     </ThemeProvider>
   );
+}
+
+// Add the missing useAuth import
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+
+// Add type declaration for window object
+declare global {
+  interface Window {
+    authNavigation: {
+      signOut: () => Promise<void>;
+      navigateTo: (path: string) => void;
+    }
+  }
 }
 
 export default App;
