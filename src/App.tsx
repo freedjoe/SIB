@@ -3,6 +3,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
   useNavigate
 } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster"
@@ -29,6 +30,8 @@ import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
 import ExpenseForecastsPage from "./pages/ExpenseForecasts";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Create an AuthNavigation component to handle navigation after auth actions
 const AuthNavigation = () => {
@@ -53,35 +56,44 @@ const AuthNavigation = () => {
   return null;
 };
 
+// AppRoutes component separated to use hooks inside Router context
+const AppRoutes = () => {
+  return (
+    <>
+      <AuthNavigation />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/budgets" element={<Budgets />} />
+          <Route path="/programs" element={<Programs />} />
+          <Route path="/portfolios" element={<Portfolios />} />
+          <Route path="/actions" element={<Actions />} />
+          <Route path="/operations" element={<Operations />} />
+          <Route path="/engagements" element={<Engagements />} />
+          <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/expense-forecasts" element={<ExpenseForecastsPage />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/audit" element={<Audit />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<Help />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
+
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="sigb-theme">
       <I18nextProvider i18n={i18n}>
         <BrowserRouter>
           <AuthProvider>
-            <AuthNavigation />
             <SettingsProvider>
               <Toaster />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/budgets" element={<Budgets />} />
-                  <Route path="/programs" element={<Programs />} />
-                  <Route path="/portfolios" element={<Portfolios />} />
-                  <Route path="/actions" element={<Actions />} />
-                  <Route path="/operations" element={<Operations />} />
-                  <Route path="/engagements" element={<Engagements />} />
-                  <Route path="/payments" element={<PaymentsPage />} />
-                  <Route path="/expense-forecasts" element={<ExpenseForecastsPage />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/audit" element={<Audit />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/help" element={<Help />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </SettingsProvider>
           </AuthProvider>
         </BrowserRouter>
@@ -89,10 +101,6 @@ function App() {
     </ThemeProvider>
   );
 }
-
-// Add the missing useAuth import
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
 
 // Add type declaration for window object
 declare global {
