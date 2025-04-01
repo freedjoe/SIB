@@ -1,659 +1,522 @@
 
 import { useState } from "react";
-import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatCard } from "@/components/ui-custom/StatCard";
-import { BudgetChart } from "@/components/charts/BudgetChart";
-import { toast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
-import { 
-  BarChart3, CalendarDays, ChevronDown, Eye, FileSpreadsheet, 
-  FilterX, LineChart, ListFilter, Plus, RefreshCw, Trash2, 
-  TrendingUp, Edit
-} from "lucide-react";
-import { ExpenseForecastDialog } from "@/components/dialogs/ExpenseForecastDialog";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Types
+// Type definitions
 interface ExpenseForecast {
   id: string;
-  programId: string;
   programName: string;
-  ministryId: string;
-  ministryName: string;
-  amount: number;
-  period: "monthly" | "quarterly" | "annually";
-  startDate: string;
-  endDate: string;
+  forecastedAmount: number;
+  period: "monthly" | "quarterly" | "annual";
+  ministry: string;
   category: string;
-  mobilizedAmount: number;
-  remaining: number;
-  status: "draft" | "active" | "completed";
   createdAt: string;
-  updatedAt: string;
+  status: "pending" | "approved" | "rejected";
+  mobilizedAmount: number;
+  remainingAmount: number;
 }
 
-interface Program {
-  id: string;
-  name: string;
-  budget: number;
-  allocated: number;
-  ministryId: string;
-  ministryName: string;
-}
+const ExpenseForecastsPage = () => {
+  const { t } = useTranslation();
+  const [forecasts, setForecasts] = useState<ExpenseForecast[]>([
+    {
+      id: "fc-001",
+      programName: "Infrastructure Development",
+      forecastedAmount: 500000,
+      period: "quarterly",
+      ministry: "Ministry of Public Works",
+      category: "Construction",
+      createdAt: "2023-04-15",
+      status: "approved",
+      mobilizedAmount: 200000,
+      remainingAmount: 300000,
+    },
+    {
+      id: "fc-002",
+      programName: "Education Reform",
+      forecastedAmount: 750000,
+      period: "annual",
+      ministry: "Ministry of Education",
+      category: "Education",
+      createdAt: "2023-05-22",
+      status: "pending",
+      mobilizedAmount: 0,
+      remainingAmount: 750000,
+    },
+    {
+      id: "fc-003",
+      programName: "Healthcare Initiative",
+      forecastedAmount: 1200000,
+      period: "monthly",
+      ministry: "Ministry of Health",
+      category: "Healthcare",
+      createdAt: "2023-06-10",
+      status: "approved",
+      mobilizedAmount: 400000,
+      remainingAmount: 800000,
+    },
+    {
+      id: "fc-004",
+      programName: "Digital Transformation",
+      forecastedAmount: 950000,
+      period: "quarterly",
+      ministry: "Ministry of Technology",
+      category: "IT",
+      createdAt: "2023-07-05",
+      status: "rejected",
+      mobilizedAmount: 0,
+      remainingAmount: 950000,
+    },
+    {
+      id: "fc-005",
+      programName: "Agricultural Subsidies",
+      forecastedAmount: 680000,
+      period: "annual",
+      ministry: "Ministry of Agriculture",
+      category: "Agriculture",
+      createdAt: "2023-08-18",
+      status: "approved",
+      mobilizedAmount: 340000,
+      remainingAmount: 340000,
+    },
+  ]);
 
-interface Ministry {
-  id: string;
-  name: string;
-  code: string;
-}
-
-// Mock Data
-const mockPrograms: Program[] = [
-  { 
-    id: "p1", 
-    name: "Programme de Développement Rural", 
-    budget: 1200000000, 
-    allocated: 800000000,
-    ministryId: "m1",
-    ministryName: "Ministère de l'Agriculture"
-  },
-  { 
-    id: "p2", 
-    name: "Plan National de Santé", 
-    budget: 2500000000, 
-    allocated: 1500000000,
-    ministryId: "m2",
-    ministryName: "Ministère de la Santé"
-  },
-  { 
-    id: "p3", 
-    name: "Programme d'Infrastructure Routière", 
-    budget: 3000000000, 
-    allocated: 2200000000,
-    ministryId: "m3",
-    ministryName: "Ministère des Travaux Publics"
-  },
-  { 
-    id: "p4", 
-    name: "Plan National d'Éducation", 
-    budget: 1800000000, 
-    allocated: 1200000000,
-    ministryId: "m4",
-    ministryName: "Ministère de l'Éducation"
-  },
-];
-
-const mockMinistries: Ministry[] = [
-  { id: "m1", name: "Ministère de l'Agriculture", code: "MAGR" },
-  { id: "m2", name: "Ministère de la Santé", code: "MSAN" },
-  { id: "m3", name: "Ministère des Travaux Publics", code: "MTRP" },
-  { id: "m4", name: "Ministère de l'Éducation", code: "MEDU" },
-  { id: "m5", name: "Ministère de l'Économie", code: "MECO" },
-];
-
-const mockForecasts: ExpenseForecast[] = [
-  {
-    id: "ef1",
-    programId: "p1",
-    programName: "Programme de Développement Rural",
-    ministryId: "m1",
-    ministryName: "Ministère de l'Agriculture",
-    amount: 350000000,
-    period: "quarterly",
-    startDate: "2023-10-01",
-    endDate: "2023-12-31",
-    category: "Infrastructures",
-    mobilizedAmount: 200000000,
-    remaining: 150000000,
-    status: "active",
-    createdAt: "2023-09-15",
-    updatedAt: "2023-09-15"
-  },
-  {
-    id: "ef2",
-    programId: "p2",
-    programName: "Plan National de Santé",
-    ministryId: "m2",
-    ministryName: "Ministère de la Santé",
-    amount: 650000000,
-    period: "quarterly",
-    startDate: "2023-10-01",
-    endDate: "2023-12-31",
-    category: "Matériel Médical",
-    mobilizedAmount: 400000000,
-    remaining: 250000000,
-    status: "active",
-    createdAt: "2023-09-10",
-    updatedAt: "2023-09-15"
-  },
-  {
-    id: "ef3",
-    programId: "p3",
-    programName: "Programme d'Infrastructure Routière",
-    ministryId: "m3",
-    ministryName: "Ministère des Travaux Publics",
-    amount: 800000000,
-    period: "annually",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    category: "Construction",
-    mobilizedAmount: 600000000,
-    remaining: 200000000,
-    status: "active",
-    createdAt: "2023-01-15",
-    updatedAt: "2023-09-20"
-  },
-  {
-    id: "ef4",
-    programId: "p4",
-    programName: "Plan National d'Éducation",
-    ministryId: "m4",
-    ministryName: "Ministère de l'Éducation",
-    amount: 450000000,
-    period: "monthly",
-    startDate: "2023-10-01",
-    endDate: "2023-10-31",
-    category: "Équipement scolaire",
-    mobilizedAmount: 100000000,
-    remaining: 350000000,
-    status: "active",
-    createdAt: "2023-09-25",
-    updatedAt: "2023-09-25"
-  },
-];
-
-// Utility Functions
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-};
-
-const getPeriodLabel = (period: string) => {
-  switch(period) {
-    case "monthly": return "Mensuel";
-    case "quarterly": return "Trimestriel";
-    case "annually": return "Annuel";
-    default: return period;
-  }
-};
-
-const getStatusBadge = (status: string, mobilized: number, total: number) => {
-  const percentage = (mobilized / total) * 100;
-  
-  if (status === "completed") {
-    return (
-      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400">
-        Complété
-      </Badge>
-    );
-  } else if (percentage >= 75) {
-    return (
-      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400">
-        {Math.round(percentage)}% mobilisé
-      </Badge>
-    );
-  } else if (percentage >= 50) {
-    return (
-      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">
-        {Math.round(percentage)}% mobilisé
-      </Badge>
-    );
-  } else if (percentage >= 25) {
-    return (
-      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
-        {Math.round(percentage)}% mobilisé
-      </Badge>
-    );
-  } else {
-    return (
-      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400">
-        {Math.round(percentage)}% mobilisé
-      </Badge>
-    );
-  }
-};
-
-export default function ExpenseForecastsPage() {
-  const [forecasts, setForecasts] = useState<ExpenseForecast[]>(mockForecasts);
-  const [periodFilter, setPeriodFilter] = useState<string>("all");
-  const [ministryFilter, setMinistryFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  
   const [currentForecast, setCurrentForecast] = useState<ExpenseForecast | null>(null);
-  
-  // Calculate statistics
-  const totalForecasted = forecasts.reduce((sum, f) => sum + f.amount, 0);
-  const totalMobilized = forecasts.reduce((sum, f) => sum + f.mobilizedAmount, 0);
-  const totalRemaining = totalForecasted - totalMobilized;
-  const mobilizationPercentage = totalForecasted > 0 ? (totalMobilized / totalForecasted) * 100 : 0;
-  
-  // Filter forecasts based on selected filters
-  const filteredForecasts = forecasts.filter(forecast => {
-    const matchesPeriod = periodFilter === "all" || forecast.period === periodFilter;
-    const matchesMinistry = ministryFilter === "all" || forecast.ministryId === ministryFilter;
-    const matchesCategory = categoryFilter === "all" || forecast.category === categoryFilter;
-    
-    return matchesPeriod && matchesMinistry && matchesCategory;
+  const [currentTab, setCurrentTab] = useState("all");
+
+  // New forecast form state
+  const [newForecast, setNewForecast] = useState({
+    programName: "",
+    forecastedAmount: 0,
+    period: "monthly",
+    ministry: "",
+    category: "",
   });
+
+  // Filter forecasts based on period type
+  const filteredForecasts = forecasts.filter((forecast) => {
+    if (currentTab === "all") return true;
+    return forecast.period === currentTab;
+  });
+
+  // Calculate CP stats
+  const totalForecastedAmount = forecasts.reduce(
+    (acc, forecast) => acc + forecast.forecastedAmount,
+    0
+  );
   
-  // Get unique categories for filter
-  const categories = [...new Set(forecasts.map(f => f.category))];
+  const totalMobilizedAmount = forecasts.reduce(
+    (acc, forecast) => acc + forecast.mobilizedAmount,
+    0
+  );
   
-  // Chart data
-  const mobilizationData = [
-    { name: "Mobilisé", value: totalMobilized, color: "#10b981" },
-    { name: "Restant", value: totalRemaining, color: "#f59e0b" },
-  ];
-  
-  const handleOpenAddDialog = () => {
-    setCurrentForecast(null);
-    setIsAddDialogOpen(true);
-  };
-  
-  const handleOpenEditDialog = (forecast: ExpenseForecast) => {
-    setCurrentForecast(forecast);
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleOpenViewDialog = (forecast: ExpenseForecast) => {
-    setCurrentForecast(forecast);
-    setIsViewDialogOpen(true);
-  };
-  
-  const handleOpenDeleteDialog = (forecast: ExpenseForecast) => {
-    setCurrentForecast(forecast);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  const handleAddForecast = (forecastData: Partial<ExpenseForecast>) => {
-    if (!forecastData.programId || !forecastData.amount) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
+  const totalRemainingAmount = forecasts.reduce(
+    (acc, forecast) => acc + forecast.remainingAmount,
+    0
+  );
+
+  // Add new forecast
+  const handleAddForecast = () => {
+    const id = `fc-${(forecasts.length + 1).toString().padStart(3, "0")}`;
     
-    const program = mockPrograms.find(p => p.id === forecastData.programId);
-    if (!program) {
-      toast({
-        title: "Erreur",
-        description: "Programme invalide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const available = program.budget - program.allocated;
-    if ((forecastData.amount || 0) > available) {
-      toast({
-        title: "Erreur",
-        description: "Le montant prévu dépasse le budget disponible",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const newForecast: ExpenseForecast = {
-      id: `ef${forecasts.length + 1}`,
-      programId: forecastData.programId || "",
-      programName: program.name,
-      ministryId: program.ministryId,
-      ministryName: program.ministryName,
-      amount: Number(forecastData.amount),
-      period: forecastData.period as "monthly" | "quarterly" | "annually",
-      startDate: forecastData.startDate || new Date().toISOString().split("T")[0],
-      endDate: forecastData.endDate || new Date().toISOString().split("T")[0],
-      category: forecastData.category || "Autre",
+    const forecast: ExpenseForecast = {
+      id,
+      programName: newForecast.programName,
+      forecastedAmount: Number(newForecast.forecastedAmount),
+      period: newForecast.period as "monthly" | "quarterly" | "annual",
+      ministry: newForecast.ministry,
+      category: newForecast.category,
+      createdAt: new Date().toISOString().slice(0, 10),
+      status: "pending",
       mobilizedAmount: 0,
-      remaining: Number(forecastData.amount),
-      status: "active",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      remainingAmount: Number(newForecast.forecastedAmount)
     };
     
-    setForecasts([...forecasts, newForecast]);
+    setForecasts([...forecasts, forecast]);
     setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Prévision ajoutée",
-      description: `La prévision pour "${program.name}" a été ajoutée avec succès.`,
+    setNewForecast({
+      programName: "",
+      forecastedAmount: 0,
+      period: "monthly",
+      ministry: "",
+      category: "",
     });
   };
-  
-  const handleEditForecast = (forecastData: Partial<ExpenseForecast>) => {
+
+  // Edit forecast
+  const handleEditForecast = () => {
     if (!currentForecast) return;
     
-    const program = mockPrograms.find(p => p.id === forecastData.programId);
-    if (!program && forecastData.programId) {
-      toast({
-        title: "Erreur",
-        description: "Programme invalide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const updatedForecasts = forecasts.map(f => 
-      f.id === currentForecast.id
-        ? {
-            ...f,
-            programId: forecastData.programId || f.programId,
-            programName: program ? program.name : f.programName,
-            ministryId: program ? program.ministryId : f.ministryId,
-            ministryName: program ? program.ministryName : f.ministryName,
-            amount: forecastData.amount || f.amount,
-            period: forecastData.period as "monthly" | "quarterly" | "annually" || f.period,
-            startDate: forecastData.startDate || f.startDate,
-            endDate: forecastData.endDate || f.endDate,
-            category: forecastData.category || f.category,
-            remaining: (forecastData.amount || f.amount) - f.mobilizedAmount,
-            updatedAt: new Date().toISOString(),
-          }
-        : f
+    const updatedForecasts = forecasts.map((f) => 
+      f.id === currentForecast.id ? currentForecast : f
     );
     
     setForecasts(updatedForecasts);
     setIsEditDialogOpen(false);
-    
-    toast({
-      title: "Prévision modifiée",
-      description: `La prévision pour "${currentForecast.programName}" a été modifiée avec succès.`,
-    });
+    setCurrentForecast(null);
   };
-  
+
+  // Delete forecast
   const handleDeleteForecast = () => {
     if (!currentForecast) return;
     
-    const updatedForecasts = forecasts.filter(f => f.id !== currentForecast.id);
+    const updatedForecasts = forecasts.filter((f) => f.id !== currentForecast.id);
     setForecasts(updatedForecasts);
     setIsDeleteDialogOpen(false);
-    
-    toast({
-      title: "Prévision supprimée",
-      description: `La prévision pour "${currentForecast.programName}" a été supprimée avec succès.`,
-    });
+    setCurrentForecast(null);
   };
-  
-  const resetFilters = () => {
-    setPeriodFilter("all");
-    setMinistryFilter("all");
-    setCategoryFilter("all");
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "DZD",
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
-  
+
   return (
-    <Dashboard>
-      <DashboardHeader 
-        title="Prévisions des Dépenses" 
-        description="Gérez les prévisions de dépenses et les CP à mobiliser"
-      >
-        <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvelle prévision
-        </Button>
-      </DashboardHeader>
-      
-      <DashboardSection>
-        <DashboardGrid columns={4}>
-          <StatCard
-            title="Montant Total Prévu"
-            value={formatCurrency(totalForecasted)}
-            description={`${forecasts.length} prévisions`}
-            icon={<BarChart3 className="h-4 w-4" />}
-          />
-          <StatCard
-            title="CP Mobilisé"
-            value={formatCurrency(totalMobilized)}
-            description={`${mobilizationPercentage.toFixed(1)}% du total`}
-            icon={<TrendingUp className="h-4 w-4" />}
-          />
-          <StatCard
-            title="CP à Mobiliser"
-            value={formatCurrency(totalRemaining)}
-            description="Montant restant"
-            icon={<LineChart className="h-4 w-4" />}
-          />
-          <Card className="flex items-center justify-center p-6">
-            <Button variant="outline">
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Exporter en Excel
-            </Button>
-          </Card>
-        </DashboardGrid>
-      </DashboardSection>
-      
-      <DashboardSection>
-        <DashboardGrid columns={2}>
-          <BudgetChart
-            title="CP Mobilisé vs. CP à Mobiliser"
-            data={mobilizationData}
-          />
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Filtres</CardTitle>
-              <CardDescription>Filtrer les prévisions par période, ministère et catégorie</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="period-filter">Période</Label>
-                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                  <SelectTrigger id="period-filter">
-                    <SelectValue placeholder="Toutes les périodes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les périodes</SelectItem>
-                    <SelectItem value="monthly">Mensuel</SelectItem>
-                    <SelectItem value="quarterly">Trimestriel</SelectItem>
-                    <SelectItem value="annually">Annuel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="ministry-filter">Ministère</Label>
-                <Select value={ministryFilter} onValueChange={setMinistryFilter}>
-                  <SelectTrigger id="ministry-filter">
-                    <SelectValue placeholder="Tous les ministères" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les ministères</SelectItem>
-                    {mockMinistries.map(ministry => (
-                      <SelectItem key={ministry.id} value={ministry.id}>
-                        {ministry.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="category-filter">Catégorie</Label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger id="category-filter">
-                    <SelectValue placeholder="Toutes les catégories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les catégories</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={resetFilters}
-              >
-                <FilterX className="mr-2 h-4 w-4" />
-                Réinitialiser les filtres
-              </Button>
-            </CardContent>
-          </Card>
-        </DashboardGrid>
-      </DashboardSection>
-      
-      <DashboardSection>
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Prévisions des Dépenses - CP à Mobiliser</h1>
+        <Button onClick={() => setIsAddDialogOpen(true)}>Ajouter une Prévision</Button>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Liste des Prévisions de Dépenses</CardTitle>
-              <CardDescription>
-                {filteredForecasts.length} prévision{filteredForecasts.length !== 1 ? 's' : ''} trouvée{filteredForecasts.length !== 1 ? 's' : ''}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Actualiser
-              </Button>
-              <Button variant="outline" size="sm">
-                <ListFilter className="mr-2 h-4 w-4" />
-                Filtres avancés
-              </Button>
-            </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">CP Prévus</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Programme</TableHead>
-                  <TableHead>Ministère</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Mobilisé</TableHead>
-                  <TableHead>Période</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredForecasts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
-                      Aucune prévision trouvée
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredForecasts.map(forecast => (
-                    <TableRow key={forecast.id}>
-                      <TableCell className="font-medium max-w-[200px] truncate">
-                        {forecast.programName}
-                      </TableCell>
-                      <TableCell>{forecast.ministryName}</TableCell>
-                      <TableCell>{formatCurrency(forecast.amount)}</TableCell>
-                      <TableCell>{formatCurrency(forecast.mobilizedAmount)}</TableCell>
-                      <TableCell>{getPeriodLabel(forecast.period)}</TableCell>
-                      <TableCell>{forecast.category}</TableCell>
-                      <TableCell>
-                        {getStatusBadge(forecast.status, forecast.mobilizedAmount, forecast.amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleOpenViewDialog(forecast)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleOpenEditDialog(forecast)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleOpenDeleteDialog(forecast)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <div className="text-2xl font-bold">{formatCurrency(totalForecastedAmount)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total des montants prévisionnels
+            </p>
           </CardContent>
         </Card>
-      </DashboardSection>
-      
-      <ExpenseForecastDialog
-        type="add"
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        forecast={null}
-        programs={mockPrograms}
-        ministries={mockMinistries}
-        formatCurrency={formatCurrency}
-        onSave={handleAddForecast}
-      />
-      
-      <ExpenseForecastDialog
-        type="edit"
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        forecast={currentForecast}
-        programs={mockPrograms}
-        ministries={mockMinistries}
-        formatCurrency={formatCurrency}
-        onSave={handleEditForecast}
-      />
-      
-      <ExpenseForecastDialog
-        type="view"
-        open={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        forecast={currentForecast}
-        programs={mockPrograms}
-        ministries={mockMinistries}
-        formatCurrency={formatCurrency}
-        onSave={() => {}}
-      />
-      
-      <ExpenseForecastDialog
-        type="delete"
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        forecast={currentForecast}
-        programs={mockPrograms}
-        ministries={mockMinistries}
-        formatCurrency={formatCurrency}
-        onSave={() => {}}
-        onDelete={handleDeleteForecast}
-      />
-    </Dashboard>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">CP Mobilisés</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalMobilizedAmount)}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.round((totalMobilizedAmount / totalForecastedAmount) * 100)}% du total prévu
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">CP à Mobiliser</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalRemainingAmount)}</div>
+            <p className="text-xs text-muted-foreground">
+              Restant à mobiliser
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Period Tabs */}
+      <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
+        <TabsList className="grid w-full grid-cols-4 md:w-auto">
+          <TabsTrigger value="all">Tous</TabsTrigger>
+          <TabsTrigger value="monthly">Mensuel</TabsTrigger>
+          <TabsTrigger value="quarterly">Trimestriel</TabsTrigger>
+          <TabsTrigger value="annual">Annuel</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Forecasts Table */}
+      <div className="rounded-md border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50 text-muted-foreground">
+              <th className="h-12 px-4 text-left">Programme</th>
+              <th className="h-12 px-4 text-left">Ministère</th>
+              <th className="h-12 px-4 text-left">Catégorie</th>
+              <th className="h-12 px-4 text-left">Période</th>
+              <th className="h-12 px-4 text-left">Montant Prévu</th>
+              <th className="h-12 px-4 text-left">Montant Mobilisé</th>
+              <th className="h-12 px-4 text-left">À Mobiliser</th>
+              <th className="h-12 px-4 text-left">Status</th>
+              <th className="h-12 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredForecasts.map((forecast) => (
+              <tr key={forecast.id} className="border-b">
+                <td className="p-4">{forecast.programName}</td>
+                <td className="p-4">{forecast.ministry}</td>
+                <td className="p-4">{forecast.category}</td>
+                <td className="p-4">{
+                  forecast.period === "monthly" ? "Mensuel" :
+                  forecast.period === "quarterly" ? "Trimestriel" : "Annuel"
+                }</td>
+                <td className="p-4">{formatCurrency(forecast.forecastedAmount)}</td>
+                <td className="p-4">{formatCurrency(forecast.mobilizedAmount)}</td>
+                <td className="p-4">{formatCurrency(forecast.remainingAmount)}</td>
+                <td className="p-4">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                    ${forecast.status === "approved" ? "bg-green-100 text-green-800" : 
+                      forecast.status === "rejected" ? "bg-red-100 text-red-800" : 
+                      "bg-yellow-100 text-yellow-800"}`}>
+                    {forecast.status === "approved" ? "Approuvé" : 
+                      forecast.status === "rejected" ? "Rejeté" : "En Attente"}
+                  </span>
+                </td>
+                <td className="p-4 text-center">
+                  <div className="flex justify-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentForecast(forecast);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      Modifier
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentForecast(forecast);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add Forecast Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Ajouter une Prévision</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="programName">Nom du Programme</Label>
+                <Input
+                  id="programName"
+                  value={newForecast.programName}
+                  onChange={(e) => setNewForecast({ ...newForecast, programName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ministry">Ministère</Label>
+                <Input
+                  id="ministry"
+                  value={newForecast.ministry}
+                  onChange={(e) => setNewForecast({ ...newForecast, ministry: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Catégorie</Label>
+                <Input
+                  id="category"
+                  value={newForecast.category}
+                  onChange={(e) => setNewForecast({ ...newForecast, category: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Montant Prévisionnel</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={newForecast.forecastedAmount}
+                  onChange={(e) => setNewForecast({ ...newForecast, forecastedAmount: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="period">Période</Label>
+                <Select
+                  onValueChange={(value: "monthly" | "quarterly" | "annual") => 
+                    setNewForecast({ ...newForecast, period: value })
+                  }
+                  defaultValue={newForecast.period}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une période" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensuel</SelectItem>
+                    <SelectItem value="quarterly">Trimestriel</SelectItem>
+                    <SelectItem value="annual">Annuel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6 space-x-3">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleAddForecast}>
+                Ajouter
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Edit Forecast Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Modifier la Prévision</h2>
+            {currentForecast && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-programName">Nom du Programme</Label>
+                  <Input
+                    id="edit-programName"
+                    value={currentForecast.programName}
+                    onChange={(e) => setCurrentForecast({ ...currentForecast, programName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-ministry">Ministère</Label>
+                  <Input
+                    id="edit-ministry"
+                    value={currentForecast.ministry}
+                    onChange={(e) => setCurrentForecast({ ...currentForecast, ministry: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Catégorie</Label>
+                  <Input
+                    id="edit-category"
+                    value={currentForecast.category}
+                    onChange={(e) => setCurrentForecast({ ...currentForecast, category: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-amount">Montant Prévisionnel</Label>
+                  <Input
+                    id="edit-amount"
+                    type="number"
+                    value={currentForecast.forecastedAmount}
+                    onChange={(e) => {
+                      const newAmount = parseFloat(e.target.value) || 0;
+                      setCurrentForecast({
+                        ...currentForecast,
+                        forecastedAmount: newAmount,
+                        remainingAmount: newAmount - currentForecast.mobilizedAmount
+                      });
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-mobilized">Montant Mobilisé</Label>
+                  <Input
+                    id="edit-mobilized"
+                    type="number"
+                    value={currentForecast.mobilizedAmount}
+                    onChange={(e) => {
+                      const newMobilized = parseFloat(e.target.value) || 0;
+                      setCurrentForecast({
+                        ...currentForecast,
+                        mobilizedAmount: newMobilized,
+                        remainingAmount: currentForecast.forecastedAmount - newMobilized
+                      });
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-period">Période</Label>
+                  <Select
+                    onValueChange={(value: "monthly" | "quarterly" | "annual") => 
+                      setCurrentForecast({ ...currentForecast, period: value })
+                    }
+                    defaultValue={currentForecast.period}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>
+                        {currentForecast.period === "monthly" ? "Mensuel" :
+                         currentForecast.period === "quarterly" ? "Trimestriel" : "Annuel"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensuel</SelectItem>
+                      <SelectItem value="quarterly">Trimestriel</SelectItem>
+                      <SelectItem value="annual">Annuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Statut</Label>
+                  <Select
+                    onValueChange={(value: "pending" | "approved" | "rejected") => 
+                      setCurrentForecast({ ...currentForecast, status: value })
+                    }
+                    defaultValue={currentForecast.status}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>
+                        {currentForecast.status === "approved" ? "Approuvé" :
+                         currentForecast.status === "rejected" ? "Rejeté" : "En Attente"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">En Attente</SelectItem>
+                      <SelectItem value="approved">Approuvé</SelectItem>
+                      <SelectItem value="rejected">Rejeté</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end mt-6 space-x-3">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditForecast}>
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirmer la suppression</h2>
+            <p className="mb-6">
+              Êtes-vous sûr de vouloir supprimer cette prévision de dépense? Cette action ne peut pas être annulée.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteForecast}>
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+    </div>
   );
-}
+};
+
+export default ExpenseForecastsPage;

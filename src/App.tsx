@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Routes,
@@ -25,7 +26,7 @@ import Audit from "./pages/Audit";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
-import AppLayout from "./components/layout/AppLayout";
+import { AppLayout } from "./components/layout/AppLayout";
 import ExpenseForecastsPage from "./pages/ExpenseForecasts";
 
 function App() {
