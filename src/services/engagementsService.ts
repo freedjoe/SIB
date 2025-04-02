@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -14,15 +13,16 @@ export interface EngagementWithRelations extends Engagement {
       program_id: string;
       program?: {
         name: string;
-      }
-    }
+      };
+    };
   };
 }
 
 export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
   const { data, error } = await supabase
-    .from('engagements')
-    .select(`
+    .from("engagements")
+    .select(
+      `
       *,
       operation:operation_id (
         name,
@@ -34,21 +34,23 @@ export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
           program:program_id (name)
         )
       )
-    `)
-    .order('request_date', { ascending: false });
-  
+    `
+    )
+    .order("request_date", { ascending: false });
+
   if (error) {
     console.error("Error fetching engagements:", error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getEngagementsByOperationId(operationId: string): Promise<EngagementWithRelations[]> {
   const { data, error } = await supabase
-    .from('engagements')
-    .select(`
+    .from("engagements")
+    .select(
+      `
       *,
       operation:operation_id (
         name,
@@ -60,22 +62,24 @@ export async function getEngagementsByOperationId(operationId: string): Promise<
           program:program_id (name)
         )
       )
-    `)
-    .eq('operation_id', operationId)
-    .order('request_date', { ascending: false });
-  
+    `
+    )
+    .eq("operation_id", operationId)
+    .order("request_date", { ascending: false });
+
   if (error) {
     console.error(`Error fetching engagements for operation ${operationId}:`, error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getEngagementById(id: string): Promise<EngagementWithRelations | null> {
   const { data, error } = await supabase
-    .from('engagements')
-    .select(`
+    .from("engagements")
+    .select(
+      `
       *,
       operation:operation_id (
         name,
@@ -87,14 +91,15 @@ export async function getEngagementById(id: string): Promise<EngagementWithRelat
           program:program_id (name)
         )
       )
-    `)
-    .eq('id', id)
+    `
+    )
+    .eq("id", id)
     .single();
-  
+
   if (error) {
     console.error(`Error fetching engagement with id ${id}:`, error);
     throw error;
   }
-  
+
   return data;
 }

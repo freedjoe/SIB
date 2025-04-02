@@ -1,8 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-export type ForecastedExpense = Tables<"forecasted_expenses">;
+export type ForecastedExpense = Tables<"cp_forecasts">;
 
 export interface ForecastedExpenseWithRelations extends ForecastedExpense {
   program?: {
@@ -17,56 +16,64 @@ export interface ForecastedExpenseWithRelations extends ForecastedExpense {
 
 export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithRelations[]> {
   const { data, error } = await supabase
-    .from('forecasted_expenses')
-    .select(`
+    .from("cp_forecasts")
+    .select(
+      `
       *,
       program:program_id (name, fiscal_year),
       ministry:ministry_id (name, code)
-    `)
-    .order('created_at', { ascending: false });
-  
+    `
+    )
+    .order("created_at", { ascending: false });
+
   if (error) {
     console.error("Error fetching forecasted expenses:", error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getForecastedExpensesByProgramId(programId: string): Promise<ForecastedExpenseWithRelations[]> {
   const { data, error } = await supabase
-    .from('forecasted_expenses')
-    .select(`
+    .from("cp_forecasts")
+    .select(
+      `
       *,
       program:program_id (name, fiscal_year),
       ministry:ministry_id (name, code)
-    `)
-    .eq('program_id', programId)
-    .order('created_at', { ascending: false });
-  
+    `
+    )
+    .eq("program_id", programId)
+    .order("created_at", { ascending: false });
+
   if (error) {
     console.error(`Error fetching forecasted expenses for program ${programId}:`, error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getForecastedExpenseById(id: string): Promise<ForecastedExpenseWithRelations | null> {
   const { data, error } = await supabase
-    .from('forecasted_expenses')
-    .select(`
+    .from("cp_forecasts")
+    .select(
+      `
       *,
       program:program_id (name, fiscal_year),
       ministry:ministry_id (name, code)
-    `)
-    .eq('id', id)
+    `
+    )
+    .eq("id", id)
     .single();
-  
+
   if (error) {
     console.error(`Error fetching forecasted expense with id ${id}:`, error);
     throw error;
   }
-  
+
+  console.log("Date value before formatting:", data.created_at);
+
   return data;
 }

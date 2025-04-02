@@ -1,4 +1,3 @@
-
 {
   "app": {
     "name": "SIGB",
@@ -75,6 +74,8 @@
       "passwordMismatch": "Passwords do not match",
       "accountCreated": "Account created successfully. Please check your email to confirm your account.",
       "resetLinkSent": "A password reset link has been sent to your email.",
+      "noAccount": "Don't have an account?",
+      "haveAccount": "Already have an account?",
       "adminLogin": "Admin Login",
       "adminTest": "Test admin login (admin/admin)",
       "adminLoginSuccess": "Admin login successful",

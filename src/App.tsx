@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -52,7 +51,7 @@ const AppRoutes = () => {
     console.log("Session:", session);
     console.log("Is Loading:", isLoading);
     console.log("Admin logged in:", localStorage.getItem("adminLoggedIn"));
-    
+
     // Check both regular auth and admin auth
     if ((user || localStorage.getItem("adminLoggedIn") === "true") && window.location.pathname === "/auth") {
       window.location.href = "/";
@@ -67,11 +66,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* For /auth route, check if logged in */}
-      <Route path="/auth" element={
-        user || localStorage.getItem("adminLoggedIn") === "true" 
-          ? <Navigate to="/" replace /> 
-          : <Auth />
-      } />
+      <Route path="/auth" element={user || localStorage.getItem("adminLoggedIn") === "true" ? <Navigate to="/" replace /> : <Auth />} />
 
       <Route
         element={
@@ -103,7 +98,12 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <SettingsProvider>
           <AuthProvider>
             <Toaster />

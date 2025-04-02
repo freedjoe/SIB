@@ -53,10 +53,10 @@ export default function Auth() {
         throw error;
       }
 
-      toast.success(t("app.login.success"));
+      toast.success(t("app.auth.loginSuccess"));
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || t("app.login.error"));
+      toast.error(error.message || t("app.auth.loginError"));
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +68,7 @@ export default function Auth() {
 
     // Validate passwords
     if (signupForm.password !== signupForm.confirmPassword) {
-      toast.error(t("app.signup.passwordMismatch"));
+      toast.error(t("app.auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
@@ -89,9 +89,9 @@ export default function Auth() {
         throw error;
       }
 
-      toast.success(t("app.signup.success"));
+      toast.success(t("app.auth.signupSuccess"));
     } catch (error: any) {
-      toast.error(error.message || t("app.signup.error"));
+      toast.error(error.message || t("app.auth.signupError"));
     } finally {
       setIsLoading(false);
     }
@@ -105,27 +105,27 @@ export default function Auth() {
         </div>
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">{t("app.login.title")}</TabsTrigger>
-            <TabsTrigger value="signup">{t("app.signup.title")}</TabsTrigger>
+            <TabsTrigger value="login">{t("app.auth.login")}</TabsTrigger>
+            <TabsTrigger value="signup">{t("app.auth.signup")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
             <Card>
               <form onSubmit={handleLogin}>
                 <CardHeader>
-                  <CardTitle>{t("app.login.title")}</CardTitle>
-                  <CardDescription>{t("app.login.description")}</CardDescription>
+                  <CardTitle>{t("app.auth.login")}</CardTitle>
+                  <CardDescription>{t("app.auth.loginDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">{t("app.login.email")}</Label>
+                    <Label htmlFor="email">{t("app.auth.email")}</Label>
                     <Input id="email" name="email" type="text" placeholder="admin" required value={loginForm.email} onChange={handleLoginChange} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password">{t("app.login.password")}</Label>
+                      <Label htmlFor="password">{t("app.auth.password")}</Label>
                       <Button variant="link" size="sm" className="px-0">
-                        {t("app.login.forgotPassword")}
+                        {t("app.auth.forgotPassword")}
                       </Button>
                     </div>
                     <Input
@@ -141,7 +141,7 @@ export default function Auth() {
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Chargement..." : t("app.login.login")}
+                    {isLoading ? "Chargement..." : t("app.auth.loginButton")}
                   </Button>
                 </CardFooter>
               </form>
@@ -152,30 +152,30 @@ export default function Auth() {
             <Card>
               <form onSubmit={handleSignup}>
                 <CardHeader>
-                  <CardTitle>{t("app.signup.title")}</CardTitle>
-                  <CardDescription>{t("app.signup.description")}</CardDescription>
+                  <CardTitle>{t("app.auth.signup")}</CardTitle>
+                  <CardDescription>{t("app.auth.signupDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">{t("app.signup.firstName")}</Label>
+                      <Label htmlFor="firstName">{t("app.auth.firstName")}</Label>
                       <Input id="firstName" name="firstName" required value={signupForm.firstName} onChange={handleSignupChange} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">{t("app.signup.lastName")}</Label>
+                      <Label htmlFor="lastName">{t("app.auth.lastName")}</Label>
                       <Input id="lastName" name="lastName" required value={signupForm.lastName} onChange={handleSignupChange} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signupEmail">{t("app.signup.email")}</Label>
+                    <Label htmlFor="signupEmail">{t("app.auth.email")}</Label>
                     <Input id="signupEmail" name="email" type="email" required value={signupForm.email} onChange={handleSignupChange} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signupPassword">{t("app.signup.password")}</Label>
+                    <Label htmlFor="signupPassword">{t("app.auth.password")}</Label>
                     <Input id="signupPassword" name="password" type="password" required value={signupForm.password} onChange={handleSignupChange} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">{t("app.signup.confirmPassword")}</Label>
+                    <Label htmlFor="confirmPassword">{t("app.auth.confirmPassword")}</Label>
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -188,7 +188,7 @@ export default function Auth() {
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Création..." : t("app.signup.signup")}
+                    {isLoading ? "Création..." : t("app.auth.signupButton")}
                   </Button>
                 </CardFooter>
               </form>
