@@ -1,5 +1,5 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
@@ -7,13 +7,14 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signOut: (callback?: () => void) => Promise<void>;
+  signOut: () => Promise<void>;
   isAdminUser: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ 
         id: "admin",
         email: "admin@example.com",
-        role: "admin", // Add role property to the admin user
       } as User);
       setIsLoading(false);
       return;
@@ -62,17 +62,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signOut = async (callback?: () => void) => {
+  const signOut = async () => {
     if (isAdminUser) {
       localStorage.removeItem("adminLoggedIn");
       setIsAdminUser(false);
       setUser(null);
-      if (callback) callback();
+      navigate("/auth");
       return;
     }
     
     await supabase.auth.signOut();
-    if (callback) callback();
+    navigate("/auth");
   };
 
   return (

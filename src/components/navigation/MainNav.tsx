@@ -1,123 +1,172 @@
 
-import { useState } from "react"
-import { useLocation, Link } from "react-router-dom"
-import { useTranslation } from "react-i18next"
-
-import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/AuthContext"
-import { Icons } from "@/components/icons"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Fragment } from "react";
+import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  BarChart3,
+  BookOpenText,
+  ChevronDown,
+  ClipboardList,
+  FileCog,
+  Layers,
+  LayoutDashboard,
+  PackagePlus,
+  PieChart,
+  Settings,
+  Briefcase,
+  FileText,
+  Shield,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import Logo from "@/components/logo/Logo";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  description?: string;
+}
 
 export function MainNav() {
-  const location = useLocation();
-  const { user } = useAuth();
   const { t } = useTranslation();
-  
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
-
-  const closeDropdown = () => {
-    setIsDropdownOpen(false);
-  };
-
-  const mainRoutes = [
+  const mainNavItems: NavItem[] = [
     {
-      label: t("dashboard"),
-      icon: "home",
-      href: "/dashboard",
+      label: t("app.navigation.dashboard"),
+      href: "/",
+      icon: LayoutDashboard,
+      description: "Vue d'ensemble du budget",
     },
     {
-      label: t("budgets"),
-      icon: "wallet",
+      label: t("app.navigation.budgets"),
       href: "/budgets",
+      icon: BarChart3,
+      description: "Gestion des budgets",
     },
     {
-      label: t("programs"),
-      icon: "target",
-      href: "/programs",
-    },
-    {
-      label: t("portfolios"),
-      icon: "briefcase",
+      label: t("app.navigation.portfolios"),
       href: "/portfolios",
+      icon: Briefcase,
+      description: "Portefeuille des programmes",
     },
     {
-      label: t("actions"),
-      icon: "hammer",
+      label: t("app.navigation.programs"),
+      href: "/programs",
+      icon: Layers,
+      description: "Gestion des programmes",
+    },
+    {
+      label: t("app.navigation.actions"),
       href: "/actions",
+      icon: ClipboardList,
+      description: "Gestion des actions",
     },
     {
-      label: t("operations"),
-      icon: "construction",
+      label: t("app.navigation.operations"),
       href: "/operations",
+      icon: FileCog,
+      description: "Gestion des opérations",
     },
     {
-      label: t("engagements"),
-      icon: "file-contract",
+      label: t("app.navigation.engagements"),
       href: "/engagements",
+      icon: PackagePlus,
+      description: "Autorisations d'engagement",
     },
     {
-      label: t("payments"),
-      icon: "credit-card",
+      label: t("app.navigation.payments"),
       href: "/payments",
+      icon: PieChart,
+      description: "Crédits de paiement",
     },
     {
-      label: "Prévisions des Dépenses",
-      icon: "chart-line",
-      href: "/expense-forecasts",
-    },
-    {
-      label: t("reports"),
-      icon: "file-text",
+      label: t("app.navigation.reports"),
       href: "/reports",
+      icon: BookOpenText,
+      description: "Rapports et analyses",
     },
     {
-      label: t("audit"),
-      icon: "shield",
+      label: t("app.navigation.controlsAudits"),
       href: "/audit",
-    },
-    {
-      label: t("settings"),
-      icon: "settings",
-      href: "/settings",
+      icon: Shield,
+      description: "Contrôles et audits",
     },
   ];
 
   return (
-    <div className="flex w-full shrink-0 items-center space-x-4">
-      <Link to="/" className="hidden items-center space-x-2 md:flex">
-        <Icons.logo />
-        <span className="font-bold">SIGB</span>
-      </Link>
-      <nav className="hidden md:flex">
-        <ul className="flex items-center space-x-6">
-          {mainRoutes.map((route) => (
-            <li key={route.href}>
-              <Link
-                to={route.href}
-                className={cn(
-                  "flex items-center text-sm font-medium transition-colors hover:text-foreground/80 sm:text-base",
-                  location.pathname === route.href
-                    ? "text-foreground/80"
-                    : "text-muted-foreground"
-                )}
-              >
-                {route.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
-  )
+    <Sidebar>
+      <SidebarHeader className="flex-1">
+        <div className="h-16 flex flex-col items-center px-4">
+          <NavLink to="/" className="flex items-center">
+            <Logo />
+          </NavLink>
+          <div className="w-full mt-4 border-t pt-4">
+            <SidebarMenu>
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.href}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-md",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )
+                      }
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        {/* The main navigation has been moved to the header */}
+      </SidebarContent>
+      <SidebarFooter className="border-t pt-4 px-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-full flex items-center justify-center gap-2"
+              asChild
+            >
+              <NavLink to="/settings">
+                <Settings className="h-4 w-4" />
+                <span>{t("app.navigation.settings")}</span>
+              </NavLink>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Paramètres du système</p>
+          </TooltipContent>
+        </Tooltip>
+      </SidebarFooter>
+    </Sidebar>
+  );
 }

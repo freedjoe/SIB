@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -41,7 +40,7 @@ export default function Auth() {
       if (loginForm.email === "admin" && loginForm.password === "admin") {
         localStorage.setItem("adminLoggedIn", "true");
         toast.success("Bienvenue Admin !");
-        navigate("/dashboard");
+        window.location.href = "/";
         return;
       }
 
@@ -55,7 +54,7 @@ export default function Auth() {
       }
 
       toast.success(t("app.login.success"));
-      navigate("/dashboard");
+      navigate("/");
     } catch (error: any) {
       toast.error(error.message || t("app.login.error"));
     } finally {
