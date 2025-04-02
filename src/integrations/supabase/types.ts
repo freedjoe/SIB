@@ -267,6 +267,53 @@ export type Database = {
           },
         ]
       }
+      payment_requests: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          created_at: string
+          description: string | null
+          engagement_id: string
+          frequency: string
+          id: string
+          requested_by: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          created_at?: string
+          description?: string | null
+          engagement_id: string
+          frequency: string
+          id?: string
+          requested_by: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          created_at?: string
+          description?: string | null
+          engagement_id?: string
+          frequency?: string
+          id?: string
+          requested_by?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_requests_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number

@@ -1,6 +1,6 @@
 
 import { StatCard } from "@/components/ui-custom/StatCard";
-import { DollarSign, CalendarCheck, Clock, CheckCircle, XCircle } from "lucide-react";
+import { DollarSign, CalendarCheck, Clock, CheckCircle, XCircle, TrendingUp, Users, Briefcase, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPaymentRequestStats } from "@/services/paymentRequestsService";
 
@@ -17,7 +17,7 @@ export function PaymentStats({ formatCurrency }: PaymentStatsProps) {
   if (isLoading || !stats) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
         ))}
       </div>
@@ -67,6 +67,12 @@ export function PaymentStats({ formatCurrency }: PaymentStatsProps) {
         value={formatCurrency(stats.annualTotal)}
         icon={<CalendarCheck />}
         description="Total des demandes annuelles"
+      />
+      <StatCard
+        title="Moyenne par demande"
+        value={formatCurrency(stats.total / (stats.count || 1))}
+        icon={<TrendingUp />}
+        description="Montant moyen par demande"
       />
     </div>
   );

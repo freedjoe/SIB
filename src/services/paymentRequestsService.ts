@@ -168,29 +168,45 @@ export async function getPaymentRequestStats(): Promise<{
   monthlyTotal: number;
   quarterlyTotal: number;
   annualTotal: number;
+  count: number;
 }> {
-  const [allData, pendingOfficerData, pendingAccountantData, approvedData, rejectedData] = await Promise.all([
-    supabase.from('payment_requests').select('id, amount, frequency').throwOnError(),
-    supabase.from('payment_requests').select('amount').eq('status', 'pending_officer').throwOnError(),
-    supabase.from('payment_requests').select('amount').eq('status', 'pending_accountant').throwOnError(),
-    supabase.from('payment_requests').select('amount').eq('status', 'approved').throwOnError(),
-    supabase.from('payment_requests').select('amount').eq('status', 'rejected').throwOnError(),
-  ]);
+  try {
+    const [allData, pendingOfficerData, pendingAccountantData, approvedData, rejectedData] = await Promise.all([
+      supabase.from('payment_requests').select('id, amount, frequency'),
+      supabase.from('payment_requests').select('amount').eq('status', 'pending_officer'),
+      supabase.from('payment_requests').select('amount').eq('status', 'pending_accountant'),
+      supabase.from('payment_requests').select('amount').eq('status', 'approved'),
+      supabase.from('payment_requests').select('amount').eq('status', 'rejected'),
+    ]);
 
-  const data = allData.data || [];
-  const monthlyData = data.filter(item => item.frequency === 'monthly');
-  const quarterlyData = data.filter(item => item.frequency === 'quarterly');
-  const annualData = data.filter(item => item.frequency === 'annual');
+    const data = allData.data || [];
+    const monthlyData = data.filter(item => item.frequency === 'monthly');
+    const quarterlyData = data.filter(item => item.frequency === 'quarterly');
+    const annualData = data.filter(item => item.frequency === 'annual');
 
-  const sumAmount = (items: any[]) => items.reduce((sum, item) => sum + Number(item.amount), 0);
+    const sumAmount = (items: any[]) => items.reduce((sum, item) => sum + Number(item.amount), 0);
 
-  return {
-    total: sumAmount(data),
-    pending: sumAmount(pendingOfficerData.data || []) + sumAmount(pendingAccountantData.data || []),
-    approved: sumAmount(approvedData.data || []),
-    rejected: sumAmount(rejectedData.data || []),
-    monthlyTotal: sumAmount(monthlyData),
-    quarterlyTotal: sumAmount(quarterlyData),
-    annualTotal: sumAmount(annualData)
-  };
+    return {
+      total: sumAmount(data),
+      pending: sumAmount(pendingOfficerData.data || []) + sumAmount(pendingAccountantData.data || []),
+      approved: sumAmount(approvedData.data || []),
+      rejected: sumAmount(rejectedData.data || []),
+      monthlyTotal: sumAmount(monthlyData),
+      quarterlyTotal: sumAmount(quarterlyData),
+      annualTotal: sumAmount(annualData),
+      count: data.length
+    };
+  } catch (error) {
+    console.error("Error fetching payment request stats:", error);
+    return {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      monthlyTotal: 0,
+      quarterlyTotal: 0,
+      annualTotal: 0,
+      count: 0
+    };
+  }
 }
