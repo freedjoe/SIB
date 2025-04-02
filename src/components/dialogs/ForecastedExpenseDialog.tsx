@@ -208,7 +208,8 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">{t('app.common.none')}</SelectItem>
+                      {/* This is the line causing the problem - empty string value */}
+                      <SelectItem value="null">{t('app.common.none')}</SelectItem>
                       {ministries.map((ministry) => (
                         <SelectItem key={ministry.id} value={ministry.id}>
                           {ministry.name}

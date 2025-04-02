@@ -538,13 +538,13 @@ export default function PaymentsPage() {
     const updatedRequests = paymentRequests.map((r) => {
       if (r.id === request.id) {
         if (request.status === "pending_officer") {
-          return { ...r, status: "pending_accountant" };
+          return { ...r, status: "pending_accountant" as const };
         }
         else if (request.status === "pending_accountant") {
-          return { ...r, status: "approved" };
+          return { ...r, status: "approved" as const };
         }
         else if (currentUserRole === "admin") {
-          return { ...r, status: "approved" };
+          return { ...r, status: "approved" as const };
         }
         return r;
       }
@@ -582,7 +582,7 @@ export default function PaymentsPage() {
 
   const handleRejectRequest = (request: PaymentRequest, reason: string) => {
     const updatedRequests = paymentRequests.map((r) => 
-      r.id === request.id ? { ...r, status: "rejected" } : r
+      r.id === request.id ? { ...r, status: "rejected" as const } : r
     );
     
     setPaymentRequests(updatedRequests);
@@ -855,8 +855,8 @@ export default function PaymentsPage() {
                             <div className="flex justify-end gap-2">
                               {(request.status === "pending_officer" || request.status === "pending_accountant") && 
                                ((currentUserRole === "officer" && request.status === "pending_officer") || 
-                                (currentUserRole === "accountant" && request.status === "pending_accountant") ||
-                                (currentUserRole === "admin")) && (
+                                (currentUserRole === "admin") || 
+                                (currentUserRole === "accountant" && request.status === "pending_accountant")) && (
                                 <Button 
                                   variant="outline"
                                   size="sm" 

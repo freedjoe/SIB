@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Calendar, Check, Clock, Edit, Plus, Trash2 } from 'lucide-react';
 
@@ -16,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 import { ForecastedExpenseDialog } from '@/components/dialogs/ForecastedExpenseDialog';
 
@@ -67,8 +67,9 @@ const ForecastedExpenses = () => {
 
   // Fetch forecasted expenses with related data
   const fetchForecastedExpenses = async () => {
+    // Use any() method to specify a table not defined in the TypeScript types
     const { data, error } = await supabase
-      .from('forecasted_expenses')
+      .from('forecasted_expenses' as any)
       .select(`
         *,
         programs:program_id (name),
@@ -124,12 +125,12 @@ const ForecastedExpenses = () => {
     queryFn: fetchForecastedExpenses,
   });
 
-  const { data: programs } = useQuery({
+  const { data: programs = [] } = useQuery({
     queryKey: ['programs'],
     queryFn: fetchPrograms,
   });
 
-  const { data: ministries } = useQuery({
+  const { data: ministries = [] } = useQuery({
     queryKey: ['ministries'],
     queryFn: fetchMinistries,
   });
@@ -172,10 +173,11 @@ const ForecastedExpenses = () => {
   }, [filteredExpenses]);
 
   // Handle creating a new forecasted expense
-  const handleCreateExpense = async (expense: Omit<ForecastedExpense, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleCreateExpense = async (expense: Partial<ForecastedExpense>) => {
     try {
+      // Use any() method to specify a table not defined in the TypeScript types
       const { data, error } = await supabase
-        .from('forecasted_expenses')
+        .from('forecasted_expenses' as any)
         .insert([expense])
         .select();
 
@@ -201,8 +203,9 @@ const ForecastedExpenses = () => {
   // Handle updating an expense
   const handleUpdateExpense = async (id: string, updates: Partial<ForecastedExpense>) => {
     try {
+      // Use any() method to specify a table not defined in the TypeScript types
       const { error } = await supabase
-        .from('forecasted_expenses')
+        .from('forecasted_expenses' as any)
         .update(updates)
         .eq('id', id);
 
@@ -231,8 +234,9 @@ const ForecastedExpenses = () => {
     if (!confirm(t('app.expenses.confirmDelete'))) return;
 
     try {
+      // Use any() method to specify a table not defined in the TypeScript types
       const { error } = await supabase
-        .from('forecasted_expenses')
+        .from('forecasted_expenses' as any)
         .delete()
         .eq('id', id);
 
