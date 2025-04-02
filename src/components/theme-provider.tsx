@@ -4,11 +4,8 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-// Define Attribute type for the theme provider
-type Attribute = "class" | "data-theme" | "style";
-
-// Define the ThemeProviderProps interface manually with the correct typing for attribute
-interface ThemeProviderProps {
+// Import the actual types from next-themes to ensure compatibility
+type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: string;
   storageKey?: string;
@@ -16,7 +13,7 @@ interface ThemeProviderProps {
   enableColorScheme?: boolean;
   forcedTheme?: string;
   disableTransitionOnChange?: boolean;
-  attribute?: Attribute | Attribute[];
+  attribute?: "class" | "data-theme" | "data-mode";
 }
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {

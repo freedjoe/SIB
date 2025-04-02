@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ 
         id: "admin",
         email: "admin@example.com",
+        role: "admin", // Add role property to the admin user
       } as User);
       setIsLoading(false);
       return;

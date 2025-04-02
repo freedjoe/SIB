@@ -194,11 +194,11 @@ const PaymentsPage = () => {
       if (req.id === requestId) {
         // If officer approves, move to accountant approval
         if (user?.role === "officer" && req.status === "pending_officer") {
-          return { ...req, status: "pending_accountant" };
+          return { ...req, status: "pending_accountant" as const };
         }
         // If accountant or admin approves a pending_accountant request, mark as approved
         else if ((user?.role === "accountant" || user?.role === "admin") && req.status === "pending_accountant") {
-          return { ...req, status: "approved" };
+          return { ...req, status: "approved" as const };
         }
         return req;
       }
@@ -213,7 +213,7 @@ const PaymentsPage = () => {
   // Handle payment request rejection
   const handleRejectRequest = (requestId: string) => {
     const updatedRequests = paymentRequests.map(req => 
-      req.id === requestId ? { ...req, status: "rejected" } : req
+      req.id === requestId ? { ...req, status: "rejected" as const } : req
     );
     
     setPaymentRequests(updatedRequests);
@@ -319,7 +319,7 @@ const PaymentsPage = () => {
                     <td className="p-4 align-middle">
                       <Badge 
                         variant={
-                          payment.status === "approved" ? "success" :
+                          payment.status === "approved" ? "default" :
                           payment.status === "rejected" ? "destructive" : "outline"
                         }
                       >
@@ -371,7 +371,7 @@ const PaymentsPage = () => {
                     <td className="p-4 align-middle">
                       <Badge 
                         variant={
-                          request.status === "approved" ? "success" :
+                          request.status === "approved" ? "default" :
                           request.status === "rejected" ? "destructive" : 
                           "outline"
                         }
@@ -492,7 +492,7 @@ const PaymentsPage = () => {
                   frequency: "monthly",
                   startDate: new Date().toISOString().split('T')[0],
                   description: "Description of the new payment request",
-                  requestedBy: user?.name || "Current User",
+                  requestedBy: user?.email || "Current User",
                   requestDate: new Date().toISOString().split('T')[0],
                   beneficiary: "New Beneficiary",
                   status: "pending_officer"
