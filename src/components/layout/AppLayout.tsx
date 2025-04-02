@@ -187,7 +187,7 @@ export function AppLayout() {
           <footer className="border-t py-4 px-6">
             <div className="flex justify-between items-center">
               <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} SIB. Tous droits réservés.</div>
-              <div className="text-xs text-muted-foreground">Version 1.0.0</div>
+              <div className="text-xs text-muted-foreground">Développé par NOUI</div>
             </div>
           </footer>
         </div>
