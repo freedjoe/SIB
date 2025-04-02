@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -19,6 +20,7 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ForecastedExpenses from "./pages/ForecastedExpenses";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
@@ -86,6 +88,7 @@ const AppRoutes = () => {
         <Route path="/operations" element={<Operations />} />
         <Route path="/engagements" element={<Engagements />} />
         <Route path="/payments" element={<Payments />} />
+        <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/settings/*" element={<Settings />} />

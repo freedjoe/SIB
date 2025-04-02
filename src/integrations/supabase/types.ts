@@ -142,6 +142,66 @@ export type Database = {
           },
         ]
       }
+      forecasted_expenses: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          end_date: string
+          forecasted_amount: number
+          id: string
+          ministry_id: string | null
+          mobilized_amount: number
+          period: string
+          program_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          end_date: string
+          forecasted_amount?: number
+          id?: string
+          ministry_id?: string | null
+          mobilized_amount?: number
+          period: string
+          program_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          forecasted_amount?: number
+          id?: string
+          ministry_id?: string | null
+          mobilized_amount?: number
+          period?: string
+          program_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecasted_expenses_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forecasted_expenses_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ministries: {
         Row: {
           code: string

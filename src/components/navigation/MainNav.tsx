@@ -16,6 +16,7 @@ import {
   Briefcase,
   FileText,
   Shield,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -96,6 +97,12 @@ export function MainNav() {
       href: "/payments",
       icon: PieChart,
       description: "Crédits de paiement",
+    },
+    {
+      label: t("app.navigation.forecastedExpenses"),
+      href: "/forecasted-expenses",
+      icon: TrendingUp,
+      description: "Prévisions des dépenses - CP à mobiliser",
     },
     {
       label: t("app.navigation.reports"),
