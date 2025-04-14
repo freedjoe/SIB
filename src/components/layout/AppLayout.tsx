@@ -187,7 +187,12 @@ export function AppLayout() {
           <footer className="border-t py-4 px-6">
             <div className="flex justify-between items-center">
               <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} SIB. Tous droits réservés.</div>
-              <div className="text-xs text-muted-foreground">Développé par NOUI</div>
+              <div className="text-xs text-muted-foreground">
+                Développé par{" "}
+                <a href="mailto:noui.djamel@cned.dz" className="hover:underline">
+                  NOUI
+                </a>
+              </div>
             </div>
           </footer>
         </div>

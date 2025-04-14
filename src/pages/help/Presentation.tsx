@@ -160,22 +160,82 @@ export default function HelpPresentation() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="parametres">
-                  <AccordionTrigger>7. Paramètres</AccordionTrigger>
+                <AccordionItem value="cycle-budgetaire">
+                  <AccordionTrigger>7. Cycle Budgétaire et Modules</AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2">
-                      <p>
-                        <strong>Rôle :</strong> Adapter l'application aux besoins des utilisateurs.
-                      </p>
-                      <p>
-                        <strong>Fonctions :</strong>
-                      </p>
-                      <ul className="list-disc pl-6">
-                        <li>Configuration personnalisée des outils et des fonctionnalités</li>
-                      </ul>
-                      <p>
-                        <strong>Processus métier :</strong> Permet une gestion flexible et alignée avec les évolutions des priorités.
-                      </p>
+                    <div className="space-y-4">
+                      <section>
+                        <h3 className="text-lg font-semibold mb-2">Phase de Préparation (n-1)</h3>
+                        <p className="text-muted-foreground mb-2">Période : mars à septembre</p>
+                        <div className="space-y-2">
+                          <p>
+                            <strong>Modules concernés :</strong> Portefeuille, Prévisions, Rapports
+                          </p>
+                          <ul className="list-disc pl-6">
+                            <li>Élaboration des propositions budgétaires sectorielles</li>
+                            <li>Regroupement des projets par ministère et secteur</li>
+                            <li>Alignement sur les priorités nationales</li>
+                            <li>Prévision des crédits de paiement nécessaires</li>
+                            <li>Production d'analyses statistiques pour les négociations</li>
+                          </ul>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-lg font-semibold mb-2">Phase d'Adoption (n-1)</h3>
+                        <p className="text-muted-foreground mb-2">Période : septembre à décembre</p>
+                        <div className="space-y-2">
+                          <p>
+                            <strong>Modules concernés :</strong> Rapports
+                          </p>
+                          <ul className="list-disc pl-6">
+                            <li>Collecte et consolidation des données budgétaires</li>
+                            <li>Génération de rapports détaillés pour les débats parlementaires</li>
+                            <li>Préparation de la Loi de Finances</li>
+                          </ul>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-lg font-semibold mb-2">Phase d'Exécution (année n)</h3>
+                        <p className="text-muted-foreground mb-2">Période : janvier à décembre</p>
+                        <div className="space-y-2">
+                          <p>
+                            <strong>Modules concernés :</strong> Programme, Action, Opération, Engagement, Paiement
+                          </p>
+                          <ul className="list-disc pl-6">
+                            <li>Déploiement des budgets votés en programmes opérationnels</li>
+                            <li>Détail des actions prévues dans chaque programme</li>
+                            <li>Supervision de l'exécution technique des opérations</li>
+                            <li>Enregistrement des engagements budgétaires</li>
+                            <li>Automatisation des paiements après validation</li>
+                          </ul>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-lg font-semibold mb-2">Phase de Contrôle et Clôture (n+1)</h3>
+                        <p className="text-muted-foreground mb-2">Période : janvier à avril</p>
+                        <div className="space-y-2">
+                          <p>
+                            <strong>Modules concernés :</strong> Rapports et Audits
+                          </p>
+                          <ul className="list-disc pl-6">
+                            <li>Génération de bilans financiers et rapports d'exécution</li>
+                            <li>Identification des écarts entre prévisions et dépenses</li>
+                            <li>Préparation de la Loi de Règlement</li>
+                          </ul>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-lg font-semibold mb-2">Valeur Ajoutée du S.I.B</h3>
+                        <ul className="list-disc pl-6">
+                          <li>Centralisation des données : Tous les processus budgétaires gérés dans un seul système</li>
+                          <li>Transparence financière : Traçabilité complète de chaque dinar</li>
+                          <li>Efficacité et agilité : Adaptation rapide aux imprévus grâce aux prévisions en temps réel</li>
+                        </ul>
+                      </section>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
