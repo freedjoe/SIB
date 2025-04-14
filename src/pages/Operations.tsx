@@ -401,11 +401,11 @@ export default function OperationsPage() {
 
       <DashboardSection>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6">
+          {/*<TabsList className="mb-6">
             <TabsTrigger value="list">Liste des opérations</TabsTrigger>
             <TabsTrigger value="engagements">Engagements</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
-          </TabsList>
+          </TabsList>*/}
 
           <TabsContent value="list" className="animate-fade-in">
             <Card className="budget-card mb-6">
