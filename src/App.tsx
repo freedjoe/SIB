@@ -17,6 +17,10 @@ import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import HelpPresentation from "./pages/help/Presentation";
+import HelpGuide from "./pages/help/Guide";
+import HelpFAQ from "./pages/help/FAQ";
+import HelpSupport from "./pages/help/Support";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ForecastedExpenses from "./pages/ForecastedExpenses";
@@ -88,6 +92,10 @@ const AppRoutes = () => {
         <Route path="/audit" element={<Audit />} />
         <Route path="/settings/*" element={<Settings />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/help/presentation" element={<HelpPresentation />} />
+        <Route path="/help/guide" element={<HelpGuide />} />
+        <Route path="/help/faq" element={<HelpFAQ />} />
+        <Route path="/help/support" element={<HelpSupport />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
