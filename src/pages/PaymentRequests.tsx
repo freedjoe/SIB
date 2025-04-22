@@ -60,7 +60,7 @@ const PaymentRequests = () => {
       frequency: request.frequency as "monthly" | "quarterly" | "annual",
       startDate: request.start_date || "",
       requestDate: request.created_at || new Date().toISOString(),
-      approvedDate: request.approved_at || null,
+      approvedDate: request.approved_date || null,
       status: request.status as "pending_officer" | "pending_accountant" | "approved" | "rejected",
       requestedBy: request.requested_by,
       beneficiary: request.engagement?.beneficiary || "Unknown",
@@ -189,8 +189,8 @@ const PaymentRequests = () => {
     ref: eng.operation?.name || "N/A",
     operation: eng.operation?.name || "N/A",
     beneficiary: eng.beneficiary,
-    budget: eng.approved_amount || 0,
-    allocated: eng.approved_amount ? eng.approved_amount / 2 : 0 // Simulation du montant déjà alloué
+    budget: eng.montant_approuve || 0, 
+    allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0 // Simulation du montant déjà alloué
   })) : [];
 
   if (isLoading) {

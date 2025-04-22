@@ -46,7 +46,6 @@ export function ReevaluationDialog({ isOpen, onClose, engagement, onSuccess }: R
         statut_reevaluation: 'en_attente',
         created_by: "Utilisateur actuel", // À remplacer par l'utilisateur connecté
         date_reevaluation: new Date().toISOString(),
-        // Ajout des champs manquants
         date_validation: null,
         document_justificatif: null,
         valide_par: null

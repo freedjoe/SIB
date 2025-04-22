@@ -52,6 +52,7 @@ type FormattedPaymentRequest = {
   beneficiary: string;
   description: string;
 };
+
 const mockPayments: FormattedPayment[] = [
   {
     id: "p1",
@@ -158,6 +159,7 @@ const mockPayments: FormattedPayment[] = [
     description: "Deuxième paiement pour travaux de revêtement",
   },
 ];
+
 const Payments = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("payments");
@@ -222,7 +224,7 @@ const Payments = () => {
       frequency: request.frequency as "monthly" | "quarterly" | "annual",
       startDate: request.start_date || "",
       requestDate: request.created_at || new Date().toISOString(),
-      approvedDate: request.approved_at || null,
+      approvedDate: request.approved_date || null,
       status: request.status as "pending_officer" | "pending_accountant" | "approved" | "rejected",
       requestedBy: request.requested_by,
       beneficiary: request.engagement?.beneficiary || "Unknown",
@@ -240,6 +242,7 @@ const Payments = () => {
       maximumFractionDigits: 2,
     }).format(amount);
   };
+
   const totalPayments = mockPayments.length;
   const totalPaidAmount = mockPayments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
   const totalPendingAmount = mockPayments.filter((p) => p.status === "pending" || p.status === "approved").reduce((sum, p) => sum + p.amount, 0);
@@ -250,13 +253,13 @@ const Payments = () => {
     { name: "En attente", value: totalPendingAmount, color: "#f59e0b" },
     { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" },
   ];
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
     return format(new Date(dateString), "dd/MM/yyyy");
   };
 
   const filteredPayments = payments.filter((payment) => {
-    console.log("AAAA", payments);
     const matchesSearch =
       payment.operationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       payment.beneficiary.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -321,7 +324,6 @@ const Payments = () => {
   };
 
   const handleDeleteRequest = (request: FormattedPaymentRequest) => {
-    // Implement deletion logic here
     toast({
       title: "Demande supprimée",
       description: "La demande de paiement a été supprimée avec succès",
@@ -331,7 +333,6 @@ const Payments = () => {
   };
 
   const handleApproveRequest = (request: FormattedPaymentRequest) => {
-    // Implement approval logic here
     toast({
       title: "Demande approuvée",
       description: `La demande de paiement ${request.operationName} a été approuvée`,
@@ -341,7 +342,6 @@ const Payments = () => {
   };
 
   const handleRejectRequest = (request: FormattedPaymentRequest) => {
-    // Implement rejection logic here
     toast({
       title: "Demande rejetée",
       description: `La demande de paiement ${request.operationName} a été rejetée`,
@@ -353,19 +353,16 @@ const Payments = () => {
   const handleSavePayment = async (paymentData: Partial<FormattedPayment>) => {
     try {
       if (paymentDialogType === "add") {
-        // Logic for adding payment would go here
         toast({
           title: "Paiement ajouté",
           description: "Le paiement a été ajouté avec succès",
         });
       } else if (paymentDialogType === "edit") {
-        // Logic for editing payment would go here
         toast({
           title: "Paiement modifié",
           description: "Le paiement a été modifié avec succès",
         });
       } else if (paymentDialogType === "delete" && selectedPayment) {
-        // Logic for deleting payment would go here
         toast({
           title: "Paiement supprimé",
           description: "Le paiement a été supprimé avec succès",
@@ -387,13 +384,11 @@ const Payments = () => {
   const handleSaveRequest = async (requestData: Partial<FormattedPaymentRequest>) => {
     try {
       if (requestDialogType === "add") {
-        // Logic for adding request would go here
         toast({
           title: "Demande ajoutée",
           description: "La demande de paiement a été ajoutée avec succès",
         });
       } else if (requestDialogType === "edit") {
-        // Logic for editing request would go here
         toast({
           title: "Demande modifiée",
           description: "La demande de paiement a été modifiée avec succès",
@@ -461,8 +456,8 @@ const Payments = () => {
         ref: eng.operation?.name || "N/A",
         operation: eng.operation?.name || "N/A",
         beneficiary: eng.beneficiary,
-        budget: eng.approved_amount || 0,
-        allocated: eng.approved_amount ? eng.approved_amount / 2 : 0, // Simulation du montant déjà alloué
+        budget: eng.montant_approuve || 0,
+        allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0, // Simulation du montant déjà alloué
       }))
     : [];
 

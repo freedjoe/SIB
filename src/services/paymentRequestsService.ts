@@ -130,11 +130,11 @@ export async function createPaymentRequest(paymentRequest: Omit<PaymentRequest, 
   return data;
 }
 
-export async function updatePaymentRequestStatus(id: string, status: string, approved_at?: string): Promise<void> {
-  const updateData: { status: string; approved_at?: string } = { status };
+export async function updatePaymentRequestStatus(id: string, status: string, approved_date?: string): Promise<void> {
+  const updateData: { status: string; approved_date?: string } = { status };
   
-  if (status === 'approved' && approved_at) {
-    updateData.approved_at = approved_at;
+  if (status === 'approved' && approved_date) {
+    updateData.approved_date = approved_date;
   }
   
   const { error } = await supabase
