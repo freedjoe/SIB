@@ -35,10 +35,21 @@ export async function getAllEngagementReevaluations(): Promise<EngagementReevalu
   return data || [];
 }
 
-export async function createEngagementReevaluation(reevaluation: Omit<EngagementReevaluation, "id" | "created_at">): Promise<EngagementReevaluation> {
+export async function createEngagementReevaluation(
+  reevaluation: Omit<EngagementReevaluation, "id" | "created_at">
+): Promise<EngagementReevaluation> {
+  // Assurons-nous que tous les champs requis sont définis
+  const completeReevaluation = {
+    ...reevaluation,
+    // Définir des valeurs par défaut pour les champs manquants
+    date_validation: reevaluation.date_validation || null,
+    document_justificatif: reevaluation.document_justificatif || null,
+    valide_par: reevaluation.valide_par || null
+  };
+
   const { data, error } = await supabase
     .from("engagement_reevaluations")
-    .insert(reevaluation)
+    .insert(completeReevaluation)
     .select()
     .single();
 

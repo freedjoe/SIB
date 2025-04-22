@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
 
 // Mock data for engagements
 interface Engagement {
@@ -866,72 +867,4 @@ export default function Engagements() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">Priorité:</div>
-                <div>{getPriorityBadge(currentEngagement.priorite)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Demandé par:</div>
-                <div>{currentEngagement.demande_par}</div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Approve Engagement Dialog */}
-      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Approuver l'engagement</DialogTitle>
-            <DialogDescription>Confirmez le montant approuvé pour cet engagement.</DialogDescription>
-          </DialogHeader>
-          {currentEngagement && (
-            <div className="py-4 space-y-4">
-              <div className="grid grid-cols-1 gap-2">
-                <p>
-                  <strong>Opération:</strong> {currentEngagement.operation}
-                </p>
-                <p>
-                  <strong>Bénéficiaire:</strong> {currentEngagement.beneficiaire}
-                </p>
-                <p>
-                  <strong>Montant demandé:</strong> {formatCurrency(currentEngagement.montant_demande)}
-                </p>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="approval-amount" className="text-right">
-                  Montant approuvé
-                </Label>
-                <Input
-                  id="approval-amount"
-                  type="number"
-                  className="col-span-3"
-                  value={approvalAmount}
-                  onChange={(e) => setApprovalAmount(e.target.value === "" ? "" : parseFloat(e.target.value))}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleApproveEngagement}>Approuver</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reevaluation Dialog */}
-      {selectedEngagementForReevaluation && (
-        <ReevaluationDialog
-          isOpen={isReevaluationDialogOpen}
-          onClose={() => setIsReevaluationDialogOpen(false)}
-          engagement={selectedEngagementForReevaluation}
-          onSuccess={handleReevaluationSuccess}
-        />
-      )}
-    </Dashboard>
-  );
-}
+                <div>{getPriorityBadge(currentEngagement.
