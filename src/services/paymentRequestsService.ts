@@ -8,6 +8,10 @@ export interface PaymentRequestWithRelations extends PaymentRequest {
   engagement?: {
     beneficiary: string;
     requested_by: string;
+    montant_approuve?: number;
+    montant_demande?: number;
+    montant_initial?: number;
+    statut?: string;
     operation_id: string;
     operation?: {
       name: string;
@@ -31,6 +35,10 @@ export async function getAllPaymentRequests(): Promise<PaymentRequestWithRelatio
       engagement:engagement_id (
         beneficiary,
         requested_by,
+        montant_approuve,
+        montant_demande,
+        montant_initial,
+        statut,
         operation_id,
         operation:operation_id (
           name,
@@ -61,6 +69,10 @@ export async function getPaymentRequestById(id: string): Promise<PaymentRequestW
       engagement:engagement_id (
         beneficiary,
         requested_by,
+        montant_approuve,
+        montant_demande,
+        montant_initial,
+        statut,
         operation_id,
         operation:operation_id (
           name,

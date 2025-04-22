@@ -4,7 +4,14 @@ import { Tables } from "@/integrations/supabase/types";
 
 export type Report = Tables<"reports">;
 
-export async function getAllReports(): Promise<Report[]> {
+export interface ReportWithRelations extends Report {
+  description?: string;
+  frequency?: string;
+  file_path?: string;
+  report_type?: string;
+}
+
+export async function getAllReports(): Promise<ReportWithRelations[]> {
   const { data, error } = await supabase
     .from('reports')
     .select('*')
@@ -14,15 +21,22 @@ export async function getAllReports(): Promise<Report[]> {
     console.error("Error fetching reports:", error);
     throw error;
   }
-  
-  return data || [];
+
+  // Add missing properties with default values for UI compatibility
+  return (data || []).map(report => ({
+    ...report,
+    description: report.content?.substring(0, 100) || '',
+    frequency: 'monthly', // Default value
+    file_path: '', // Default value
+    report_type: report.type || ''
+  }));
 }
 
-export async function getReportsByType(reportType: string): Promise<Report[]> {
+export async function getReportsByType(reportType: string): Promise<ReportWithRelations[]> {
   const { data, error } = await supabase
     .from('reports')
     .select('*')
-    .eq('report_type', reportType)
+    .eq('type', reportType)
     .order('generated_date', { ascending: false });
   
   if (error) {
@@ -30,10 +44,17 @@ export async function getReportsByType(reportType: string): Promise<Report[]> {
     throw error;
   }
   
-  return data || [];
+  // Add missing properties with default values for UI compatibility
+  return (data || []).map(report => ({
+    ...report,
+    description: report.content?.substring(0, 100) || '',
+    frequency: 'monthly', // Default value
+    file_path: '', // Default value
+    report_type: report.type || ''
+  }));
 }
 
-export async function getReportById(id: string): Promise<Report | null> {
+export async function getReportById(id: string): Promise<ReportWithRelations | null> {
   const { data, error } = await supabase
     .from('reports')
     .select('*')
@@ -45,5 +66,14 @@ export async function getReportById(id: string): Promise<Report | null> {
     throw error;
   }
   
-  return data;
+  if (!data) return null;
+
+  // Add missing properties with default values for UI compatibility
+  return {
+    ...data,
+    description: data.content?.substring(0, 100) || '',
+    frequency: 'monthly', // Default value
+    file_path: '', // Default value
+    report_type: data.type || ''
+  };
 }
