@@ -31,7 +31,21 @@ export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithR
     throw error;
   }
 
-  return data || [];
+  return (
+    data?.map(item => ({
+      ...item,
+      program: {
+        ...item.program,
+        name: item.program?.name || "",
+        fiscal_year: item.program?.fiscal_year || 0
+      },
+      ministry: {
+        ...item.ministry,
+        name: item.ministry?.name || "",
+        code: item.ministry?.code || ""
+      }
+    })) || []
+  );
 }
 
 export async function getForecastedExpensesByProgramId(programId: string): Promise<ForecastedExpenseWithRelations[]> {
@@ -52,7 +66,21 @@ export async function getForecastedExpensesByProgramId(programId: string): Promi
     throw error;
   }
 
-  return data || [];
+  return (
+    data?.map(item => ({
+      ...item,
+      program: {
+        ...item.program,
+        name: item.program?.name || "",
+        fiscal_year: item.program?.fiscal_year || 0
+      },
+      ministry: {
+        ...item.ministry,
+        name: item.ministry?.name || "",
+        code: item.ministry?.code || ""
+      }
+    })) || []
+  );
 }
 
 export async function getForecastedExpenseById(id: string): Promise<ForecastedExpenseWithRelations | null> {
@@ -73,7 +101,19 @@ export async function getForecastedExpenseById(id: string): Promise<ForecastedEx
     throw error;
   }
 
-  console.log("Date value before formatting:", data.created_at);
+  if (!data) return null;
 
-  return data;
+  return {
+    ...data,
+    program: {
+      ...data.program,
+      name: data.program?.name || "",
+      fiscal_year: data.program?.fiscal_year || 0
+    },
+    ministry: {
+      ...data.ministry,
+      name: data.ministry?.name || "",
+      code: data.ministry?.code || ""
+    }
+  };
 }

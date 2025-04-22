@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -49,13 +48,12 @@ export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
     throw error;
   }
 
-  // Add default values for properties that might be used in the UI
   const enhancedData = data?.map(engagement => ({
     ...engagement,
-    montant_initial: engagement.montant_initial || 0,
-    montant_approuve: engagement.montant_approuve || null,
-    montant_demande: engagement.montant_demande || 0,
-    statut: engagement.statut || "En attente",
+    montant_initial: engagement.montant_initial ?? 0,
+    montant_approuve: engagement.montant_approuve ?? null,
+    montant_demande: engagement.montant_demande ?? 0,
+    statut: engagement.statut ?? "En attente",
     request_date: engagement.created_at
   })) || [];
 
@@ -88,13 +86,12 @@ export async function getEngagementsByOperationId(operationId: string): Promise<
     throw error;
   }
 
-  // Add default values for properties that might be used in the UI
   const enhancedData = data?.map(engagement => ({
     ...engagement,
-    montant_initial: engagement.montant_initial || 0,
-    montant_approuve: engagement.montant_approuve || null,
-    montant_demande: engagement.montant_demande || 0,
-    statut: engagement.statut || "En attente",
+    montant_initial: engagement.montant_initial ?? 0,
+    montant_approuve: engagement.montant_approuve ?? null,
+    montant_demande: engagement.montant_demande ?? 0,
+    statut: engagement.statut ?? "En attente",
     request_date: engagement.created_at
   })) || [];
 
@@ -128,13 +125,12 @@ export async function getEngagementById(id: string): Promise<EngagementWithRelat
   }
 
   if (data) {
-    // Add default values for properties that might be used in the UI
     return {
       ...data,
-      montant_initial: data.montant_initial || 0,
-      montant_approuve: data.montant_approuve || null,
-      montant_demande: data.montant_demande || 0,
-      statut: data.statut || "En attente",
+      montant_initial: data.montant_initial ?? 0,
+      montant_approuve: data.montant_approuve ?? null,
+      montant_demande: data.montant_demande ?? 0,
+      statut: data.statut ?? "En attente",
       request_date: data.created_at
     };
   }
