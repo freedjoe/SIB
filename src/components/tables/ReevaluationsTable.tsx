@@ -63,7 +63,7 @@ export function ReevaluationsTable({
             <TableRow key={reevaluation.id}>
               <TableCell>{formatDate(reevaluation.date_reevaluation)}</TableCell>
               <TableCell>
-                {reevaluation.engagement?.reference} - {reevaluation.engagement?.operation?.name}
+                {reevaluation.engagement?.reference || '-'} - {reevaluation.engagement?.operation?.name || '-'}
               </TableCell>
               <TableCell>{formatCurrency(reevaluation.montant_initial)}</TableCell>
               <TableCell>{formatCurrency(reevaluation.montant_reevalue)}</TableCell>

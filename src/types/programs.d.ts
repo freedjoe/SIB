@@ -5,7 +5,7 @@ export interface Program {
   description?: string;
   portfolio_id: string;
   created_at: string;
-  // Additional properties needed by ForecastedExpenses.tsx
+  // Required properties for ForecastedExpenses.tsx
   budget: number;
   allocated: number;
   fiscal_year?: number;

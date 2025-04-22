@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { Program } from "@/types/programs";
 
 export type ForecastedExpense = Tables<"cp_forecasts">;
 
