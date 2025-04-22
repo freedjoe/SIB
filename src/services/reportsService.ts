@@ -1,13 +1,14 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 export type Report = Tables<"reports">;
 
 export interface ReportWithRelations extends Report {
-  description?: string;
-  frequency?: string;
-  file_path?: string;
-  report_type?: string;
+  description: string;
+  frequency: string;
+  file_path: string;
+  report_type: string;
 }
 
 export async function getAllReports(): Promise<ReportWithRelations[]> {

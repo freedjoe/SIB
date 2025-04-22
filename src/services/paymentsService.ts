@@ -8,13 +8,14 @@ export interface PaymentWithRelations extends Payment {
   engagement?: {
     beneficiary: string;
     requested_by: string;
-    montant_approuve?: number;
-    montant_demande?: number;
-    montant_initial?: number;
-    statut?: string;
+    montant_approuve: number | null;
+    montant_demande: number;
+    montant_initial: number;
+    statut: string;
     operation_id: string;
     operation?: {
       name: string;
+      status?: string;
     }
   };
 }
@@ -32,7 +33,7 @@ export async function getAllPayments(): Promise<PaymentWithRelations[]> {
         montant_initial,
         statut,
         operation_id,
-        operation:operation_id (name)
+        operation:operation_id (name, status)
       )
     `)
     .order('payment_date', { ascending: false });
@@ -52,7 +53,12 @@ export async function getAllPayments(): Promise<PaymentWithRelations[]> {
           montant_approuve: payment.engagement.montant_approuve || null,
           montant_demande: payment.engagement.montant_demande || 0,
           montant_initial: payment.engagement.montant_initial || 0,
-          statut: payment.engagement.statut || 'En attente'
+          statut: payment.engagement.statut || 'En attente',
+          operation: {
+            ...(payment.engagement.operation || {}),
+            name: payment.engagement.operation?.name || 'Unknown',
+            status: payment.engagement.operation?.status || 'Unknown'
+          }
         }
       };
     }
@@ -73,7 +79,7 @@ export async function getPaymentsByEngagementId(engagementId: string): Promise<P
         montant_initial,
         statut,
         operation_id,
-        operation:operation_id (name)
+        operation:operation_id (name, status)
       )
     `)
     .eq('engagement_id', engagementId)
@@ -94,7 +100,12 @@ export async function getPaymentsByEngagementId(engagementId: string): Promise<P
           montant_approuve: payment.engagement.montant_approuve || null,
           montant_demande: payment.engagement.montant_demande || 0,
           montant_initial: payment.engagement.montant_initial || 0,
-          statut: payment.engagement.statut || 'En attente'
+          statut: payment.engagement.statut || 'En attente',
+          operation: {
+            ...(payment.engagement.operation || {}),
+            name: payment.engagement.operation?.name || 'Unknown',
+            status: payment.engagement.operation?.status || 'Unknown'
+          }
         }
       };
     }
@@ -115,7 +126,7 @@ export async function getPaymentById(id: string): Promise<PaymentWithRelations |
         montant_initial,
         statut,
         operation_id,
-        operation:operation_id (name)
+        operation:operation_id (name, status)
       )
     `)
     .eq('id', id)
@@ -134,7 +145,12 @@ export async function getPaymentById(id: string): Promise<PaymentWithRelations |
         montant_approuve: data.engagement.montant_approuve || null,
         montant_demande: data.engagement.montant_demande || 0,
         montant_initial: data.engagement.montant_initial || 0,
-        statut: data.engagement.statut || 'En attente'
+        statut: data.engagement.statut || 'En attente',
+        operation: {
+          ...(data.engagement.operation || {}),
+          name: data.engagement.operation?.name || 'Unknown',
+          status: data.engagement.operation?.status || 'Unknown'
+        }
       }
     };
   }

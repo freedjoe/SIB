@@ -1,14 +1,15 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 export type Engagement = Tables<"engagements">;
 
 export interface EngagementWithRelations extends Engagement {
-  montant_initial?: number;
-  montant_approuve?: number;
-  montant_demande?: number;
-  statut?: string;
-  request_date?: string;
+  montant_initial: number;
+  montant_approuve: number | null;
+  montant_demande: number;
+  statut: string;
+  request_date: string;
   operation?: {
     name: string;
     status: string;

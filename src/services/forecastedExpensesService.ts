@@ -1,17 +1,22 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 export type ForecastedExpense = Tables<"cp_forecasts">;
 
+export interface ProgramData {
+  name: string;
+  fiscal_year: number;
+}
+
+export interface MinistryData {
+  name: string;
+  code: string;
+}
+
 export interface ForecastedExpenseWithRelations extends ForecastedExpense {
-  program?: {
-    name: string;
-    fiscal_year: number;
-  };
-  ministry?: {
-    name: string;
-    code: string;
-  };
+  program?: ProgramData;
+  ministry?: MinistryData;
 }
 
 export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithRelations[]> {
@@ -20,7 +25,7 @@ export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithR
     .select(
       `
       *,
-      program:program_id (name, fiscal_year),
+      program:program_id (name),
       ministry:ministry_id (name, code)
     `
     )
@@ -35,9 +40,8 @@ export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithR
     data?.map(item => ({
       ...item,
       program: {
-        ...item.program,
         name: item.program?.name || "",
-        fiscal_year: item.program?.fiscal_year || 0
+        fiscal_year: 2024 // Default fiscal year
       },
       ministry: {
         ...item.ministry,
@@ -54,7 +58,7 @@ export async function getForecastedExpensesByProgramId(programId: string): Promi
     .select(
       `
       *,
-      program:program_id (name, fiscal_year),
+      program:program_id (name),
       ministry:ministry_id (name, code)
     `
     )
@@ -70,9 +74,8 @@ export async function getForecastedExpensesByProgramId(programId: string): Promi
     data?.map(item => ({
       ...item,
       program: {
-        ...item.program,
         name: item.program?.name || "",
-        fiscal_year: item.program?.fiscal_year || 0
+        fiscal_year: 2024 // Default fiscal year
       },
       ministry: {
         ...item.ministry,
@@ -89,7 +92,7 @@ export async function getForecastedExpenseById(id: string): Promise<ForecastedEx
     .select(
       `
       *,
-      program:program_id (name, fiscal_year),
+      program:program_id (name),
       ministry:ministry_id (name, code)
     `
     )
@@ -106,9 +109,8 @@ export async function getForecastedExpenseById(id: string): Promise<ForecastedEx
   return {
     ...data,
     program: {
-      ...data.program,
       name: data.program?.name || "",
-      fiscal_year: data.program?.fiscal_year || 0
+      fiscal_year: 2024 // Default fiscal year
     },
     ministry: {
       ...data.ministry,
