@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
 
-// Mock data for engagements
 interface Engagement {
   id: string;
   operation: string;
@@ -96,7 +95,6 @@ const mockEngagements: Engagement[] = [
   },
 ];
 
-// Beneficiaries for select dropdown
 const beneficiaires = [
   "Entreprise de construction ABC",
   "Université des Sciences",
@@ -106,7 +104,6 @@ const beneficiaires = [
   "Fournisseur Médical MediPlus",
 ];
 
-// Operations for select dropdown
 const operations = [
   "Rénovation des routes nationales",
   "Équipement des laboratoires universitaires",
@@ -116,7 +113,6 @@ const operations = [
   "Équipement médical",
 ];
 
-// Departments for select dropdown
 const departments = [
   "Département des travaux publics",
   "Ministère de l'Enseignement Supérieur",
@@ -150,7 +146,6 @@ export default function Engagements() {
   });
   const [approvalAmount, setApprovalAmount] = useState<number | "">(0);
 
-  // Filter engagements based on search term
   const filteredEngagements = engagements.filter(
     (engagement) =>
       engagement.operation.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,10 +153,8 @@ export default function Engagements() {
       engagement.statut.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get pending approvals
   const pendingApprovals = engagements.filter((engagement) => engagement.statut === "En attente");
 
-  // Open add dialog
   const handleOpenAddDialog = () => {
     setNewEngagement({
       operation: "",
@@ -175,7 +168,6 @@ export default function Engagements() {
     setIsAddDialogOpen(true);
   };
 
-  // Open edit dialog
   const handleOpenEditDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
     setNewEngagement({
@@ -190,32 +182,27 @@ export default function Engagements() {
     setIsEditDialogOpen(true);
   };
 
-  // Open delete dialog
   const handleOpenDeleteDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
     setIsDeleteDialogOpen(true);
   };
 
-  // Open view dialog
   const handleOpenViewDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
     setIsViewDialogOpen(true);
   };
 
-  // Open approve dialog
   const handleOpenApproveDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
     setApprovalAmount(engagement.montant_demande);
     setIsApproveDialogOpen(true);
   };
 
-  // Open reevaluation dialog
   const handleOpenReevaluationDialog = (engagement: Engagement) => {
     setSelectedEngagementForReevaluation(engagement);
     setIsReevaluationDialogOpen(true);
   };
 
-  // Add new engagement
   const handleAddEngagement = () => {
     if (!newEngagement.operation || !newEngagement.beneficiaire || !newEngagement.demande_par) {
       toast({
@@ -246,7 +233,6 @@ export default function Engagements() {
     });
   };
 
-  // Edit engagement
   const handleEditEngagement = () => {
     if (!currentEngagement) return;
 
@@ -281,7 +267,6 @@ export default function Engagements() {
     });
   };
 
-  // Delete engagement
   const handleDeleteEngagement = () => {
     if (!currentEngagement) return;
 
@@ -294,7 +279,6 @@ export default function Engagements() {
     });
   };
 
-  // Approve engagement
   const handleApproveEngagement = () => {
     if (!currentEngagement) return;
 
@@ -327,7 +311,6 @@ export default function Engagements() {
     });
   };
 
-  // Reject engagement
   const handleRejectEngagement = (engagement: Engagement) => {
     const updatedEngagements = engagements.map((e) =>
       e.id === engagement.id
@@ -346,7 +329,6 @@ export default function Engagements() {
     });
   };
 
-  // Format currency
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return "N/A";
     return new Intl.NumberFormat("fr-DZ", {
@@ -356,7 +338,6 @@ export default function Engagements() {
     }).format(amount);
   };
 
-  // Format date
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
@@ -366,7 +347,6 @@ export default function Engagements() {
     return new Date(dateString).toLocaleDateString("fr-FR", options);
   };
 
-  // Status badge styling
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Approuvé":
@@ -380,7 +360,6 @@ export default function Engagements() {
     }
   };
 
-  // Priority badge styling
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "Haute":
@@ -392,6 +371,13 @@ export default function Engagements() {
       default:
         return <Badge variant="secondary">{priority}</Badge>;
     }
+  };
+
+  const handleReevaluationSuccess = () => {
+    toast({
+      title: "Réévaluation ajoutée",
+      description: "La demande de réévaluation a été créée avec succès.",
+    });
   };
 
   return (
@@ -553,7 +539,6 @@ export default function Engagements() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Engagement Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -674,7 +659,6 @@ export default function Engagements() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Engagement Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -795,7 +779,6 @@ export default function Engagements() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Engagement Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -829,7 +812,6 @@ export default function Engagements() {
         </DialogContent>
       </Dialog>
 
-      {/* View Engagement Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -867,4 +849,75 @@ export default function Engagements() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">Priorité:</div>
-                <div>{getPriorityBadge(currentEngagement.
+                <div>{getPriorityBadge(currentEngagement.priorite)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-semibold">Demandé par:</div>
+                <div>{currentEngagement.demande_par}</div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Approuver l'engagement</DialogTitle>
+            <DialogDescription>Confirmez le montant approuvé pour cet engagement.</DialogDescription>
+          </DialogHeader>
+          {currentEngagement && (
+            <div className="py-4 space-y-4">
+              <div className="grid grid-cols-1 gap-2">
+                <p>
+                  <strong>Opération:</strong> {currentEngagement.operation}
+                </p>
+                <p>
+                  <strong>Bénéficiaire:</strong> {currentEngagement.beneficiaire}
+                </p>
+                <p>
+                  <strong>Montant demandé:</strong> {formatCurrency(currentEngagement.montant_demande)}
+                </p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="approval-amount" className="text-right">
+                  Montant approuvé
+                </Label>
+                <Input
+                  id="approval-amount"
+                  type="number"
+                  className="col-span-3"
+                  value={approvalAmount}
+                  onChange={(e) => setApprovalAmount(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleApproveEngagement}>Approuver</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {selectedEngagementForReevaluation && (
+        <ReevaluationDialog
+          isOpen={isReevaluationDialogOpen}
+          onClose={() => setIsReevaluationDialogOpen(false)}
+          engagement={{
+            id: selectedEngagementForReevaluation.id,
+            reference: selectedEngagementForReevaluation.id,
+            beneficiary: selectedEngagementForReevaluation.beneficiaire,
+            montant_initial: selectedEngagementForReevaluation.montant_demande
+          }}
+          onSuccess={handleReevaluationSuccess}
+        />
+      )}
+    </Dashboard>
+  );
+}
