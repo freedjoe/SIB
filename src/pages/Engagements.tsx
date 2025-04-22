@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
+import { useEffect } from "react";
+import { ReevaluationsTable } from "@/components/tables/ReevaluationsTable";
+import { getAllEngagementReevaluations } from "@/services/engagementReevaluationsService";
 
 interface Engagement {
   id: string;
@@ -145,6 +148,19 @@ export default function Engagements() {
     date: new Date().toISOString().split("T")[0],
   });
   const [approvalAmount, setApprovalAmount] = useState<number | "">(0);
+  const [reevaluations, setReevaluations] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchReevaluations() {
+      try {
+        const res = await getAllEngagementReevaluations();
+        setReevaluations(res);
+      } catch (error) {
+        // Optionally toast error
+      }
+    }
+    fetchReevaluations();
+  }, []);
 
   const filteredEngagements = engagements.filter(
     (engagement) =>
@@ -385,7 +401,7 @@ export default function Engagements() {
       <DashboardHeader title={t("app.navigation.engagements")} description="Gestion des engagements budgétaires" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="liste">Liste des Engagements</TabsTrigger>
           <TabsTrigger value="approbations">
             Approbations en Attente
@@ -395,6 +411,7 @@ export default function Engagements() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="historique">Historique des réévaluations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="liste" className="mt-6">
@@ -534,6 +551,21 @@ export default function Engagements() {
                   )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historique" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historique des réévaluations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReevaluationsTable
+                reevaluations={reevaluations}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+              />
             </CardContent>
           </Card>
         </TabsContent>
