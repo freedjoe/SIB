@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Plus, FileEdit, Trash2, Search, Eye, Check, X } from "lucide-react";
+import { Plus, FileEdit, Trash2, Search, Eye, Check, X, ArrowUpDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,8 @@ export default function Engagements() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isReevaluationDialogOpen, setIsReevaluationDialogOpen] = useState(false);
+  const [selectedEngagementForReevaluation, setSelectedEngagementForReevaluation] = useState<Engagement | null>(null);
   const [currentEngagement, setCurrentEngagement] = useState<Engagement | null>(null);
   const [newEngagement, setNewEngagement] = useState<Partial<Engagement>>({
     operation: "",
@@ -204,6 +206,12 @@ export default function Engagements() {
     setCurrentEngagement(engagement);
     setApprovalAmount(engagement.montant_demande);
     setIsApproveDialogOpen(true);
+  };
+
+  // Open reevaluation dialog
+  const handleOpenReevaluationDialog = (engagement: Engagement) => {
+    setSelectedEngagementForReevaluation(engagement);
+    setIsReevaluationDialogOpen(true);
   };
 
   // Add new engagement
@@ -460,6 +468,14 @@ export default function Engagements() {
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(engagement)}>
                               <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenReevaluationDialog(engagement)}
+                              title="Réévaluer"
+                            >
+                              <ArrowUpDown className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -906,6 +922,16 @@ export default function Engagements() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reevaluation Dialog */}
+      {selectedEngagementForReevaluation && (
+        <ReevaluationDialog
+          isOpen={isReevaluationDialogOpen}
+          onClose={() => setIsReevaluationDialogOpen(false)}
+          engagement={selectedEngagementForReevaluation}
+          onSuccess={handleReevaluationSuccess}
+        />
+      )}
     </Dashboard>
   );
 }

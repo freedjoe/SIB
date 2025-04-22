@@ -1,610 +1,1151 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   public: {
     Tables: {
       actions: {
         Row: {
-          action_type: string;
-          allocated_amount: number;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          program_id: string;
-          updated_at: string | null;
-        };
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          operation_id: string
+          program_id: string
+          start_date: string
+          status: string
+        }
         Insert: {
-          action_type: string;
-          allocated_amount?: number;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          program_id: string;
-          updated_at?: string | null;
-        };
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          operation_id: string
+          program_id: string
+          start_date: string
+          status: string
+        }
         Update: {
-          action_type?: string;
-          allocated_amount?: number;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          program_id?: string;
-          updated_at?: string | null;
-        };
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          operation_id?: string
+          program_id?: string
+          start_date?: string
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "actions_program_id_fkey";
-            columns: ["program_id"];
-            isOneToOne: false;
-            referencedRelation: "programs";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      audit_controls: {
+            foreignKeyName: "actions_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_logs: {
         Row: {
-          comments: string | null;
-          control_date: string | null;
-          control_type: string;
-          controller: string;
-          created_at: string | null;
-          entity_id: string;
-          entity_type: string;
-          id: string;
-          result: string;
-          updated_at: string | null;
-        };
+          action: string
+          created_at: string
+          description: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
         Insert: {
-          comments?: string | null;
-          control_date?: string | null;
-          control_type: string;
-          controller: string;
-          created_at?: string | null;
-          entity_id: string;
-          entity_type: string;
-          id?: string;
-          result: string;
-          updated_at?: string | null;
-        };
+          action: string
+          created_at?: string
+          description: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
         Update: {
-          comments?: string | null;
-          control_date?: string | null;
-          control_type?: string;
-          controller?: string;
-          created_at?: string | null;
-          entity_id?: string;
-          entity_type?: string;
-          id?: string;
-          result?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
-      engagements: {
-        Row: {
-          approval_date: string | null;
-          approved_amount: number | null;
-          beneficiary: string;
-          created_at: string | null;
-          id: string;
-          operation_id: string;
-          priority: string;
-          request_date: string | null;
-          requested_amount: number;
-          requested_by: string;
-          status: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          approval_date?: string | null;
-          approved_amount?: number | null;
-          beneficiary: string;
-          created_at?: string | null;
-          id?: string;
-          operation_id: string;
-          priority?: string;
-          request_date?: string | null;
-          requested_amount: number;
-          requested_by: string;
-          status?: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          approval_date?: string | null;
-          approved_amount?: number | null;
-          beneficiary?: string;
-          created_at?: string | null;
-          id?: string;
-          operation_id?: string;
-          priority?: string;
-          request_date?: string | null;
-          requested_amount?: number;
-          requested_by?: string;
-          status?: string;
-          updated_at?: string | null;
-        };
+          action?: string
+          created_at?: string
+          description?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "engagements_operation_id_fkey";
-            columns: ["operation_id"];
-            isOneToOne: false;
-            referencedRelation: "operations";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_followups: {
+        Row: {
+          action_taken: string
+          audit_id: string
+          created_at: string
+          due_date: string
+          id: string
+          status: string
+        }
+        Insert: {
+          action_taken: string
+          audit_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          status: string
+        }
+        Update: {
+          action_taken?: string
+          audit_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_followups_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audits: {
+        Row: {
+          audit_date: string
+          auditor: string
+          created_at: string
+          findings: string
+          id: string
+          operation_id: string
+          recommendations: string | null
+          status: string
+        }
+        Insert: {
+          audit_date: string
+          auditor: string
+          created_at?: string
+          findings: string
+          id?: string
+          operation_id: string
+          recommendations?: string | null
+          status: string
+        }
+        Update: {
+          audit_date?: string
+          auditor?: string
+          created_at?: string
+          findings?: string
+          id?: string
+          operation_id?: string
+          recommendations?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audits_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_lines: {
+        Row: {
+          amount: number
+          budget_id: string
+          created_at: string
+          description: string | null
+          id: string
+          program_id: string
+        }
+        Insert: {
+          amount: number
+          budget_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          program_id: string
+        }
+        Update: {
+          amount?: number
+          budget_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          program_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_lines_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          created_at: string
+          id: string
+          ministry_id: string
+          status: string
+          total_amount: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ministry_id: string
+          status: string
+          total_amount: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ministry_id?: string
+          status?: string
+          total_amount?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cp_forecasts: {
         Row: {
-          category: string;
-          created_at: string;
-          description: string | null;
-          end_date: string;
-          forecasted_amount: number;
-          id: string;
-          ministry_id: string | null;
-          mobilized_amount: number;
-          period: string;
-          program_id: string;
-          start_date: string;
-          updated_at: string;
-        };
+          category: string
+          company_id: string
+          created_at: string | null
+          description: string | null
+          end_date: string
+          forecasted_amount: number
+          id: string
+          ministry_id: string
+          mobilized_amount: number
+          period: string
+          program_id: string
+          requested_by: string
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
         Insert: {
-          category: string;
-          created_at?: string;
-          description?: string | null;
-          end_date: string;
-          forecasted_amount?: number;
-          id?: string;
-          ministry_id?: string | null;
-          mobilized_amount?: number;
-          period: string;
-          program_id: string;
-          start_date: string;
-          updated_at?: string;
-        };
+          category: string
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          end_date: string
+          forecasted_amount: number
+          id?: string
+          ministry_id: string
+          mobilized_amount: number
+          period: string
+          program_id: string
+          requested_by: string
+          start_date: string
+          status: string
+          updated_at?: string | null
+        }
         Update: {
-          category?: string;
-          created_at?: string;
-          description?: string | null;
-          end_date?: string;
-          forecasted_amount?: number;
-          id?: string;
-          ministry_id?: string | null;
-          mobilized_amount?: number;
-          period?: string;
-          program_id?: string;
-          start_date?: string;
-          updated_at?: string;
-        };
+          category?: string
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string
+          forecasted_amount?: number
+          id?: string
+          ministry_id?: string
+          mobilized_amount?: number
+          period?: string
+          program_id?: string
+          requested_by?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "cp_forecasts_ministry_id_fkey";
-            columns: ["ministry_id"];
-            isOneToOne: false;
-            referencedRelation: "ministries";
-            referencedColumns: ["id"];
+            foreignKeyName: "cp_forecasts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cp_forecasts_program_id_fkey";
-            columns: ["program_id"];
-            isOneToOne: false;
-            referencedRelation: "programs";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "cp_forecasts_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cp_forecasts_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cp_forecasts_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement_reevaluations: {
+        Row: {
+          created_at: string
+          created_by: string
+          date_reevaluation: string
+          date_validation: string | null
+          document_justificatif: string | null
+          engagement_id: string
+          id: string
+          montant_initial: number
+          montant_reevalue: number
+          motif_reevaluation: string
+          statut_reevaluation: string
+          valide_par: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          date_reevaluation?: string
+          date_validation?: string | null
+          document_justificatif?: string | null
+          engagement_id: string
+          id?: string
+          montant_initial: number
+          montant_reevalue: number
+          motif_reevaluation: string
+          statut_reevaluation: string
+          valide_par?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date_reevaluation?: string
+          date_validation?: string | null
+          document_justificatif?: string | null
+          engagement_id?: string
+          id?: string
+          montant_initial?: number
+          montant_reevalue?: number
+          motif_reevaluation?: string
+          statut_reevaluation?: string
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_reevaluations_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagements: {
+        Row: {
+          beneficiary: string
+          created_at: string
+          description: string | null
+          id: string
+          operation_id: string
+          reference: string
+          requested_by: string
+        }
+        Insert: {
+          beneficiary?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          operation_id: string
+          reference: string
+          requested_by: string
+        }
+        Update: {
+          beneficiary?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          operation_id?: string
+          reference?: string
+          requested_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagements_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_logs: {
+        Row: {
+          created_at: string
+          error_message: string
+          error_type: string
+          id: string
+          ip_address: string | null
+          stack_trace: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          error_type: string
+          id?: string
+          ip_address?: string | null
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          error_type?: string
+          id?: string
+          ip_address?: string | null
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ministries: {
         Row: {
-          code: string;
-          created_at: string | null;
-          id: string;
-          name: string;
-          updated_at: string | null;
-        };
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
         Insert: {
-          code: string;
-          created_at?: string | null;
-          id?: string;
-          name: string;
-          updated_at?: string | null;
-        };
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
         Update: {
-          code?: string;
-          created_at?: string | null;
-          id?: string;
-          name?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       operations: {
         Row: {
-          action_id: string;
-          amount: number;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          status: string;
-          updated_at: string | null;
-        };
+          action_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          program_id: string
+        }
         Insert: {
-          action_id: string;
-          amount?: number;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          status?: string;
-          updated_at?: string | null;
-        };
+          action_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          program_id: string
+        }
         Update: {
-          action_id?: string;
-          amount?: number;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          status?: string;
-          updated_at?: string | null;
-        };
+          action_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          program_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "operations_action_id_fkey";
-            columns: ["action_id"];
-            isOneToOne: false;
-            referencedRelation: "actions";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      payment_requests: {
-        Row: {
-          amount: number;
-          approved_at: string | null;
-          created_at: string;
-          description: string | null;
-          engagement_id: string;
-          frequency: string;
-          id: string;
-          requested_by: string;
-          start_date: string;
-          status: string;
-        };
-        Insert: {
-          amount: number;
-          approved_at?: string | null;
-          created_at?: string;
-          description?: string | null;
-          engagement_id: string;
-          frequency: string;
-          id?: string;
-          requested_by: string;
-          start_date: string;
-          status?: string;
-        };
-        Update: {
-          amount?: number;
-          approved_at?: string | null;
-          created_at?: string;
-          description?: string | null;
-          engagement_id?: string;
-          frequency?: string;
-          id?: string;
-          requested_by?: string;
-          start_date?: string;
-          status?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "payment_requests_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      payments: {
-        Row: {
-          amount: number;
-          created_at: string | null;
-          engagement_id: string;
-          id: string;
-          payment_date: string | null;
-          payment_method: string | null;
-          payment_reference: string | null;
-          status: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          amount: number;
-          created_at?: string | null;
-          engagement_id: string;
-          id?: string;
-          payment_date?: string | null;
-          payment_method?: string | null;
-          payment_reference?: string | null;
-          status?: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string | null;
-          engagement_id?: string;
-          id?: string;
-          payment_date?: string | null;
-          payment_method?: string | null;
-          payment_reference?: string | null;
-          status?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "payments_engagement_id_fkey";
-            columns: ["engagement_id"];
-            isOneToOne: false;
-            referencedRelation: "engagements";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      portfolios: {
-        Row: {
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
-      programs: {
-        Row: {
-          allocated: number;
-          budget: number;
-          created_at: string | null;
-          description: string | null;
-          fiscal_year: number;
-          id: string;
-          ministry_id: string | null;
-          name: string;
-          portfolio_id: string | null;
-          status: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          allocated?: number;
-          budget?: number;
-          created_at?: string | null;
-          description?: string | null;
-          fiscal_year: number;
-          id?: string;
-          ministry_id?: string | null;
-          name: string;
-          portfolio_id?: string | null;
-          status?: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          allocated?: number;
-          budget?: number;
-          created_at?: string | null;
-          description?: string | null;
-          fiscal_year?: number;
-          id?: string;
-          ministry_id?: string | null;
-          name?: string;
-          portfolio_id?: string | null;
-          status?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "programs_ministry_id_fkey";
-            columns: ["ministry_id"];
-            isOneToOne: false;
-            referencedRelation: "ministries";
-            referencedColumns: ["id"];
+            foreignKeyName: "operations_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "programs_portfolio_id_fkey";
-            columns: ["portfolio_id"];
-            isOneToOne: false;
-            referencedRelation: "portfolios";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      reports: {
+            foreignKeyName: "operations_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_requests: {
         Row: {
-          created_at: string | null;
-          description: string | null;
-          file_path: string | null;
-          frequency: string;
-          generated_date: string | null;
-          id: string;
-          report_type: string;
-          status: string;
-          title: string;
-          updated_at: string | null;
-        };
+          amount: number
+          approved_date: string | null
+          beneficiary: string
+          created_at: string
+          description: string
+          engagement_id: string
+          frequency: string
+          id: string
+          operation_id: string
+          program_id: string
+          request_date: string
+          requested_by: string
+          start_date: string
+          status: string
+        }
         Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          file_path?: string | null;
-          frequency: string;
-          generated_date?: string | null;
-          id?: string;
-          report_type: string;
-          status?: string;
-          title: string;
-          updated_at?: string | null;
-        };
+          amount: number
+          approved_date?: string | null
+          beneficiary: string
+          created_at?: string
+          description: string
+          engagement_id: string
+          frequency: string
+          id?: string
+          operation_id: string
+          program_id: string
+          request_date: string
+          requested_by: string
+          start_date: string
+          status: string
+        }
         Update: {
-          created_at?: string | null;
-          description?: string | null;
-          file_path?: string | null;
-          frequency?: string;
-          generated_date?: string | null;
-          id?: string;
-          report_type?: string;
-          status?: string;
-          title?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
-      users: {
-        Row: {
-          created_at: string | null;
-          first_name: string | null;
-          id: string;
-          last_name: string | null;
-          ministry_id: string | null;
-          role: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          first_name?: string | null;
-          id: string;
-          last_name?: string | null;
-          ministry_id?: string | null;
-          role?: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          first_name?: string | null;
-          id?: string;
-          last_name?: string | null;
-          ministry_id?: string | null;
-          role?: string;
-          updated_at?: string | null;
-        };
+          amount?: number
+          approved_date?: string | null
+          beneficiary?: string
+          created_at?: string
+          description?: string
+          engagement_id?: string
+          frequency?: string
+          id?: string
+          operation_id?: string
+          program_id?: string
+          request_date?: string
+          requested_by?: string
+          start_date?: string
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "users_ministry_id_fkey";
-            columns: ["ministry_id"];
-            isOneToOne: false;
-            referencedRelation: "ministries";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-    };
+            foreignKeyName: "payment_requests_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          beneficiary: string
+          created_at: string
+          description: string
+          engagement_id: string
+          id: string
+          operation_id: string
+          payment_date: string | null
+          request_date: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          beneficiary: string
+          created_at?: string
+          description: string
+          engagement_id: string
+          id?: string
+          operation_id: string
+          payment_date?: string | null
+          request_date: string
+          status: string
+        }
+        Update: {
+          amount?: number
+          beneficiary?: string
+          created_at?: string
+          description?: string
+          engagement_id?: string
+          id?: string
+          operation_id?: string
+          payment_date?: string | null
+          request_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          module: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portfolios: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          portfolio_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          portfolio_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          portfolio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          content: string
+          created_at: string
+          generated_date: string
+          id: string
+          operation_id: string
+          report_date: string
+          status: string
+          title: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          generated_date?: string
+          id?: string
+          operation_id: string
+          report_date: string
+          status: string
+          title: string
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          generated_date?: string
+          id?: string
+          operation_id?: string
+          report_date?: string
+          status?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_parameters: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          module: string
+          parameter_key: string
+          parameter_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module: string
+          parameter_key: string
+          parameter_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          module?: string
+          parameter_key?: string
+          parameter_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          is_active: boolean | null
+          last_login: string | null
+          last_name: string | null
+          password_hash: string
+          role_id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          last_name?: string | null
+          password_hash: string
+          role_id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          last_name?: string | null
+          password_hash?: string
+          role_id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type PublicSchema = Database[Extract<keyof Database, "public">];
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] & PublicSchema["Views"]) | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] & Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] & Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-  ? (PublicSchema["Tables"] & PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-      Row: infer R;
-    }
-    ? R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
-  : never;
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends keyof PublicSchema["Tables"] | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Insert: infer I;
-    }
-    ? I
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never;
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends keyof PublicSchema["Tables"] | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U;
-    }
-    ? U
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never;
 
 export type Enums<
-  PublicEnumNameOrOptions extends keyof PublicSchema["Enums"] | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-    : never = never
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-  : never;
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"] | { schema: keyof Database },
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof Database
   }
     ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-  ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never;
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
