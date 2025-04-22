@@ -24,7 +24,13 @@ export async function getAllPrograms(): Promise<ProgramWithRelations[]> {
     throw error;
   }
   
-  return data || [];
+  return data.map(program => ({
+    ...program,
+    budget: program.budget || 0,
+    allocated: program.allocated || 0,
+    fiscal_year: program.fiscal_year || 2024,
+    code_programme: program.code_programme || ''
+  })) || [];
 }
 
 export async function getProgramsByFiscalYear(year: number): Promise<ProgramWithRelations[]> {
@@ -43,7 +49,13 @@ export async function getProgramsByFiscalYear(year: number): Promise<ProgramWith
     throw error;
   }
   
-  return data || [];
+  return data.map(program => ({
+    ...program,
+    budget: program.budget || 0,
+    allocated: program.allocated || 0,
+    fiscal_year: program.fiscal_year || 2024,
+    code_programme: program.code_programme || ''
+  })) || [];
 }
 
 export async function getProgramById(id: string): Promise<ProgramWithRelations | null> {
@@ -62,5 +74,13 @@ export async function getProgramById(id: string): Promise<ProgramWithRelations |
     throw error;
   }
   
-  return data;
+  if (!data) return null;
+
+  return {
+    ...data,
+    budget: data.budget || 0,
+    allocated: data.allocated || 0,
+    fiscal_year: data.fiscal_year || 2024,
+    code_programme: data.code_programme || ''
+  };
 }

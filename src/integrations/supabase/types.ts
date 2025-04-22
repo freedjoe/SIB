@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       actions: {
         Row: {
+          code_action: string | null
           created_at: string
           description: string | null
           end_date: string | null
@@ -22,6 +23,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          code_action?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -33,6 +35,7 @@ export type Database = {
           status: string
         }
         Update: {
+          code_action?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -336,12 +339,19 @@ export type Database = {
           category: string
           company_id: string
           created_at: string | null
+          date_soumission: string | null
           description: string | null
           end_date: string
+          exercice: number | null
           forecasted_amount: number
           id: string
           ministry_id: string
           mobilized_amount: number
+          montant_consomme: number | null
+          montant_demande: number | null
+          montant_mobilise: number | null
+          montant_prevu: number | null
+          notes: string | null
           period: string
           program_id: string
           requested_by: string
@@ -353,12 +363,19 @@ export type Database = {
           category: string
           company_id: string
           created_at?: string | null
+          date_soumission?: string | null
           description?: string | null
           end_date: string
+          exercice?: number | null
           forecasted_amount: number
           id?: string
           ministry_id: string
           mobilized_amount: number
+          montant_consomme?: number | null
+          montant_demande?: number | null
+          montant_mobilise?: number | null
+          montant_prevu?: number | null
+          notes?: string | null
           period: string
           program_id: string
           requested_by: string
@@ -370,12 +387,19 @@ export type Database = {
           category?: string
           company_id?: string
           created_at?: string | null
+          date_soumission?: string | null
           description?: string | null
           end_date?: string
+          exercice?: number | null
           forecasted_amount?: number
           id?: string
           ministry_id?: string
           mobilized_amount?: number
+          montant_consomme?: number | null
+          montant_demande?: number | null
+          montant_mobilise?: number | null
+          montant_prevu?: number | null
+          notes?: string | null
           period?: string
           program_id?: string
           requested_by?: string
@@ -583,27 +607,39 @@ export type Database = {
       operations: {
         Row: {
           action_id: string | null
+          code_operation: string | null
           created_at: string
           description: string | null
           id: string
           name: string
+          origine_financement: string | null
           program_id: string
+          titre_budgetaire: number | null
+          wilaya: string | null
         }
         Insert: {
           action_id?: string | null
+          code_operation?: string | null
           created_at?: string
           description?: string | null
           id?: string
           name: string
+          origine_financement?: string | null
           program_id: string
+          titre_budgetaire?: number | null
+          wilaya?: string | null
         }
         Update: {
           action_id?: string | null
+          code_operation?: string | null
           created_at?: string
           description?: string | null
           id?: string
           name?: string
+          origine_financement?: string | null
           program_id?: string
+          titre_budgetaire?: number | null
+          wilaya?: string | null
         }
         Relationships: [
           {
@@ -799,22 +835,34 @@ export type Database = {
       }
       programs: {
         Row: {
+          allocated: number | null
+          budget: number | null
+          code_programme: string | null
           created_at: string
           description: string | null
+          fiscal_year: number | null
           id: string
           name: string
           portfolio_id: string
         }
         Insert: {
+          allocated?: number | null
+          budget?: number | null
+          code_programme?: string | null
           created_at?: string
           description?: string | null
+          fiscal_year?: number | null
           id?: string
           name: string
           portfolio_id: string
         }
         Update: {
+          allocated?: number | null
+          budget?: number | null
+          code_programme?: string | null
           created_at?: string
           description?: string | null
+          fiscal_year?: number | null
           id?: string
           name?: string
           portfolio_id?: string
@@ -833,10 +881,14 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          description: string | null
+          file_path: string | null
+          frequency: string | null
           generated_date: string
           id: string
           operation_id: string
           report_date: string
+          report_type: string | null
           status: string
           title: string
           type: string
@@ -844,10 +896,14 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          description?: string | null
+          file_path?: string | null
+          frequency?: string | null
           generated_date?: string
           id?: string
           operation_id: string
           report_date: string
+          report_type?: string | null
           status: string
           title: string
           type: string
@@ -855,10 +911,14 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          description?: string | null
+          file_path?: string | null
+          frequency?: string | null
           generated_date?: string
           id?: string
           operation_id?: string
           report_date?: string
+          report_type?: string | null
           status?: string
           title?: string
           type?: string
