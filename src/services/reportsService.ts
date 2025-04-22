@@ -28,7 +28,8 @@ export async function getAllReports(): Promise<ReportWithRelations[]> {
     description: report.content?.substring(0, 100) || '',
     frequency: 'monthly', // Default value
     file_path: '', // Default value
-    report_type: report.type || ''
+    report_type: report.type || '',
+    type: report.type || '' // Ensure original field is preserved
   }));
 }
 
@@ -50,7 +51,8 @@ export async function getReportsByType(reportType: string): Promise<ReportWithRe
     description: report.content?.substring(0, 100) || '',
     frequency: 'monthly', // Default value
     file_path: '', // Default value
-    report_type: report.type || ''
+    report_type: report.type || '',
+    type: report.type || '' // Ensure original field is preserved
   }));
 }
 
@@ -74,6 +76,7 @@ export async function getReportById(id: string): Promise<ReportWithRelations | n
     description: data.content?.substring(0, 100) || '',
     frequency: 'monthly', // Default value
     file_path: '', // Default value
-    report_type: data.type || ''
+    report_type: data.type || '',
+    type: data.type || '' // Ensure original field is preserved
   };
 }

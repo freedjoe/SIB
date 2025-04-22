@@ -42,7 +42,22 @@ export async function getAllPayments(): Promise<PaymentWithRelations[]> {
     throw error;
   }
   
-  return data || [];
+  // Ensure all required properties exist on each engagement object
+  return (data || []).map(payment => {
+    if (payment.engagement) {
+      return {
+        ...payment,
+        engagement: {
+          ...payment.engagement,
+          montant_approuve: payment.engagement.montant_approuve || null,
+          montant_demande: payment.engagement.montant_demande || 0,
+          montant_initial: payment.engagement.montant_initial || 0,
+          statut: payment.engagement.statut || 'En attente'
+        }
+      };
+    }
+    return payment;
+  });
 }
 
 export async function getPaymentsByEngagementId(engagementId: string): Promise<PaymentWithRelations[]> {
@@ -69,7 +84,22 @@ export async function getPaymentsByEngagementId(engagementId: string): Promise<P
     throw error;
   }
   
-  return data || [];
+  // Ensure all required properties exist on each engagement object
+  return (data || []).map(payment => {
+    if (payment.engagement) {
+      return {
+        ...payment,
+        engagement: {
+          ...payment.engagement,
+          montant_approuve: payment.engagement.montant_approuve || null,
+          montant_demande: payment.engagement.montant_demande || 0,
+          montant_initial: payment.engagement.montant_initial || 0,
+          statut: payment.engagement.statut || 'En attente'
+        }
+      };
+    }
+    return payment;
+  });
 }
 
 export async function getPaymentById(id: string): Promise<PaymentWithRelations | null> {
@@ -94,6 +124,19 @@ export async function getPaymentById(id: string): Promise<PaymentWithRelations |
   if (error) {
     console.error(`Error fetching payment with id ${id}:`, error);
     throw error;
+  }
+  
+  if (data && data.engagement) {
+    return {
+      ...data,
+      engagement: {
+        ...data.engagement,
+        montant_approuve: data.engagement.montant_approuve || null,
+        montant_demande: data.engagement.montant_demande || 0,
+        montant_initial: data.engagement.montant_initial || 0,
+        statut: data.engagement.statut || 'En attente'
+      }
+    };
   }
   
   return data;
