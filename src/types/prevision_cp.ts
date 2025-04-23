@@ -25,21 +25,30 @@ export interface Engagement {
   updated_at: string;
 }
 
-export interface PrevisionCP {
+export type PrevisionCPStatus = "prévu" | "demandé" | "mobilisé" | "en retard" | "partiellement mobilisé";
+
+export type PrevisionCP = {
   id: string;
-  exercice: string;
-  periode: string;
-  operation_id: string;
-  operation: Operation;
   engagement_id: string;
-  engagement: Engagement;
+  operation_id: string;
+  exercice: number;
+  periode: string;
   montant_prevu: number;
   montant_demande: number;
   montant_mobilise: number;
   montant_consomme: number;
-  statut: "prévu" | "demandé" | "mobilisé" | "partiellement mobilisé" | "consommé";
-  notes: string | null;
+  statut: PrevisionCPStatus;
   date_soumission: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
-}
+  engagement?: {
+    libelle: string;
+    operation_id: string;
+    ministry_id: string | null;
+  };
+  operation?: {
+    name: string;
+    ministry_id: string | null;
+  };
+};

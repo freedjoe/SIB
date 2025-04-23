@@ -26,7 +26,6 @@ type Engagement = {
   name: string;
   operation_id: string;
   operation_name?: string;
-  ministry_id: string | null;
 };
 
 type Operation = {
@@ -66,15 +65,11 @@ const PrevisionsCP = () => {
         .select(
           `
           *,
-          engagement:engagement_id (name, operation_id, ministry_id),
-          operation:operation_id (name, ministry_id)
+          engagement:engagements(name, operation_id),
+          operation:operations(name, ministry_id)
         `
         )
         .eq("exercice", selectedYear);
-
-      if (selectedMinistry && selectedMinistry !== "all") {
-        query = query.eq("engagement.ministry_id", selectedMinistry);
-      }
 
       if (selectedEngagement && selectedEngagement !== "all") {
         query = query.eq("engagement_id", selectedEngagement);
@@ -95,7 +90,18 @@ const PrevisionsCP = () => {
         throw error;
       }
 
-      return data as PrevisionCP[];
+      return data.map(
+        (
+          prevision: PrevisionCP & {
+            engagement: { name: string; operation_id: string | null } | null;
+            operation: { name: string; ministry_id: string | null } | null;
+          }
+        ) => ({
+          ...prevision,
+          engagement_name: prevision.engagement?.name,
+          operation_name: prevision.operation?.name,
+        })
+      ) as PrevisionCP[];
     },
   });
 
@@ -107,10 +113,6 @@ const PrevisionsCP = () => {
         *,
         operation:operation_id (name)
       `);
-
-      if (selectedMinistry && selectedMinistry !== "all") {
-        query = query.eq("ministry_id", selectedMinistry);
-      }
 
       if (selectedOperation && selectedOperation !== "all") {
         query = query.eq("operation_id", selectedOperation);
@@ -201,9 +203,9 @@ const PrevisionsCP = () => {
   };
 
   // Handle update prevision CP
-  const handleUpdatePrevision = async (id: string, updates: Partial<PrevisionCP>) => {
+  const handleUpdatePrevision = async (data: Partial<PrevisionCP>) => {
     try {
-      const { data, error } = await supabase.from("prevision_cp").update(updates).eq("id", id).select();
+      const { data: updatedData, error } = await supabase.from("prevision_cp").update(data).eq("id", data.id).select();
 
       if (error) {
         throw error;
@@ -251,12 +253,12 @@ const PrevisionsCP = () => {
   };
 
   // Handle request mobilization
-  const handleRequestMobilization = async (id: string, montant_demande: number) => {
+  const handleRequestMobilization = async (id: string, data: Partial<PrevisionCP>) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("prevision_cp")
         .update({
-          montant_demande,
+          montant_demande: data.montant_demande,
           statut: "demandé",
           date_soumission: new Date().toISOString(),
         })
@@ -343,8 +345,8 @@ const PrevisionsCP = () => {
           alerts.push({
             type: "delayed",
             message: t("PrevisionsCP.alerts.delayed", {
-              engagement: prevision.engagement_name,
-              operation: prevision.operation_name,
+              engagement: prevision.engagement?.name,
+              operation: prevision.operation?.name,
               periode: prevision.periode,
             }),
             prevision,
@@ -357,8 +359,8 @@ const PrevisionsCP = () => {
         alerts.push({
           type: "insufficient",
           message: t("PrevisionsCP.alerts.insufficient", {
-            engagement: prevision.engagement_name,
-            operation: prevision.operation_name,
+            engagement: prevision.engagement?.name,
+            operation: prevision.operation?.name,
             periode: prevision.periode,
             prevu: formatCurrency(prevision.montant_prevu),
             mobilise: formatCurrency(prevision.montant_mobilise),
@@ -387,7 +389,7 @@ const PrevisionsCP = () => {
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.map((alert, index) => (
-            <Alert key={index} variant={alert.type === "delayed" ? "destructive" : "warning"}>
+            <Alert key={index} variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>{t("PrevisionsCP.alerts.title")}</AlertTitle>
               <AlertDescription>{alert.message}</AlertDescription>
@@ -551,8 +553,8 @@ const PrevisionsCP = () => {
                   ) : (
                     previsionsCP?.map((prevision) => (
                       <TableRow key={prevision.id}>
-                        <TableCell>{prevision.engagement_name}</TableCell>
-                        <TableCell>{prevision.operation_name}</TableCell>
+                        <TableCell>{prevision.engagement?.name}</TableCell>
+                        <TableCell>{prevision.operation?.name}</TableCell>
                         <TableCell>{prevision.periode}</TableCell>
                         <TableCell>{formatCurrency(prevision.montant_prevu)}</TableCell>
                         <TableCell>{formatCurrency(prevision.montant_demande)}</TableCell>

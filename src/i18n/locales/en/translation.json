@@ -57,6 +57,7 @@
     },
     "auth": {
       "login": "Login",
+      "loginDescription": "Sign in to access your account",
       "signup": "Sign Up",
       "logout": "Logout",
       "forgotPassword": "Forgot password?",

@@ -16,6 +16,10 @@ import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
 import Settings from "./pages/Settings";
+import Profile from "./pages/settings/Profile";
+import Localization from "./pages/settings/Localization";
+import Security from "./pages/settings/Security";
+import BasicData from "./pages/settings/BasicData";
 import Help from "./pages/Help";
 import HelpPresentation from "./pages/help/Presentation";
 import HelpGuide from "./pages/help/Guide";
@@ -92,7 +96,10 @@ const AppRoutes = () => {
         <Route path="/previsions-cp" element={<PrevisionsCP />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit" element={<Audit />} />
-        <Route path="/settings/*" element={<Settings />} />
+        <Route path="/settings/profile" element={<Profile />} />
+        <Route path="/settings/security" element={<Security />} />
+        <Route path="/settings/localization" element={<Localization />} />
+        <Route path="/settings/basic-data" element={<BasicData />} />
         <Route path="/help" element={<Help />} />
         <Route path="/help/presentation" element={<HelpPresentation />} />
         <Route path="/help/guide" element={<HelpGuide />} />

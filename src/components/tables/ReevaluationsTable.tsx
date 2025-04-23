@@ -1,8 +1,17 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X } from "lucide-react";
 import { EngagementReevaluationWithRelations } from "@/services/engagementReevaluationsService";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ColumnDef } from "@tanstack/react-table";
+
+interface Engagement {
+  reference: string;
+  operation?: {
+    name: string;
+  };
+}
 
 interface ReevaluationsTableProps {
   reevaluations: EngagementReevaluationWithRelations[];
@@ -29,69 +38,82 @@ export function ReevaluationsTable({ reevaluations, formatCurrency, formatDate, 
     }
   };
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Engagement</TableHead>
-          <TableHead>Montant initial</TableHead>
-          <TableHead>Montant réévalué</TableHead>
-          <TableHead>Motif</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Validé par</TableHead>
-          {showActions && <TableHead className="text-right">Actions</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {reevaluations.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={showActions ? 8 : 7} className="text-center py-4">
-              Aucune réévaluation trouvée
-            </TableCell>
-          </TableRow>
-        ) : (
-          reevaluations.map((reevaluation) => (
-            <TableRow key={reevaluation.id}>
-              <TableCell>{formatDate(reevaluation.date_reevaluation)}</TableCell>
-              <TableCell>
-                {reevaluation.engagement?.reference || "-"} - {reevaluation.engagement?.operation?.name || "-"}
-              </TableCell>
-              <TableCell>{formatCurrency(reevaluation.montant_initial)}</TableCell>
-              <TableCell>{formatCurrency(reevaluation.montant_reevalue)}</TableCell>
-              <TableCell>{reevaluation.motif_reevaluation}</TableCell>
-              <TableCell>{getStatusBadge(reevaluation.statut_reevaluation)}</TableCell>
-              <TableCell>{reevaluation.valide_par || "-"}</TableCell>
-              {showActions && (
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {reevaluation.statut_reevaluation === "en_attente" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50"
-                          onClick={() => onApprove?.(reevaluation)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-600 hover:bg-red-50"
-                          onClick={() => onReject?.(reevaluation)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              )}
-            </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
-  );
+  const columns: ColumnDef<EngagementReevaluationWithRelations>[] = [
+    {
+      accessorKey: "date_reevaluation",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+      cell: ({ row }) => formatDate(row.getValue("date_reevaluation")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "engagement",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Engagement" />,
+      cell: ({ row }) => {
+        const engagement = row.getValue("engagement") as Engagement | undefined;
+        return `${engagement?.reference || "-"} - ${engagement?.operation?.name || "-"}`;
+      },
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "montant_initial",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant initial" />,
+      cell: ({ row }) => formatCurrency(row.getValue("montant_initial")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "montant_reevalue",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant réévalué" />,
+      cell: ({ row }) => formatCurrency(row.getValue("montant_reevalue")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "motif_reevaluation",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Motif" />,
+      cell: ({ row }) => row.getValue("motif_reevaluation"),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "statut_reevaluation",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
+      cell: ({ row }) => getStatusBadge(row.getValue("statut_reevaluation")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "valide_par",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Validé par" />,
+      cell: ({ row }) => row.getValue("valide_par") || "-",
+      filterFn: "includesString",
+    },
+  ];
+
+  if (showActions) {
+    columns.push({
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const reevaluation = row.original;
+        return (
+          <div className="flex justify-end gap-2">
+            {reevaluation.statut_reevaluation === "en_attente" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                  onClick={() => onApprove?.(reevaluation)}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => onReject?.(reevaluation)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  return <DataTable columns={columns} data={reevaluations} />;
 }

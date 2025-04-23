@@ -1,7 +1,9 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AuditLogWithRelations } from "@/services/auditLogService";
 import { formatDate } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface AuditLogTableProps {
   logs: AuditLogWithRelations[];
@@ -49,36 +51,38 @@ export function AuditLogTable({ logs }: AuditLogTableProps) {
     );
   };
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Action</TableHead>
-          <TableHead>Utilisateur</TableHead>
-          <TableHead>Rôle</TableHead>
-          <TableHead>Modifications</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {logs.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={5} className="text-center py-4">
-              Aucun historique trouvé
-            </TableCell>
-          </TableRow>
-        ) : (
-          logs.map((log) => (
-            <TableRow key={log.id}>
-              <TableCell>{formatDate(log.created_at)}</TableCell>
-              <TableCell>{getActionBadge(log.action)}</TableCell>
-              <TableCell>{log.user?.name || "-"}</TableCell>
-              <TableCell>{log.user?.role || "-"}</TableCell>
-              <TableCell>{formatChanges(log.changes)}</TableCell>
-            </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
-  );
+  const columns: ColumnDef<AuditLogWithRelations>[] = [
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+      cell: ({ row }) => formatDate(row.getValue("created_at")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "action",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Action" />,
+      cell: ({ row }) => getActionBadge(row.getValue("action")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "user.name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Utilisateur" />,
+      cell: ({ row }) => row.original.user?.name || "-",
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "user.role",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Rôle" />,
+      cell: ({ row }) => row.original.user?.role || "-",
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "changes",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Modifications" />,
+      cell: ({ row }) => formatChanges(row.getValue("changes")),
+      filterFn: "includesString",
+    },
+  ];
+
+  return <DataTable columns={columns} data={logs} />;
 }

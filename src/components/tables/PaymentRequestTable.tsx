@@ -1,16 +1,10 @@
-
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, FileEdit, Trash2, Check, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface PaymentRequest {
   id: string;
@@ -52,109 +46,112 @@ export function PaymentRequestTable({
   onDelete,
   onApprove,
   onReject,
-  showApprovalActions = false
+  showApprovalActions = false,
 }: PaymentRequestTableProps) {
+  const columns: ColumnDef<PaymentRequest>[] = [
+    {
+      accessorKey: "programName",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Programme" />,
+      cell: ({ row }) => <div className="font-medium">{row.getValue("programName")}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "operationName",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Opération" />,
+      cell: ({ row }) => row.getValue("operationName"),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "beneficiary",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Bénéficiaire" />,
+      cell: ({ row }) => row.getValue("beneficiary"),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "amount",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant" />,
+      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue("amount"))}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "frequency",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Fréquence" />,
+      cell: ({ row }) => {
+        const frequency = row.getValue("frequency") as PaymentRequest["frequency"];
+        return frequency === "monthly" ? "Mensuel" : frequency === "quarterly" ? "Trimestriel" : "Annuel";
+      },
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
+      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "requestDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Date de demande" />,
+      cell: ({ row }) => formatDate(row.getValue("requestDate")),
+      filterFn: "includesString",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const request = row.original;
+        return (
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="icon" onClick={() => onView(request)} title="Voir les détails">
+              <Eye className="h-4 w-4" />
+            </Button>
+
+            {onEdit && (
+              <Button variant="ghost" size="icon" onClick={() => onEdit(request)} title="Modifier">
+                <FileEdit className="h-4 w-4" />
+              </Button>
+            )}
+
+            {onDelete && (
+              <Button variant="ghost" size="icon" onClick={() => onDelete(request)} title="Supprimer">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+
+            {showApprovalActions && onApprove && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onApprove(request)}
+                title="Approuver"
+                className="text-green-600 hover:text-green-700"
+                disabled={request.status === "approved"}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            )}
+
+            {showApprovalActions && onReject && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onReject(request)}
+                title="Rejeter"
+                className="text-red-600 hover:text-red-700"
+                disabled={request.status === "rejected"}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <Card>
       <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Programme</TableHead>
-              <TableHead>Opération</TableHead>
-              <TableHead>Bénéficiaire</TableHead>
-              <TableHead className="text-right">Montant</TableHead>
-              <TableHead>Fréquence</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Date de demande</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paymentRequests.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-4">
-                  Aucune demande de paiement trouvée
-                </TableCell>
-              </TableRow>
-            ) : (
-              paymentRequests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="font-medium">{request.programName}</TableCell>
-                  <TableCell>{request.operationName}</TableCell>
-                  <TableCell>{request.beneficiary}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(request.amount)}</TableCell>
-                  <TableCell>
-                    {request.frequency === "monthly" ? "Mensuel" : 
-                     request.frequency === "quarterly" ? "Trimestriel" : "Annuel"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>{formatDate(request.requestDate)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onView(request)}
-                        title="Voir les détails"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(request)}
-                          title="Modifier"
-                        >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(request)}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {showApprovalActions && onApprove && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onApprove(request)}
-                          title="Approuver"
-                          className="text-green-600 hover:text-green-700"
-                          disabled={request.status === "approved"}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {showApprovalActions && onReject && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onReject(request)}
-                          title="Rejeter"
-                          className="text-red-600 hover:text-red-700"
-                          disabled={request.status === "rejected"}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable columns={columns} data={paymentRequests} />
       </CardContent>
     </Card>
   );
