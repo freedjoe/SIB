@@ -24,6 +24,7 @@ import {
   CreditCard,
   Users2,
   ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -125,6 +126,12 @@ export function MainNav() {
       href: "/audit",
       icon: Shield,
       description: "Contrôles et audits",
+    },
+    {
+      label: "Assistant IA",
+      href: "/chat",
+      icon: MessageSquare,
+      description: "Assistant IA pour répondre à vos questions",
     },
   ];
 

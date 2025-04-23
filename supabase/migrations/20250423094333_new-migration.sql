@@ -1156,3 +1156,161 @@ VALUES
     ('DRB Ouargla', 'DRB-30'),
     ('DRB Bechar', 'DRB-08')
 ON CONFLICT (code) DO NOTHING;
+
+-- Create notification_types enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
+        CREATE TYPE notification_type AS ENUM (
+            'info',
+            'warning',
+            'error',
+            'success'
+        );
+    END IF;
+END $$;
+
+-- Create notification_status enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_status') THEN
+        CREATE TYPE notification_status AS ENUM (
+            'unread',
+            'read',
+            'archived'
+        );
+    END IF;
+END $$;
+
+-- Create report_types enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'report_type') THEN
+        CREATE TYPE report_type AS ENUM (
+            'daily',
+            'weekly',
+            'monthly',
+            'quarterly',
+            'annual',
+            'custom'
+        );
+    END IF;
+END $$;
+
+-- Create report_status enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'report_status') THEN
+        CREATE TYPE report_status AS ENUM (
+            'draft',
+            'pending',
+            'approved',
+            'rejected',
+            'archived'
+        );
+    END IF;
+END $$;
+
+-- Create notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    type notification_type NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    status notification_status NOT NULL DEFAULT 'unread',
+    metadata JSONB,
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create reports table
+CREATE TABLE IF NOT EXISTS reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT,
+    type report_type NOT NULL,
+    status report_status NOT NULL DEFAULT 'draft',
+    created_by UUID NOT NULL REFERENCES auth.users(id),
+    approved_by UUID REFERENCES auth.users(id),
+    metadata JSONB,
+    start_date DATE,
+    end_date DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create report_recipients table
+CREATE TABLE IF NOT EXISTS report_recipients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    role TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE(report_id, user_id)
+);
+
+-- Create report_comments table
+CREATE TABLE IF NOT EXISTS report_comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    comment TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create indexes for notifications
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+
+-- Create indexes for reports
+CREATE INDEX IF NOT EXISTS idx_reports_created_by ON reports(created_by);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+CREATE INDEX IF NOT EXISTS idx_reports_type ON reports(type);
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at);
+
+-- Create indexes for report_recipients
+CREATE INDEX IF NOT EXISTS idx_report_recipients_report_id ON report_recipients(report_id);
+CREATE INDEX IF NOT EXISTS idx_report_recipients_user_id ON report_recipients(user_id);
+
+-- Create indexes for report_comments
+CREATE INDEX IF NOT EXISTS idx_report_comments_report_id ON report_comments(report_id);
+CREATE INDEX IF NOT EXISTS idx_report_comments_user_id ON report_comments(user_id);
+
+-- Enable RLS on new tables
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE report_recipients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE report_comments ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for new tables
+CREATE POLICY "Enable all access for authenticated users" ON notifications
+    FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable all access for authenticated users" ON reports
+    FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable all access for authenticated users" ON report_recipients
+    FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable all access for authenticated users" ON report_comments
+    FOR ALL USING (auth.role() = 'authenticated');
+
+-- Add triggers for updated_at columns
+CREATE TRIGGER update_notifications_updated_at
+    BEFORE UPDATE ON notifications
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_reports_updated_at
+    BEFORE UPDATE ON reports
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_report_comments_updated_at
+    BEFORE UPDATE ON report_comments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

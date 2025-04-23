@@ -15,7 +15,7 @@ import Engagements from "./pages/Engagements";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
-import Settings from "./pages/settings";
+import Settings from "./pages/Settings";
 import Profile from "./pages/settings/Profile";
 import Localization from "./pages/settings/Localization";
 import Security from "./pages/settings/Security";
@@ -36,6 +36,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ForecastedExpenses from "./pages/ForecastedExpenses";
 import PrevisionsCP from "./pages/PrevisionsCP";
+import Chat from "./pages/Chat";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
@@ -92,6 +93,7 @@ const AppRoutes = () => {
         }
       >
         <Route path="/" element={<Dashboard />} />
+        <Route path="/chat" element={<Chat />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/programs" element={<Programs />} />
         <Route path="/portfolios" element={<Portfolios />} />
