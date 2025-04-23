@@ -1,7 +1,7 @@
-
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3,
   BookOpenText,
@@ -17,6 +17,11 @@ import {
   FileText,
   Shield,
   TrendingUp,
+  User,
+  Lock,
+  Globe,
+  Database,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -33,11 +38,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "@/components/logo/Logo";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavItem {
   label: string;
@@ -48,6 +49,7 @@ interface NavItem {
 
 export function MainNav() {
   const { t } = useTranslation();
+  const [isParametersMenu, setIsParametersMenu] = useState(false);
 
   const mainNavItems: NavItem[] = [
     {
@@ -105,6 +107,12 @@ export function MainNav() {
       description: "Prévisions des dépenses - CP à mobiliser",
     },
     {
+      label: t("app.navigation.previsionsCP"),
+      href: "/previsions-cp",
+      icon: CreditCard,
+      description: "Prévisions et mobilisation des CP",
+    },
+    {
       label: t("app.navigation.reports"),
       href: "/reports",
       icon: BookOpenText,
@@ -118,6 +126,48 @@ export function MainNav() {
     },
   ];
 
+  const parametersNavItems: NavItem[] = [
+    {
+      label: t("app.navigation.profile"),
+      href: "/settings/profile",
+      icon: User,
+      description: "Gérer votre profil",
+    },
+    {
+      label: t("app.navigation.security"),
+      href: "/settings/security",
+      icon: Lock,
+      description: "Paramètres de sécurité",
+    },
+    {
+      label: t("app.navigation.localization"),
+      href: "/settings/localization",
+      icon: Globe,
+      description: "Paramètres de localisation",
+    },
+    {
+      label: t("app.navigation.basicData"),
+      href: "/settings/basic-data",
+      icon: Database,
+      description: "Données de base",
+    },
+  ];
+
+  const menuVariants = {
+    enter: {
+      opacity: 0,
+      x: -20,
+    },
+    center: {
+      opacity: 1,
+      x: 0,
+    },
+    exit: {
+      opacity: 0,
+      x: 20,
+    },
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="flex-1">
@@ -126,34 +176,41 @@ export function MainNav() {
             <Logo />
           </NavLink>
           <div className="w-full mt-4 border-t pt-4">
-            <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.href}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-md",
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        )
-                      }
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={isParametersMenu ? "parameters" : "modules"}
+                variants={menuVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.2 }}
+              >
+                <SidebarMenu>
+                  {(isParametersMenu ? parametersNavItems : mainNavItems).map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to={item.href}
+                          className={({ isActive }) =>
+                            cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-md",
+                              isActive ? "bg-primary text-primary-foreground" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            )
+                          }
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        {/* The main navigation has been moved to the header */}
-      </SidebarContent>
+      <SidebarContent>{/* The main navigation has been moved to the header */}</SidebarContent>
       <SidebarFooter className="border-t pt-4 px-3">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -161,16 +218,14 @@ export function MainNav() {
               variant="outline"
               size="icon"
               className="w-full flex items-center justify-center gap-2"
-              asChild
+              onClick={() => setIsParametersMenu(!isParametersMenu)}
             >
-              <NavLink to="/settings">
-                <Settings className="h-4 w-4" />
-                <span>{t("app.navigation.settings")}</span>
-              </NavLink>
+              <Settings className="h-4 w-4" />
+              <span>{isParametersMenu ? t("app.navigation.modules") : t("app.navigation.parameters")}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Paramètres du système</p>
+            <p>{isParametersMenu ? "Retour aux modules" : "Paramètres du système"}</p>
           </TooltipContent>
         </Tooltip>
       </SidebarFooter>

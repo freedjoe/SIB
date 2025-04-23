@@ -1,4 +1,3 @@
-
 export interface Program {
   id: string;
   name: string;
@@ -8,5 +7,5 @@ export interface Program {
   budget: number;
   allocated: number;
   fiscal_year?: number;
-  code_programme?: string;
+  code_programme: string;
 }

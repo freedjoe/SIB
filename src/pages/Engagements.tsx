@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
 import { useEffect } from "react";
 import { ReevaluationsTable } from "@/components/tables/ReevaluationsTable";
-import { getAllEngagementReevaluations } from "@/services/engagementReevaluationsService";
+import { getAllEngagementReevaluations, EngagementReevaluationWithRelations } from "@/services/engagementReevaluationsService";
 
 interface Engagement {
   id: string;
@@ -148,7 +148,8 @@ export default function Engagements() {
     date: new Date().toISOString().split("T")[0],
   });
   const [approvalAmount, setApprovalAmount] = useState<number | "">(0);
-  const [reevaluations, setReevaluations] = useState<any[]>([]);
+  const [reevaluations, setReevaluations] = useState<EngagementReevaluationWithRelations[]>([]);
+  const [reevaluationSearchTerm, setReevaluationSearchTerm] = useState("");
 
   useEffect(() => {
     async function fetchReevaluations() {
@@ -161,6 +162,12 @@ export default function Engagements() {
     }
     fetchReevaluations();
   }, []);
+
+  const filteredReevaluations = reevaluations.filter(
+    (reevaluation) =>
+      reevaluation.engagement?.reference?.toLowerCase().includes(reevaluationSearchTerm.toLowerCase()) ||
+      reevaluation.engagement?.operation?.name?.toLowerCase().includes(reevaluationSearchTerm.toLowerCase())
+  );
 
   const filteredEngagements = engagements.filter(
     (engagement) =>
@@ -390,9 +397,10 @@ export default function Engagements() {
   };
 
   const handleReevaluationSuccess = () => {
+    fetchReevaluations();
     toast({
-      title: "Réévaluation ajoutée",
-      description: "La demande de réévaluation a été créée avec succès.",
+      title: "Succès",
+      description: "La demande de réévaluation a été créée avec succès",
     });
   };
 
@@ -401,12 +409,12 @@ export default function Engagements() {
       <DashboardHeader title={t("app.navigation.engagements")} description="Gestion des engagements budgétaires" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="liste">Liste des Engagements</TabsTrigger>
           <TabsTrigger value="approbations">
             Approbations en Attente
             {pendingApprovals.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="warning" className="ml-2">
                 {pendingApprovals.length}
               </Badge>
             )}
@@ -473,12 +481,7 @@ export default function Engagements() {
                             <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(engagement)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenReevaluationDialog(engagement)}
-                              title="Réévaluer"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenReevaluationDialog(engagement)} title="Réévaluer">
                               <ArrowUpDown className="h-4 w-4" />
                             </Button>
                           </div>
@@ -561,11 +564,16 @@ export default function Engagements() {
               <CardTitle>Historique des réévaluations</CardTitle>
             </CardHeader>
             <CardContent>
-              <ReevaluationsTable
-                reevaluations={reevaluations}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-              />
+              <div className="relative w-72 mb-4">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par engagement..."
+                  className="pl-8"
+                  value={reevaluationSearchTerm}
+                  onChange={(e) => setReevaluationSearchTerm(e.target.value)}
+                />
+              </div>
+              <ReevaluationsTable reevaluations={filteredReevaluations} formatCurrency={formatCurrency} formatDate={formatDate} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -945,7 +953,7 @@ export default function Engagements() {
             id: selectedEngagementForReevaluation.id,
             reference: selectedEngagementForReevaluation.id,
             beneficiary: selectedEngagementForReevaluation.beneficiaire,
-            montant_initial: selectedEngagementForReevaluation.montant_demande
+            montant_initial: selectedEngagementForReevaluation.montant_demande,
           }}
           onSuccess={handleReevaluationSuccess}
         />

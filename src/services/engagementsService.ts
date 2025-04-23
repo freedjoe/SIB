@@ -1,19 +1,12 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 export type Engagement = Tables<"engagements">;
 
 export interface EngagementWithRelations extends Engagement {
-  montant_initial: number;
-  montant_approuve: number | null;
-  montant_demande: number;
-  statut: string;
-  request_date: string;
   operation?: {
     name: string;
-    status: string;
-    action_id: string;
+    action_id: string | null;
     action?: {
       name: string;
       program_id: string;
@@ -32,7 +25,6 @@ export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
       *,
       operation:operation_id (
         name,
-        status,
         action_id,
         action:action_id (
           name,
@@ -49,16 +41,7 @@ export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
     throw error;
   }
 
-  const enhancedData = data?.map(engagement => ({
-    ...engagement,
-    montant_initial: engagement.montant_initial ?? 0,
-    montant_approuve: engagement.montant_approuve ?? null,
-    montant_demande: engagement.montant_demande ?? 0,
-    statut: engagement.statut ?? "En attente",
-    request_date: engagement.created_at
-  })) || [];
-
-  return enhancedData;
+  return data || [];
 }
 
 export async function getEngagementsByOperationId(operationId: string): Promise<EngagementWithRelations[]> {
@@ -69,7 +52,6 @@ export async function getEngagementsByOperationId(operationId: string): Promise<
       *,
       operation:operation_id (
         name,
-        status,
         action_id,
         action:action_id (
           name,
@@ -87,16 +69,7 @@ export async function getEngagementsByOperationId(operationId: string): Promise<
     throw error;
   }
 
-  const enhancedData = data?.map(engagement => ({
-    ...engagement,
-    montant_initial: engagement.montant_initial ?? 0,
-    montant_approuve: engagement.montant_approuve ?? null,
-    montant_demande: engagement.montant_demande ?? 0,
-    statut: engagement.statut ?? "En attente",
-    request_date: engagement.created_at
-  })) || [];
-
-  return enhancedData;
+  return data || [];
 }
 
 export async function getEngagementById(id: string): Promise<EngagementWithRelations | null> {
@@ -107,7 +80,6 @@ export async function getEngagementById(id: string): Promise<EngagementWithRelat
       *,
       operation:operation_id (
         name,
-        status,
         action_id,
         action:action_id (
           name,
@@ -123,17 +95,6 @@ export async function getEngagementById(id: string): Promise<EngagementWithRelat
   if (error) {
     console.error(`Error fetching engagement with id ${id}:`, error);
     throw error;
-  }
-
-  if (data) {
-    return {
-      ...data,
-      montant_initial: data.montant_initial ?? 0,
-      montant_approuve: data.montant_approuve ?? null,
-      montant_demande: data.montant_demande ?? 0,
-      statut: data.statut ?? "En attente",
-      request_date: data.created_at
-    };
   }
 
   return data;

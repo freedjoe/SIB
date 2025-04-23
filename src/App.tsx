@@ -24,6 +24,7 @@ import HelpSupport from "./pages/help/Support";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ForecastedExpenses from "./pages/ForecastedExpenses";
+import PrevisionsCP from "./pages/PrevisionsCP";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
@@ -88,6 +89,7 @@ const AppRoutes = () => {
         <Route path="/engagements" element={<Engagements />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
+        <Route path="/previsions-cp" element={<PrevisionsCP />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/settings/*" element={<Settings />} />

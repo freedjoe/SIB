@@ -83,6 +83,21 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Create engagement_revaluations table
+CREATE TABLE engagement_revaluations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    engagement_id UUID NOT NULL REFERENCES engagements(id),
+    initial_amount DECIMAL(15,2) NOT NULL,
+    proposed_amount DECIMAL(15,2) NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+    requested_by UUID NOT NULL REFERENCES users(id),
+    approved_by UUID REFERENCES users(id),
+    approval_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- Create activity_logs table
 CREATE TABLE activity_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -129,6 +144,11 @@ CREATE TABLE operations (
     program_id UUID NOT NULL REFERENCES programs(id),
     name TEXT NOT NULL,
     description TEXT,
+    code_programme TEXT NOT NULL,
+    code_action TEXT NOT NULL,
+    code_operation TEXT NOT NULL,
+    wilaya TEXT NOT NULL,
+    titre_budgetaire TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -138,6 +158,8 @@ CREATE TABLE engagements (
     operation_id UUID NOT NULL REFERENCES operations(id),
     reference TEXT NOT NULL,
     description TEXT,
+    statut_demande TEXT NOT NULL CHECK (statut_demande IN ('en_cours', 'approuve', 'rejete', 'termine')),
+    origine_financement TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -330,20 +352,20 @@ INSERT INTO programs (id, portfolio_id, name, description) VALUES
     ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '11111111-1111-1111-1111-111111111111', 'Programme Formation', 'Programme pour la formation professionnelle');
 
 -- Insert test data into operations
-INSERT INTO operations (id, program_id, name, description) VALUES
-    ('aaaaaaaa-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Construction École Primaire de Koné', 'Construction d''une école primaire'),
-    ('bbbbbbbb-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Équipement Hôpital Central', 'Équipement d''un hôpital'),
-    ('cccccccc-3333-3333-3333-333333333333', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'Rénovation Route Nationale 1', 'Rénovation d''une route nationale'),
-    ('dddddddd-4444-4444-4444-444444444444', 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'Installation Système d''Irrigation', 'Installation d''un système d''irrigation'),
-    ('eeeeeeee-5555-5555-5555-555555555555', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Formation des Enseignants', 'Formation des enseignants');
+INSERT INTO operations (id, program_id, name, description, code_programme, code_action, code_operation, wilaya, titre_budgetaire) VALUES
+    ('aaaaaaaa-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Construction École Primaire de Koné', 'Construction d''une école primaire', 'E1', 'P1', 'O1', 'Wilaya 1', 'Titre 1'),
+    ('bbbbbbbb-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Équipement Hôpital Central', 'Équipement d''un hôpital', 'E2', 'P2', 'O2', 'Wilaya 2', 'Titre 2'),
+    ('cccccccc-3333-3333-3333-333333333333', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'Rénovation Route Nationale 1', 'Rénovation d''une route nationale', 'E3', 'P3', 'O3', 'Wilaya 3', 'Titre 3'),
+    ('dddddddd-4444-4444-4444-444444444444', 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'Installation Système d''Irrigation', 'Installation d''un système d''irrigation', 'E4', 'P4', 'O4', 'Wilaya 4', 'Titre 4'),
+    ('eeeeeeee-5555-5555-5555-555555555555', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Formation des Enseignants', 'Formation des enseignants', 'E5', 'P5', 'O5', 'Wilaya 5', 'Titre 5');
 
 -- Insert test data into engagements
-INSERT INTO engagements (id, operation_id, reference, description) VALUES
-    ('aaaaaaaa-1111-1111-1111-111111111111', 'aaaaaaaa-1111-1111-1111-111111111111', 'ENG/2023/001', 'Engagement pour construction école'),
-    ('bbbbbbbb-2222-2222-2222-222222222222', 'bbbbbbbb-2222-2222-2222-222222222222', 'ENG/2023/008', 'Engagement pour équipement hôpital'),
-    ('cccccccc-3333-3333-3333-333333333333', 'cccccccc-3333-3333-3333-333333333333', 'ENG/2023/012', 'Engagement pour rénovation route'),
-    ('dddddddd-4444-4444-4444-444444444444', 'dddddddd-4444-4444-4444-444444444444', 'ENG/2023/025', 'Engagement pour système d''irrigation'),
-    ('eeeeeeee-5555-5555-5555-555555555555', 'eeeeeeee-5555-5555-5555-555555555555', 'ENG/2023/030', 'Engagement pour formation enseignants');
+INSERT INTO engagements (id, operation_id, reference, description, statut_demande, origine_financement) VALUES
+    ('aaaaaaaa-1111-1111-1111-111111111111', 'aaaaaaaa-1111-1111-1111-111111111111', 'ENG/2023/001', 'Engagement pour construction école', 'en_cours', 'financement_1'),
+    ('bbbbbbbb-2222-2222-2222-222222222222', 'bbbbbbbb-2222-2222-2222-222222222222', 'ENG/2023/008', 'Engagement pour équipement hôpital', 'approuve', 'financement_2'),
+    ('cccccccc-3333-3333-3333-333333333333', 'cccccccc-3333-3333-3333-333333333333', 'ENG/2023/012', 'Engagement pour rénovation route', 'rejete', 'financement_3'),
+    ('dddddddd-4444-4444-4444-444444444444', 'dddddddd-4444-4444-4444-444444444444', 'ENG/2023/025', 'Engagement pour système d''irrigation', 'termine', 'financement_4'),
+    ('eeeeeeee-5555-5555-5555-555555555555', 'eeeeeeee-5555-5555-5555-555555555555', 'ENG/2023/030', 'Engagement pour formation enseignants', 'en_cours', 'financement_5');
 
 -- Insert test data into payments
 INSERT INTO payments (

@@ -334,13 +334,120 @@
       "portfolios": "Portfolios",
       "actions": "Actions",
       "operations": "Operations",
-      "engagements": "Commitments",
+      "engagements": "Engagements",
       "payments": "Payments",
-      "forecastedExpenses": "Forecasted CP",
+      "forecastedExpenses": "Forecasted Expenses",
+      "previsionsCP": "CP Forecasts",
       "reports": "Reports",
-      "controlsAudits": "Controls & Audits",
+      "audit": "Audit",
       "settings": "Settings",
-      "help": "Help"
+      "help": "Help",
+      "parameters": "Parameters",
+      "profile": "Profile",
+      "security": "Security",
+      "localization": "Localization",
+      "basicData": "Basic Data",
+      "modules": "Modules"
+    }
+  },
+  "PrevisionsCP": {
+    "title": "CP Forecasting and Mobilization",
+    "actions": {
+      "create": "Create CP Forecast",
+      "edit": "Edit CP Forecast",
+      "delete": "Delete CP Forecast",
+      "mobilize": "Mobilize CP",
+      "view": "View Details"
+    },
+    "filters": {
+      "exercice": "Fiscal Year",
+      "periode": "Period",
+      "statut": "Status",
+      "operation": "Operation",
+      "engagement": "Engagement"
+    },
+    "view": {
+      "list": "List View",
+      "chart": "Chart View"
+    },
+    "table": {
+      "exercice": "Fiscal Year",
+      "periode": "Period",
+      "operation": "Operation",
+      "engagement": "Engagement",
+      "montant_prevu": "Planned Amount",
+      "montant_demande": "Requested Amount",
+      "montant_mobilise": "Mobilized Amount",
+      "montant_consomme": "Consumed Amount",
+      "statut": "Status",
+      "date_soumission": "Submission Date",
+      "actions": "Actions"
+    },
+    "status": {
+      "prévu": "Planned",
+      "demandé": "Requested",
+      "mobilisé": "Mobilized",
+      "en retard": "Delayed",
+      "partiellement mobilisé": "Partially Mobilized"
+    },
+    "alerts": {
+      "delete": {
+        "title": "Delete CP Forecast",
+        "description": "Are you sure you want to delete this CP forecast? This action cannot be undone."
+      }
+    },
+    "toast": {
+      "create": {
+        "success": "CP forecast created successfully",
+        "error": "Failed to create CP forecast"
+      },
+      "update": {
+        "success": "CP forecast updated successfully",
+        "error": "Failed to update CP forecast"
+      },
+      "delete": {
+        "success": "CP forecast deleted successfully",
+        "error": "Failed to delete CP forecast"
+      },
+      "mobilize": {
+        "success": "CP mobilized successfully",
+        "error": "Failed to mobilize CP"
+      }
+    },
+    "dialog": {
+      "create": {
+        "title": "Create CP Forecast",
+        "description": "Create a new CP forecast entry"
+      },
+      "edit": {
+        "title": "Edit CP Forecast",
+        "description": "Modify the CP forecast details"
+      },
+      "mobilization": {
+        "title": "Mobilize CP",
+        "description": "Request mobilization of CP for this forecast",
+        "montantPrevu": "Planned Amount",
+        "montantRestant": "Remaining Amount",
+        "montantDemande": "Requested Amount",
+        "notes": "Notes",
+        "submit": "Submit Request"
+      },
+      "engagement": "Engagement",
+      "selectEngagement": "Select Engagement",
+      "operation": "Operation",
+      "selectOperation": "Select Operation",
+      "exercice": "Fiscal Year",
+      "periode": "Period",
+      "montantPrevu": "Forecasted Amount",
+      "notes": "Notes",
+      "create": "Create"
+    },
+    "chart": {
+      "title": "CP Forecast Overview",
+      "montantPrevu": "Planned Amount",
+      "montantDemande": "Requested Amount",
+      "montantMobilise": "Mobilized Amount",
+      "montantConsomme": "Consumed Amount"
     }
   }
 }

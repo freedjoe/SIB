@@ -1,4 +1,3 @@
-
 {
   "app": {
     "name": "SIGB",
@@ -339,7 +338,145 @@
       "reports": "Rapports",
       "controlsAudits": "Contrôles & Audits",
       "settings": "Paramètres",
-      "help": "Aide"
+      "help": "Aide",
+      "previsionsCP": "Prévisions CP",
+      "parameters": "Paramètres",
+      "profile": "Profil",
+      "security": "Sécurité",
+      "localization": "Localisation",
+      "basicData": "Données de base",
+      "modules": "Modules"
+    }
+  },
+  "PrevisionsCP": {
+    "title": "Prévisions et Mobilisation des CP",
+    "actions": {
+      "create": "Créer une Prévision"
+    },
+    "filters": {
+      "title": "Filtres",
+      "description": "Filtrer les prévisions par ministère, engagement, opération, année et statut",
+      "ministry": "Ministère",
+      "allMinistries": "Tous les Ministères",
+      "engagement": "Engagement",
+      "allEngagements": "Tous les Engagements",
+      "operation": "Opération",
+      "allOperations": "Toutes les Opérations",
+      "year": "Année",
+      "selectYear": "Sélectionner une Année",
+      "status": "Statut",
+      "allStatuses": "Tous les Statuts",
+      "selectMinistry": "Sélectionner un Ministère",
+      "selectEngagement": "Sélectionner un Engagement",
+      "selectOperation": "Sélectionner une Opération",
+      "selectStatus": "Sélectionner un Statut"
+    },
+    "view": {
+      "list": "Vue Liste",
+      "chart": "Vue Graphique"
+    },
+    "table": {
+      "engagement": "Engagement",
+      "operation": "Opération",
+      "period": "Période",
+      "planned": "Prévu",
+      "requested": "Demandé",
+      "mobilized": "Mobilisé",
+      "consumed": "Consommé",
+      "status": "Statut",
+      "actions": "Actions",
+      "noData": "Aucune donnée disponible"
+    },
+    "status": {
+      "planned": "Prévu",
+      "requested": "Demandé",
+      "mobilized": "Mobilisé",
+      "delayed": "En Retard",
+      "partiallyMobilized": "Partiellement Mobilisé"
+    },
+    "alerts": {
+      "title": "Alertes",
+      "delayed": "{{engagement}} - {{operation}} - {{periode}} : Mobilisation en retard",
+      "insufficient": "{{engagement}} - {{operation}} - {{periode}} : Mobilisation insuffisante ({{prevu}} prévu, {{mobilise}} mobilisé)"
+    },
+    "toast": {
+      "created": {
+        "title": "Prévision Créée",
+        "description": "La prévision CP a été créée avec succès"
+      },
+      "updated": {
+        "title": "Prévision Mise à Jour",
+        "description": "La prévision CP a été mise à jour avec succès"
+      },
+      "deleted": {
+        "title": "Prévision Supprimée",
+        "description": "La prévision CP a été supprimée avec succès"
+      },
+      "mobilizationRequested": {
+        "title": "Mobilisation Demandée",
+        "description": "La demande de mobilisation CP a été soumise avec succès"
+      },
+      "error": {
+        "title": "Erreur",
+        "description": "Une erreur s'est produite lors du traitement de votre demande"
+      }
+    },
+    "dialog": {
+      "createTitle": "Créer une Prévision CP",
+      "createDescription": "Créer une nouvelle prévision CP pour un engagement et une opération",
+      "editTitle": "Modifier une Prévision CP",
+      "editDescription": "Modifier une prévision CP existante",
+      "form": {
+        "engagement": "Engagement",
+        "selectEngagement": "Sélectionner un Engagement",
+        "operation": "Opération",
+        "selectOperation": "Sélectionner une Opération",
+        "year": "Année",
+        "selectYear": "Sélectionner une Année",
+        "period": "Période",
+        "selectPeriod": "Sélectionner une Période",
+        "plannedAmount": "Montant Prévu",
+        "plannedAmountDescription": "Entrer le montant prévu pour cette période",
+        "notes": "Notes",
+        "notesDescription": "Ajouter des notes ou commentaires supplémentaires"
+      },
+      "create": {
+        "title": "Créer une prévision CP",
+        "description": "Créer une nouvelle entrée de prévision CP"
+      },
+      "engagement": "Engagement",
+      "selectEngagement": "Sélectionner un engagement",
+      "operation": "Opération",
+      "selectOperation": "Sélectionner une opération",
+      "exercice": "Exercice",
+      "periode": "Période",
+      "montantPrevu": "Montant prévu",
+      "notes": "Notes",
+      "create": "Créer"
+    },
+    "mobilization": {
+      "title": "Demander une Mobilisation CP",
+      "description": "Demander la mobilisation de CP pour {{engagement}} - {{operation}} - {{periode}} ({{montant}} prévu)",
+      "requestedAmount": "Montant Demandé",
+      "requestedAmountDescription": "Entrer le montant à demander (par défaut : {{montant}})",
+      "notes": "Notes",
+      "notesDescription": "Ajouter des notes ou commentaires supplémentaires",
+      "submit": "Soumettre la Demande"
+    },
+    "chart": {
+      "combined": "Vue Combinée",
+      "mobilization": "Vue Mobilisation",
+      "consumption": "Vue Consommation",
+      "combinedTitle": "Aperçu des Prévisions CP",
+      "combinedDescription": "Aperçu des CP prévus, demandés, mobilisés et consommés",
+      "mobilizationTitle": "Mobilisation CP",
+      "mobilizationDescription": "Comparaison des CP prévus vs mobilisés",
+      "consumptionTitle": "Consommation CP",
+      "consumptionDescription": "Comparaison des CP mobilisés vs consommés",
+      "planned": "Prévu",
+      "requested": "Demandé",
+      "mobilized": "Mobilisé",
+      "consumed": "Consommé"
     }
   }
 }

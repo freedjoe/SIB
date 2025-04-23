@@ -1,45 +1,57 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { createEngagementReevaluation } from "@/services/engagementReevaluationsService";
+import { createRevaluation } from "@/services/engagementRevaluationService";
 import { formatCurrency } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface ReevaluationDialogProps {
+interface RequestRevaluationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   engagement: {
     id: string;
     reference: string;
     beneficiary: string;
-    montant_initial: number;
+    initial_amount: number;
   };
   onSuccess?: () => void;
 }
 
-export function ReevaluationDialog({ isOpen, onClose, engagement, onSuccess }: ReevaluationDialogProps) {
-  const [montantReevalue, setMontantReevalue] = useState<number>(engagement.montant_initial);
-  const [motifReevaluation, setMotifReevaluation] = useState("");
-  const [documentJustificatif, setDocumentJustificatif] = useState<File | null>(null);
+export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSuccess }: RequestRevaluationDialogProps) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [proposedAmount, setProposedAmount] = useState<number>(engagement.initial_amount);
+  const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!motifReevaluation) {
+    if (!user) {
       toast({
         title: "Erreur",
-        description: "Veuillez fournir un motif de réévaluation",
+        description: "Vous devez être connecté pour effectuer cette action",
         variant: "destructive",
       });
       return;
     }
 
-    if (montantReevalue <= 0) {
+    if (!reason.trim()) {
       toast({
         title: "Erreur",
-        description: "Le montant réévalué doit être supérieur à 0",
+        description: "Veuillez fournir un motif pour la réévaluation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (proposedAmount <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Le montant proposé doit être supérieur à 0",
         variant: "destructive",
       });
       return;
@@ -48,17 +60,12 @@ export function ReevaluationDialog({ isOpen, onClose, engagement, onSuccess }: R
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement file upload logic
-      const documentUrl = documentJustificatif ? "placeholder_url" : null;
-
-      await createEngagementReevaluation({
+      await createRevaluation({
         engagement_id: engagement.id,
-        montant_initial: engagement.montant_initial,
-        montant_reevalue: montantReevalue,
-        motif_reevaluation: motifReevaluation,
-        document_justificatif: documentUrl,
-        statut_reevaluation: "en_attente",
-        date_reevaluation: new Date().toISOString(),
+        initial_amount: engagement.initial_amount,
+        proposed_amount: proposedAmount,
+        reason: reason.trim(),
+        requested_by: user.id,
       });
 
       toast({
@@ -69,9 +76,10 @@ export function ReevaluationDialog({ isOpen, onClose, engagement, onSuccess }: R
       onSuccess?.();
       onClose();
     } catch (error) {
+      console.error("Error creating revaluation:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la création de la demande",
+        description: "Une erreur est survenue lors de la création de la demande de réévaluation",
         variant: "destructive",
       });
     } finally {
@@ -103,52 +111,45 @@ export function ReevaluationDialog({ isOpen, onClose, engagement, onSuccess }: R
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="montant_initial" className="text-right">
+            <Label htmlFor="initial_amount" className="text-right">
               Montant initial
             </Label>
-            <div className="col-span-3">{formatCurrency(engagement.montant_initial)}</div>
+            <div className="col-span-3">{formatCurrency(engagement.initial_amount)}</div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="montant_reevalue" className="text-right">
-              Montant réévalué
+            <Label htmlFor="proposed_amount" className="text-right">
+              Montant proposé
             </Label>
             <Input
-              id="montant_reevalue"
+              id="proposed_amount"
               type="number"
               className="col-span-3"
-              value={montantReevalue}
-              onChange={(e) => setMontantReevalue(Number(e.target.value))}
+              value={proposedAmount}
+              onChange={(e) => setProposedAmount(Number(e.target.value))}
             />
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="motif" className="text-right">
+            <Label htmlFor="reason" className="text-right">
               Motif
             </Label>
             <Textarea
-              id="motif"
+              id="reason"
               className="col-span-3"
-              value={motifReevaluation}
-              onChange={(e) => setMotifReevaluation(e.target.value)}
-              placeholder="Justifiez la demande de réévaluation..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Expliquez les raisons de la réévaluation..."
             />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="document" className="text-right">
-              Justificatif
-            </Label>
-            <Input id="document" type="file" className="col-span-3" onChange={(e) => setDocumentJustificatif(e.target.files?.[0] || null)} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Envoi en cours..." : "Soumettre"}
+            {isSubmitting ? "Envoi en cours..." : "Soumettre la demande"}
           </Button>
         </DialogFooter>
       </DialogContent>

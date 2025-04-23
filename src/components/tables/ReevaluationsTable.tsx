@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,14 +13,7 @@ interface ReevaluationsTableProps {
   showActions?: boolean;
 }
 
-export function ReevaluationsTable({
-  reevaluations,
-  formatCurrency,
-  formatDate,
-  onApprove,
-  onReject,
-  showActions = false,
-}: ReevaluationsTableProps) {
+export function ReevaluationsTable({ reevaluations, formatCurrency, formatDate, onApprove, onReject, showActions = false }: ReevaluationsTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approuvee":
@@ -63,7 +55,7 @@ export function ReevaluationsTable({
             <TableRow key={reevaluation.id}>
               <TableCell>{formatDate(reevaluation.date_reevaluation)}</TableCell>
               <TableCell>
-                {reevaluation.engagement?.reference || '-'} - {reevaluation.engagement?.operation?.name || '-'}
+                {reevaluation.engagement?.reference || "-"} - {reevaluation.engagement?.operation?.name || "-"}
               </TableCell>
               <TableCell>{formatCurrency(reevaluation.montant_initial)}</TableCell>
               <TableCell>{formatCurrency(reevaluation.montant_reevalue)}</TableCell>
