@@ -1,0 +1,225 @@
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { Button } from "@/components/ui/button";
+import { ColumnDef } from "@tanstack/react-table";
+import { Eye, FileEdit, Trash2, Check, X, File, Download, Printer, RefreshCw, Plus } from "lucide-react";
+import * as XLSX from "xlsx";
+
+export interface ActionHandlers<T> {
+  onView?: (data: T) => void;
+  onEdit?: (data: T) => void;
+  onDelete?: (data: T) => void;
+  onApprove?: (data: T) => void;
+  onReject?: (data: T) => void;
+  onCustomAction?: (data: T, actionType: string) => void;
+}
+
+interface CustomAction<T> {
+  label: string;
+  icon: React.ReactNode;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | null | undefined;
+  actionType: string;
+  condition?: (data: T) => boolean;
+}
+
+interface ReusableDataTableProps<T> {
+  data: T[];
+  columns: ColumnDef<T, unknown>[];
+  filterColumn?: string;
+  actionHandlers?: ActionHandlers<T>;
+  customActions?: CustomAction<T>[];
+  enableRowSelection?: boolean;
+  onRowSelectionChange?: (selectedRows: Record<string, boolean>) => void;
+  onRefresh?: () => void;
+  onAddNew?: () => void;
+  addNewLabel?: string;
+  noCardWrapper?: boolean;
+  className?: string;
+  emptyMessage?: string;
+  enablePrint?: boolean;
+  enableExport?: boolean;
+  tableName?: string;
+}
+
+export function ReusableDataTable<T>({
+  data,
+  columns,
+  filterColumn = "name",
+  actionHandlers,
+  customActions = [],
+  enableRowSelection = false,
+  onRowSelectionChange,
+  onRefresh,
+  onAddNew,
+  addNewLabel = "Ajouter",
+  noCardWrapper = false,
+  className,
+  emptyMessage,
+  enablePrint = true,
+  enableExport = true,
+  tableName = "Données",
+}: ReusableDataTableProps<T>) {
+  // Add the actions column if any action handlers are provided
+  const hasActions = actionHandlers || (customActions && customActions.length > 0);
+
+  const columnsWithActions = React.useMemo(() => {
+    if (!hasActions) return columns;
+
+    return [
+      ...columns,
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const data = row.original;
+
+          return (
+            <div className="flex justify-end gap-2">
+              {actionHandlers?.onView && (
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onView?.(data)} title="Voir les détails">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
+
+              {actionHandlers?.onEdit && (
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onEdit?.(data)} title="Modifier">
+                  <FileEdit className="h-4 w-4" />
+                </Button>
+              )}
+
+              {actionHandlers?.onDelete && (
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onDelete?.(data)} title="Supprimer">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+
+              {actionHandlers?.onApprove && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => actionHandlers.onApprove?.(data)}
+                  title="Approuver"
+                  className="text-green-600 hover:text-green-700"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              )}
+
+              {actionHandlers?.onReject && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => actionHandlers.onReject?.(data)}
+                  title="Rejeter"
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+
+              {customActions.map((action, idx) => {
+                if (action.condition && !action.condition(data)) return null;
+
+                return (
+                  <Button
+                    key={idx}
+                    variant={action.variant || "ghost"}
+                    size="icon"
+                    onClick={() => actionHandlers?.onCustomAction?.(data, action.actionType)}
+                    title={action.label}
+                  >
+                    {action.icon}
+                  </Button>
+                );
+              })}
+            </div>
+          );
+        },
+      },
+    ];
+  }, [columns, actionHandlers, customActions, hasActions]);
+
+  const handleExportToExcel = () => {
+    // Flatten data for Excel export
+    const flattenObject = (obj: Record<string, unknown>, prefix = ""): Record<string, unknown> => {
+      return Object.keys(obj).reduce((acc: Record<string, unknown>, k: string) => {
+        const pre = prefix.length ? prefix + "." : "";
+        if (typeof obj[k] === "object" && obj[k] !== null && !Array.isArray(obj[k]) && !(obj[k] instanceof Date)) {
+          Object.assign(acc, flattenObject(obj[k] as Record<string, unknown>, pre + k));
+        } else {
+          acc[pre + k] = obj[k];
+        }
+        return acc;
+      }, {});
+    };
+
+    // Get visible columns
+    const visibleColumns = columns.filter((col) => {
+      if (!col.id) return false;
+      return true;
+    });
+
+    // Format data based on visible columns
+    const formattedData = data.map((item) => {
+      const flatItem = flattenObject(item as unknown as Record<string, unknown>);
+      const exportRow: Record<string, unknown> = {};
+
+      visibleColumns.forEach((col) => {
+        if (!col.id) return;
+
+        // Get the header name for this column
+        const headerName = typeof col.header === "function" ? col.header({ column: { id: col.id } } as any) : col.header || col.id;
+
+        // Get the cell value
+        exportRow[typeof headerName === "string" ? headerName : col.id] = flatItem[col.id];
+      });
+
+      return exportRow;
+    });
+
+    // Create workbook and add worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(formattedData);
+    XLSX.utils.book_append_sheet(wb, ws, tableName);
+
+    // Save to file
+    XLSX.writeFile(wb, `${tableName}_export_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const toolbarExtra = onAddNew ? (
+    <Button variant="default" size="sm" onClick={onAddNew} className="ml-4">
+      <Plus className="mr-2 h-4 w-4" />
+      {addNewLabel}
+    </Button>
+  ) : null;
+
+  const table = (
+    <DataTable
+      data={data}
+      columns={columnsWithActions}
+      filterColumn={filterColumn}
+      rowSelection={enableRowSelection}
+      onRowSelectionChange={onRowSelectionChange}
+      emptyMessage={emptyMessage}
+      toolbarExtra={toolbarExtra}
+      className={className}
+      onRefresh={onRefresh}
+      onExportCSV={enableExport ? handleExportToExcel : undefined}
+      onPrint={enablePrint ? handlePrint : undefined}
+    />
+  );
+
+  return noCardWrapper ? (
+    table
+  ) : (
+    <Card>
+      <CardContent className="pt-6">{table}</CardContent>
+    </Card>
+  );
+}

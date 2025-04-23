@@ -15,11 +15,18 @@ import Engagements from "./pages/Engagements";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
-import Settings from "./pages/Settings";
+import Settings from "./pages/settings";
 import Profile from "./pages/settings/Profile";
 import Localization from "./pages/settings/Localization";
 import Security from "./pages/settings/Security";
 import BasicData from "./pages/settings/BasicData";
+import Ministries from "./pages/settings/basic-data/Ministries";
+import Companies from "./pages/settings/basic-data/Companies";
+import BudgetCatalog from "./pages/settings/basic-data/BudgetCatalog";
+import Nomenclature from "./pages/settings/basic-data/Nomenclature";
+import ReportTypes from "./pages/settings/basic-data/ReportTypes";
+import Users from "./pages/settings/Users";
+import Roles from "./pages/settings/Roles";
 import Help from "./pages/Help";
 import HelpPresentation from "./pages/help/Presentation";
 import HelpGuide from "./pages/help/Guide";
@@ -100,6 +107,13 @@ const AppRoutes = () => {
         <Route path="/settings/security" element={<Security />} />
         <Route path="/settings/localization" element={<Localization />} />
         <Route path="/settings/basic-data" element={<BasicData />} />
+        <Route path="/settings/basic-data/ministries" element={<Ministries />} />
+        <Route path="/settings/basic-data/companies" element={<Companies />} />
+        <Route path="/settings/basic-data/budget-catalog" element={<BudgetCatalog />} />
+        <Route path="/settings/basic-data/nomenclature" element={<Nomenclature />} />
+        <Route path="/settings/basic-data/report-types" element={<ReportTypes />} />
+        <Route path="/settings/users" element={<Users />} />
+        <Route path="/settings/roles" element={<Roles />} />
         <Route path="/help" element={<Help />} />
         <Route path="/help/presentation" element={<HelpPresentation />} />
         <Route path="/help/guide" element={<HelpGuide />} />

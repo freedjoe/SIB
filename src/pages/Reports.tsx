@@ -2,7 +2,27 @@
 // We should create a new component for the report generation dialog and update the page to use it.
 
 import { useState, useEffect } from "react";
-import { FileDown, FileText, ArrowDownWideNarrow, FileSearch, X, Calendar, FilePlus, ChartBar, FileEdit, Trash2, Eye, Save } from "lucide-react";
+import {
+  FileDown,
+  FileText,
+  ArrowDownWideNarrow,
+  FileSearch,
+  X,
+  Calendar,
+  FilePlus,
+  ChartBar,
+  FileEdit,
+  Trash2,
+  Eye,
+  Save,
+  Download,
+  Clock,
+  LineChart,
+  BarChart3,
+  PieChart,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 import { Dashboard, DashboardHeader, DashboardGrid, DashboardSection } from "@/components/layout/Dashboard";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +50,88 @@ interface Report {
   status: "ready" | "pending" | "error";
 }
 
+// Mock report types
+const reportTypes = [
+  { id: "budget", name: "Exécution Budgétaire", description: "Rapport sur l'exécution du budget" },
+  { id: "payment", name: "Paiements", description: "Rapport sur les paiements effectués" },
+  { id: "engagement", name: "Engagements", description: "Rapport sur les engagements" },
+  { id: "operation", name: "Opérations", description: "Rapport sur les opérations" },
+  { id: "program", name: "Programmes", description: "Rapport sur les programmes" },
+  { id: "ministry", name: "Ministères", description: "Rapport sur les ministères" },
+  { id: "audit", name: "Audit", description: "Rapport d'audit et contrôle" },
+  { id: "analytics", name: "Analytique", description: "Rapports analytiques et tableaux de bord" },
+];
+
+// Mock recent reports
+const recentReports = [
+  {
+    id: "rep1",
+    name: "Exécution budgétaire T2 2023",
+    type: "budget",
+    date: "2023-06-30",
+    user: "admin@sib.dz",
+    status: "completed",
+  },
+  {
+    id: "rep2",
+    name: "Rapport d'engagement Ministère de l'Éducation",
+    type: "engagement",
+    date: "2023-07-15",
+    user: "finance@sib.dz",
+    status: "completed",
+  },
+  {
+    id: "rep3",
+    name: "Paiements Q3 2023",
+    type: "payment",
+    date: "2023-10-01",
+    user: "admin@sib.dz",
+    status: "pending",
+  },
+  {
+    id: "rep4",
+    name: "Audit contrôle financier",
+    type: "audit",
+    date: "2023-09-22",
+    user: "audit@sib.dz",
+    status: "completed",
+  },
+];
+
+// Mock scheduled reports
+const scheduledReports = [
+  {
+    id: "srep1",
+    name: "Rapport d'exécution budgétaire mensuel",
+    type: "budget",
+    frequency: "monthly",
+    nextRun: "2023-11-01",
+    recipients: ["finance@sib.dz", "admin@sib.dz"],
+  },
+  {
+    id: "srep2",
+    name: "Rapport des paiements",
+    type: "payment",
+    frequency: "weekly",
+    nextRun: "2023-10-23",
+    recipients: ["finance@sib.dz"],
+  },
+  {
+    id: "srep3",
+    name: "Tableau de bord exécutif",
+    type: "analytics",
+    frequency: "daily",
+    nextRun: "2023-10-18",
+    recipients: ["director@sib.dz", "admin@sib.dz"],
+  },
+];
+
 export default function ReportsPage() {
+  const [activeTab, setActiveTab] = useState("generate");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedReportType, setSelectedReportType] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [selectedFormat, setSelectedFormat] = useState("pdf");
   const [reportTypeFilter, setReportTypeFilter] = useState<string>("all");
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,333 +405,270 @@ export default function ReportsPage() {
     { label: "Annuel", value: "annual" },
   ];
 
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  // Get status badge
+  const getStatusBadge = (status: string) => {
+    if (status === "completed") {
+      return <Badge className="bg-green-100 text-green-800 border-green-400">Complété</Badge>;
+    } else if (status === "pending") {
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-400">En attente</Badge>;
+    } else if (status === "failed") {
+      return <Badge className="bg-red-100 text-red-800 border-red-400">Échoué</Badge>;
+    }
+    return <Badge>Inconnu</Badge>;
+  };
+
+  // Get frequency badge
+  const getFrequencyBadge = (frequency: string) => {
+    if (frequency === "daily") {
+      return <Badge variant="outline">Quotidien</Badge>;
+    } else if (frequency === "weekly") {
+      return <Badge variant="outline">Hebdomadaire</Badge>;
+    } else if (frequency === "monthly") {
+      return <Badge variant="outline">Mensuel</Badge>;
+    } else if (frequency === "quarterly") {
+      return <Badge variant="outline">Trimestriel</Badge>;
+    }
+    return <Badge variant="outline">Personnalisé</Badge>;
+  };
+
+  // Filter reports based on search term
+  const filteredRecentReports = recentReports.filter((report) => report.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return (
     <Dashboard>
-      <DashboardHeader title="Rapports" description="Générez et téléchargez des rapports sur l'exécution budgétaire">
-        <Button className="shadow-subtle" onClick={handleGenerateReport}>
-          <FilePlus className="mr-2 h-4 w-4" />
-          Générer un rapport
+      <DashboardHeader title="Rapports" description="Générez et consultez les rapports sur l'exécution budgétaire et financière">
+        <Button>
+          <FileText className="mr-2 h-4 w-4" />
+          Nouveau rapport
         </Button>
       </DashboardHeader>
 
       <DashboardSection>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Filtrer les rapports</CardTitle>
-            <CardDescription>Utilisez les filtres ci-dessous pour affiner votre recherche</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <Select value={reportTypeFilter} onValueChange={setReportTypeFilter}>
-                <SelectTrigger className="w-full md:w-[250px]">
-                  <SelectValue placeholder="Type de rapport" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les types</SelectItem>
-                  <SelectItem value="execution">Exécution Budgétaire</SelectItem>
-                  <SelectItem value="allocation">Allocation</SelectItem>
-                  <SelectItem value="annual">Rapport Annuel</SelectItem>
-                  <SelectItem value="distribution">Répartition</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardSection>
-
-      <DashboardSection title="Rapports disponibles" description="Consultez et téléchargez les rapports générés">
-        {loading ? (
-          <p className="text-center py-8">Chargement des rapports...</p>
-        ) : (
-          <DashboardGrid columns={3}>
-            {filteredReports.length > 0 ? (
-              filteredReports.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  id={report.id}
-                  title={report.title}
-                  description={report.description}
-                  date={report.generated_date}
-                  frequency={report.frequency}
-                  status={report.status}
-                  filePath={report.file_path}
-                  onView={() => handleViewReport(report.id)}
-                  onEdit={() => handleEditReport(report.id)}
-                  onDelete={() => handleDeleteReport(report.id)}
-                  onDownload={() => handleDownloadReport(report)}
-                />
-              ))
-            ) : (
-              <div className="col-span-3 text-center py-8">
-                <p className="text-muted-foreground">Aucun rapport ne correspond à vos critères de recherche</p>
-              </div>
-            )}
-          </DashboardGrid>
-        )}
-      </DashboardSection>
-
-      <DashboardSection title="Rapports périodiques" description="Rapports générés à intervalles réguliers">
-        <Tabs defaultValue="monthly" className="w-full">
-          <TabsList>
-            <TabsTrigger value="monthly">Mensuel</TabsTrigger>
-            <TabsTrigger value="quarterly">Trimestriel</TabsTrigger>
-            <TabsTrigger value="yearly">Annuel</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="generate">Générer un rapport</TabsTrigger>
+            <TabsTrigger value="recent">Rapports récents</TabsTrigger>
+            <TabsTrigger value="scheduled">Rapports programmés</TabsTrigger>
           </TabsList>
-          <TabsContent value="monthly" className="pt-4">
+
+          <TabsContent value="generate" className="pt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Exécution Budgétaire Mensuelle</CardTitle>
-                <CardDescription>Suivi mensuel détaillé de l'exécution budgétaire</CardDescription>
+                <CardTitle>Générer un nouveau rapport</CardTitle>
+                <CardDescription>Sélectionnez les paramètres pour générer un rapport</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mois</TableHead>
-                      <TableHead>Budget Prévu</TableHead>
-                      <TableHead>Budget Exécuté</TableHead>
-                      <TableHead>Taux d'Exécution</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>Juillet 2023</TableCell>
-                      <TableCell>120,000,000 DZD</TableCell>
-                      <TableCell>98,500,000 DZD</TableCell>
-                      <TableCell>82%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Juin 2023</TableCell>
-                      <TableCell>115,000,000 DZD</TableCell>
-                      <TableCell>110,200,000 DZD</TableCell>
-                      <TableCell>96%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <div className="grid gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Type de rapport</label>
+                      <Select value={selectedReportType} onValueChange={setSelectedReportType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un type de rapport" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {reportTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Période</label>
+                      <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une période" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="current-month">Mois courant</SelectItem>
+                          <SelectItem value="previous-month">Mois précédent</SelectItem>
+                          <SelectItem value="current-quarter">Trimestre courant</SelectItem>
+                          <SelectItem value="previous-quarter">Trimestre précédent</SelectItem>
+                          <SelectItem value="current-year">Année courante</SelectItem>
+                          <SelectItem value="previous-year">Année précédente</SelectItem>
+                          <SelectItem value="custom">Période personnalisée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Format de sortie</label>
+                    <div className="flex space-x-2">
+                      <Button variant={selectedFormat === "pdf" ? "default" : "outline"} onClick={() => setSelectedFormat("pdf")} className="flex-1">
+                        PDF
+                      </Button>
+                      <Button
+                        variant={selectedFormat === "excel" ? "default" : "outline"}
+                        onClick={() => setSelectedFormat("excel")}
+                        className="flex-1"
+                      >
+                        Excel
+                      </Button>
+                      <Button variant={selectedFormat === "csv" ? "default" : "outline"} onClick={() => setSelectedFormat("csv")} className="flex-1">
+                        CSV
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Réinitialiser</Button>
+                <Button>Générer le rapport</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="recent" className="pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Rapports récents</CardTitle>
+                <CardDescription>Consultez et téléchargez les rapports générés récemment</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher des rapports..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="border rounded-md divide-y">
+                  {filteredRecentReports.length > 0 ? (
+                    filteredRecentReports.map((report) => (
+                      <div key={report.id} className="p-4 flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="font-medium">{report.name}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            <span>{reportTypes.find((t) => t.id === report.type)?.name}</span>
+                            <span className="mx-1">•</span>
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(report.date)}</span>
+                            <span className="mx-1">•</span>
+                            {getStatusBadge(report.status)}
+                          </div>
+                        </div>
+                        <div>
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-muted-foreground">Aucun rapport trouvé. Générez un nouveau rapport pour commencer.</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="quarterly" className="pt-4">
+
+          <TabsContent value="scheduled" className="pt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Exécution Budgétaire Trimestrielle</CardTitle>
-                <CardDescription>Suivi trimestriel détaillé de l'exécution budgétaire</CardDescription>
+                <CardTitle>Rapports programmés</CardTitle>
+                <CardDescription>Gérez les rapports qui s'exécutent automatiquement selon un calendrier</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Trimestre</TableHead>
-                      <TableHead>Budget Prévu</TableHead>
-                      <TableHead>Budget Exécuté</TableHead>
-                      <TableHead>Taux d'Exécution</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>T2 2023</TableCell>
-                      <TableCell>350,000,000 DZD</TableCell>
-                      <TableCell>325,800,000 DZD</TableCell>
-                      <TableCell>93%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>T1 2023</TableCell>
-                      <TableCell>320,000,000 DZD</TableCell>
-                      <TableCell>290,500,000 DZD</TableCell>
-                      <TableCell>91%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <div className="border rounded-md divide-y">
+                  {scheduledReports.map((report) => (
+                    <div key={report.id} className="p-4 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="font-medium">{report.name}</div>
+                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          <span>{reportTypes.find((t) => t.id === report.type)?.name}</span>
+                          <span className="mx-1">•</span>
+                          <Clock className="h-3 w-3" />
+                          <span>{getFrequencyBadge(report.frequency)}</span>
+                          <span className="mx-1">•</span>
+                          <Calendar className="h-3 w-3" />
+                          <span>Prochain: {formatDate(report.nextRun)}</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        Modifier <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="yearly" className="pt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Exécution Budgétaire Annuelle</CardTitle>
-                <CardDescription>Bilan annuel détaillé de l'exécution budgétaire</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Année</TableHead>
-                      <TableHead>Budget Prévu</TableHead>
-                      <TableHead>Budget Exécuté</TableHead>
-                      <TableHead>Taux d'Exécution</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>2022</TableCell>
-                      <TableCell>1,450,000,000 DZD</TableCell>
-                      <TableCell>1,380,500,000 DZD</TableCell>
-                      <TableCell>95%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>2021</TableCell>
-                      <TableCell>1,320,000,000 DZD</TableCell>
-                      <TableCell>1,290,800,000 DZD</TableCell>
-                      <TableCell>98%</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-                          Complété
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
+              <CardFooter>
+                <Button className="w-full">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Créer un rapport programmé
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
       </DashboardSection>
 
-      <DashboardSection
-        title="Répartition Budgétaire par Ministère"
-        description="Analyse de la répartition du budget entre les différents ministères"
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Répartition par Ministère</CardTitle>
-            <CardDescription>Aperçu de la répartition du budget total entre les ministères</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ministère</TableHead>
-                  <TableHead>Budget Alloué</TableHead>
-                  <TableHead>Pourcentage</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Ministère de l'Éducation</TableCell>
-                  <TableCell>1,250,000,000 DZD</TableCell>
-                  <TableCell>25%</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Ministère de la Santé</TableCell>
-                  <TableCell>980,000,000 DZD</TableCell>
-                  <TableCell>19.6%</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Ministère des Transports</TableCell>
-                  <TableCell>750,000,000 DZD</TableCell>
-                  <TableCell>15%</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Ministère de l'Agriculture</TableCell>
-                  <TableCell>620,000,000 DZD</TableCell>
-                  <TableCell>12.4%</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Autres Ministères</TableCell>
-                  <TableCell>1,400,000,000 DZD</TableCell>
-                  <TableCell>28%</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button variant="outline" className="mr-2">
-              <ArrowDownWideNarrow className="mr-2 h-4 w-4" />
-              Trier
-            </Button>
-            <Button>
-              <FileDown className="mr-2 h-4 w-4" />
-              Télécharger le rapport complet
-            </Button>
-          </CardFooter>
-        </Card>
+      <DashboardSection>
+        <DashboardGrid columns={3}>
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Rapports populaires</CardTitle>
+              <CardDescription>Accédez rapidement aux rapports les plus utilisés</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {reportTypes.slice(0, 4).map((type) => (
+                <div key={type.id} className="border rounded-md p-4 flex items-start gap-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                  {type.id === "budget" && <BarChart3 className="h-8 w-8 text-primary" />}
+                  {type.id === "payment" && <LineChart className="h-8 w-8 text-primary" />}
+                  {type.id === "engagement" && <PieChart className="h-8 w-8 text-primary" />}
+                  {type.id === "audit" && <FileText className="h-8 w-8 text-primary" />}
+                  <div>
+                    <h3 className="font-medium">{type.name}</h3>
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Statistiques</CardTitle>
+              <CardDescription>Statistiques des rapports générés</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Total rapports générés</span>
+                <span className="font-medium">158</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Rapports ce mois</span>
+                <span className="font-medium">24</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Rapports programmés actifs</span>
+                <span className="font-medium">7</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Formats les plus utilisés</span>
+                <span className="font-medium">PDF (64%)</span>
+              </div>
+            </CardContent>
+          </Card>
+        </DashboardGrid>
       </DashboardSection>
 
       {/* Add Report Dialog */}

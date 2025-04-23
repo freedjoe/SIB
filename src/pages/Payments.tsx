@@ -646,6 +646,7 @@ const Payments = () => {
                 onApprove={handleApproveRequest}
                 onReject={handleRejectRequest}
                 showApprovalActions={true}
+                onRefresh={refetchRequests}
               />
               <div className="mt-4 text-sm text-muted-foreground">
                 Affichage de {filteredRequests.length} demandes sur {paymentRequests.length}.

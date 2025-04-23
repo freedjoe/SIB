@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Shield, FileDown, Search } from "lucide-react";
+import { Shield, FileDown, Search, Plus } from "lucide-react";
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AuditLogsTable, AuditLog } from "@/components/tables/AuditLogsTable";
+import { FinancialControlsTable, FinancialControl } from "@/components/tables/FinancialControlsTable";
+import { toast } from "@/hooks/use-toast";
+import { AuditControlDialog } from "@/components/dialogs/AuditControlDialog";
+import { AuditLogDialog } from "@/components/dialogs/AuditLogDialog";
 
 // Mock data for audit controls
-const auditControlsData = [
+const auditControlsData: FinancialControl[] = [
   {
     id: "control-1",
     date: "2023-07-15",
@@ -53,7 +58,7 @@ const auditControlsData = [
 ];
 
 // Mock data for audit logs
-const auditLogsData = [
+const auditLogsData: AuditLog[] = [
   {
     id: "log-1",
     timestamp: "2023-07-28T14:35:42",
@@ -121,6 +126,11 @@ const formatTimestamp = (timestamp: string) => {
 
 export default function AuditPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [controlDialogOpen, setControlDialogOpen] = useState(false);
+  const [controlDialogType, setControlDialogType] = useState<"add" | "edit" | "view">("add");
+  const [selectedControl, setSelectedControl] = useState<FinancialControl | null>(null);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const filteredControls = auditControlsData.filter(
     (control) =>
@@ -161,13 +171,66 @@ export default function AuditPage() {
     }
   };
 
+  const handleViewLog = (log: AuditLog) => {
+    setSelectedLog(log);
+    setLogDialogOpen(true);
+  };
+
+  const handleViewControl = (control: FinancialControl) => {
+    setControlDialogType("view");
+    setSelectedControl(control);
+    setControlDialogOpen(true);
+  };
+
+  const handleEditControl = (control: FinancialControl) => {
+    setControlDialogType("edit");
+    setSelectedControl(control);
+    setControlDialogOpen(true);
+  };
+
+  const handleAddNewControl = () => {
+    setControlDialogType("add");
+    setSelectedControl(null);
+    setControlDialogOpen(true);
+  };
+
+  const handleSaveControl = (controlData: Partial<FinancialControl>) => {
+    if (controlDialogType === "add") {
+      toast({
+        title: "Contrôle ajouté",
+        description: "Le contrôle financier a été ajouté avec succès",
+      });
+      console.log("Added control:", controlData);
+    } else if (controlDialogType === "edit") {
+      toast({
+        title: "Contrôle modifié",
+        description: "Le contrôle financier a été modifié avec succès",
+      });
+      console.log("Updated control:", controlData);
+    }
+
+    // Here you would update your data source
+    setControlDialogOpen(false);
+  };
+
+  const handleExportLogs = () => {
+    // Handle exporting logs
+    console.log("Exporting logs");
+  };
+
   return (
     <Dashboard>
       <DashboardHeader title="Contrôles & Audits" description="Suivez les contrôles financiers et consultez les logs d'audit">
-        <Button className="shadow-subtle">
-          <FileDown className="mr-2 h-4 w-4" />
-          Exporter les logs
-        </Button>
+        <div className="flex gap-2">
+          <Button className="shadow-subtle" onClick={handleAddNewControl}>
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter un contrôle
+          </Button>
+          <Button className="shadow-subtle" onClick={handleExportLogs}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Exporter les logs
+          </Button>
+        </div>
       </DashboardHeader>
 
       <DashboardSection>
@@ -203,42 +266,15 @@ export default function AuditPage() {
                 <CardDescription>Liste des contrôles financiers effectués sur le système</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type de Contrôle</TableHead>
-                      <TableHead>Entité</TableHead>
-                      <TableHead>Contrôleur</TableHead>
-                      <TableHead>Résultat</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredControls.length > 0 ? (
-                      filteredControls.map((control) => (
-                        <TableRow key={control.id}>
-                          <TableCell>{formatDate(control.date)}</TableCell>
-                          <TableCell>{control.type}</TableCell>
-                          <TableCell>{control.entity}</TableCell>
-                          <TableCell>{control.controller}</TableCell>
-                          <TableCell>{getResultBadge(control.result)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Shield className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                          Aucun contrôle trouvé.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                <FinancialControlsTable
+                  controls={filteredControls}
+                  formatDate={formatDate}
+                  getResultBadge={getResultBadge}
+                  onView={handleViewControl}
+                  onEdit={handleEditControl}
+                  onRefresh={() => console.log("Refreshing controls")}
+                  onAddNew={handleAddNewControl}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -249,41 +285,29 @@ export default function AuditPage() {
                 <CardDescription>Historique des actions effectuées sur le système</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Horodatage</TableHead>
-                      <TableHead>Utilisateur</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Détails</TableHead>
-                      <TableHead>Adresse IP</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLogs.length > 0 ? (
-                      filteredLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatTimestamp(log.timestamp)}</TableCell>
-                          <TableCell>{log.user}</TableCell>
-                          <TableCell>{log.action}</TableCell>
-                          <TableCell>{log.details}</TableCell>
-                          <TableCell>{log.ipAddress}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          Aucun log trouvé.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                <AuditLogsTable
+                  logs={filteredLogs}
+                  formatTimestamp={formatTimestamp}
+                  onView={handleViewLog}
+                  onRefresh={() => console.log("Refreshing logs")}
+                />
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </DashboardSection>
+
+      {/* Audit Control Dialog */}
+      <AuditControlDialog
+        open={controlDialogOpen}
+        onOpenChange={setControlDialogOpen}
+        control={selectedControl}
+        onSave={handleSaveControl}
+        type={controlDialogType}
+      />
+
+      {/* Audit Log Dialog */}
+      <AuditLogDialog open={logDialogOpen} onOpenChange={setLogDialogOpen} log={selectedLog} formatTimestamp={formatTimestamp} />
     </Dashboard>
   );
 }

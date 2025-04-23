@@ -1,53 +1,18 @@
-
 import { useState } from "react";
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Plus, FileEdit, Trash2, Search, Eye } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ActionsTable, Action } from "@/components/tables/ActionsTable";
 
 // Mock data for actions
-interface Action {
-  id: string;
-  programme_id: string;
-  programme_name: string;
-  nom: string;
-  type_action: string;
-  montant_alloue: number;
-}
-
 const mockActions: Action[] = [
   {
     id: "ACT001",
@@ -100,14 +65,7 @@ const programmes = [
 ];
 
 // Action types
-const actionTypes = [
-  "Infrastructure",
-  "Équipement",
-  "Formation",
-  "Recherche",
-  "Environnement",
-  "Autre",
-];
+const actionTypes = ["Infrastructure", "Équipement", "Formation", "Recherche", "Environnement", "Autre"];
 
 export default function Actions() {
   const { t } = useTranslation();
@@ -179,8 +137,8 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programmes.find(p => p.id === newAction.programme_id);
-    
+    const selectedProgramme = programmes.find((p) => p.id === newAction.programme_id);
+
     const action: Action = {
       id: `ACT${String(actions.length + 1).padStart(3, "0")}`,
       programme_id: newAction.programme_id!,
@@ -209,7 +167,7 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programmes.find(p => p.id === newAction.programme_id);
+    const selectedProgramme = programmes.find((p) => p.id === newAction.programme_id);
 
     const updatedActions = actions.map((action) =>
       action.id === currentAction.id
@@ -236,9 +194,7 @@ export default function Actions() {
   const handleDeleteAction = () => {
     if (!currentAction) return;
 
-    const updatedActions = actions.filter(
-      (action) => action.id !== currentAction.id
-    );
+    const updatedActions = actions.filter((action) => action.id !== currentAction.id);
     setActions(updatedActions);
     setIsDeleteDialogOpen(false);
     toast({
@@ -258,86 +214,36 @@ export default function Actions() {
 
   return (
     <Dashboard className="p-6">
-      <DashboardHeader
-        title={t("app.navigation.actions")}
-        description="Gestion des actions budgétaires"
-      />
+      <DashboardHeader title={t("app.navigation.actions")} description="Gestion des actions budgétaires" />
 
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-6">
             <div className="relative w-72">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher des actions..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <Input placeholder="Rechercher des actions..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
             <Button onClick={handleOpenAddDialog}>
               <Plus className="mr-2 h-4 w-4" /> Ajouter une action
             </Button>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Programme</TableHead>
-                <TableHead>Nom de l'action</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Montant alloué</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredActions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    Aucune action trouvée
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredActions.map((action) => (
-                  <TableRow key={action.id}>
-                    <TableCell>{action.id}</TableCell>
-                    <TableCell>{action.programme_name}</TableCell>
-                    <TableCell className="font-medium">{action.nom}</TableCell>
-                    <TableCell>{action.type_action}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(action.montant_alloue)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenViewDialog(action)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEditDialog(action)}
-                        >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDeleteDialog(action)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <ActionsTable
+            actions={filteredActions}
+            formatCurrency={formatCurrency}
+            onView={handleOpenViewDialog}
+            onEdit={handleOpenEditDialog}
+            onDelete={handleOpenDeleteDialog}
+            onRefresh={() => {
+              // Simulate refreshing data
+              toast({
+                title: "Données actualisées",
+                description: "La liste des actions a été actualisée.",
+              });
+              setActions([...mockActions]);
+            }}
+            onAddNew={handleOpenAddDialog}
+          />
         </CardContent>
       </Card>
 
@@ -346,21 +252,14 @@ export default function Actions() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Ajouter une nouvelle action</DialogTitle>
-            <DialogDescription>
-              Complétez le formulaire pour ajouter une nouvelle action budgétaire.
-            </DialogDescription>
+            <DialogDescription>Complétez le formulaire pour ajouter une nouvelle action budgétaire.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="programme" className="text-right">
                 Programme
               </Label>
-              <Select
-                value={newAction.programme_id}
-                onValueChange={(value) =>
-                  setNewAction({ ...newAction, programme_id: value })
-                }
-              >
+              <Select value={newAction.programme_id} onValueChange={(value) => setNewAction({ ...newAction, programme_id: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un programme" />
                 </SelectTrigger>
@@ -381,21 +280,14 @@ export default function Actions() {
                 id="nom"
                 className="col-span-3"
                 value={newAction.nom || ""}
-                onChange={(e) =>
-                  setNewAction({ ...newAction, nom: e.target.value })
-                }
+                onChange={(e) => setNewAction({ ...newAction, nom: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">
                 Type d'action
               </Label>
-              <Select
-                value={newAction.type_action}
-                onValueChange={(value) =>
-                  setNewAction({ ...newAction, type_action: value })
-                }
-              >
+              <Select value={newAction.type_action} onValueChange={(value) => setNewAction({ ...newAction, type_action: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un type" />
                 </SelectTrigger>
@@ -427,10 +319,7 @@ export default function Actions() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAddDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Annuler
             </Button>
             <Button onClick={handleAddAction}>Ajouter</Button>
@@ -443,21 +332,14 @@ export default function Actions() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Modifier l'action</DialogTitle>
-            <DialogDescription>
-              Modifiez les détails de l'action.
-            </DialogDescription>
+            <DialogDescription>Modifiez les détails de l'action.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-programme" className="text-right">
                 Programme
               </Label>
-              <Select
-                value={newAction.programme_id}
-                onValueChange={(value) =>
-                  setNewAction({ ...newAction, programme_id: value })
-                }
-              >
+              <Select value={newAction.programme_id} onValueChange={(value) => setNewAction({ ...newAction, programme_id: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un programme" />
                 </SelectTrigger>
@@ -478,21 +360,14 @@ export default function Actions() {
                 id="edit-nom"
                 className="col-span-3"
                 value={newAction.nom || ""}
-                onChange={(e) =>
-                  setNewAction({ ...newAction, nom: e.target.value })
-                }
+                onChange={(e) => setNewAction({ ...newAction, nom: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-type" className="text-right">
                 Type d'action
               </Label>
-              <Select
-                value={newAction.type_action}
-                onValueChange={(value) =>
-                  setNewAction({ ...newAction, type_action: value })
-                }
-              >
+              <Select value={newAction.type_action} onValueChange={(value) => setNewAction({ ...newAction, type_action: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un type" />
                 </SelectTrigger>
@@ -524,10 +399,7 @@ export default function Actions() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Annuler
             </Button>
             <Button onClick={handleEditAction}>Enregistrer</Button>
@@ -540,10 +412,7 @@ export default function Actions() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette action? Cette action est
-              irréversible.
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer cette action? Cette action est irréversible.</DialogDescription>
           </DialogHeader>
           {currentAction && (
             <div className="py-4">
@@ -557,16 +426,12 @@ export default function Actions() {
                 <strong>Nom:</strong> {currentAction.nom}
               </p>
               <p>
-                <strong>Montant alloué:</strong>{" "}
-                {formatCurrency(currentAction.montant_alloue)}
+                <strong>Montant alloué:</strong> {formatCurrency(currentAction.montant_alloue)}
               </p>
             </div>
           )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Annuler
             </Button>
             <Button variant="destructive" onClick={handleDeleteAction}>

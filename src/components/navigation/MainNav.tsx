@@ -22,6 +22,8 @@ import {
   Globe,
   Database,
   CreditCard,
+  Users2,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -144,6 +146,18 @@ export function MainNav() {
       href: "/settings/localization",
       icon: Globe,
       description: "Paramètres de localisation",
+    },
+    {
+      label: t("app.navigation.users"),
+      href: "/settings/users",
+      icon: Users2,
+      description: "Gestion des utilisateurs",
+    },
+    {
+      label: t("app.navigation.roles"),
+      href: "/settings/roles",
+      icon: ShieldCheck,
+      description: "Gestion des rôles et permissions",
     },
     {
       label: t("app.navigation.basicData"),

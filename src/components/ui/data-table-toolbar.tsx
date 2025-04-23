@@ -7,9 +7,21 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  filterColumn?: string;
+  extraContent?: React.ReactNode;
+  onRefresh?: () => void;
+  onExportCSV?: () => void;
+  onPrint?: () => void;
 }
 
-export function DataTableToolbar<TData>({ table }: DataTableToolbarProps<TData>) {
+export function DataTableToolbar<TData>({
+  table,
+  filterColumn = "name",
+  extraContent,
+  onRefresh,
+  onExportCSV,
+  onPrint,
+}: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -17,8 +29,8 @@ export function DataTableToolbar<TData>({ table }: DataTableToolbarProps<TData>)
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Rechercher..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+          value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
+          onChange={(event) => table.getColumn(filterColumn)?.setFilterValue(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px]"
         />
         {isFiltered && (
@@ -27,8 +39,9 @@ export function DataTableToolbar<TData>({ table }: DataTableToolbarProps<TData>)
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}
+        {extraContent}
       </div>
-      <DataTableViewOptions table={table} />
+      <DataTableViewOptions table={table} onRefresh={onRefresh} onExportCSV={onExportCSV} onPrint={onPrint} />
     </div>
   );
 }

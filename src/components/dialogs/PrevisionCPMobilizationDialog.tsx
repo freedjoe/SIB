@@ -15,8 +15,8 @@ import { PrevisionCP } from "@/types/prevision_cp";
 interface PrevisionCPMobilizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  prevision: PrevisionCP;
-  onSubmit: (id: string, data: Partial<PrevisionCP>) => void;
+  prevision: PrevisionCP | null;
+  onSubmit: (data: Partial<PrevisionCP>) => void;
 }
 
 // Form schema
@@ -51,10 +51,10 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     if (!prevision) return;
 
-    onSubmit(prevision.id, {
+    onSubmit({
+      id: prevision.id,
       ...values,
       statut: "demandé",
-      date_soumission: new Date().toISOString(),
     });
     form.reset();
     onOpenChange(false);
@@ -77,11 +77,11 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantPrevu")}</FormLabel>
-                <div className="text-lg font-semibold">{prevision.montant_prevu.toLocaleString()} FCFA</div>
+                <div className="text-lg font-semibold">{prevision.montant_prevu.toLocaleString()} DZD</div>
               </div>
               <div>
                 <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantRestant")}</FormLabel>
-                <div className="text-lg font-semibold">{(prevision.montant_prevu - (prevision.montant_mobilise || 0)).toLocaleString()} FCFA</div>
+                <div className="text-lg font-semibold">{(prevision.montant_prevu - (prevision.montant_mobilise || 0)).toLocaleString()} DZD</div>
               </div>
             </div>
             <FormField

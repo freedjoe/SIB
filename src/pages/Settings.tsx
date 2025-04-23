@@ -5,6 +5,8 @@ import ProfileSettings from "./settings/Profile";
 import SecuritySettings from "./settings/Security";
 import LocalizationSettings from "./settings/Localization";
 import BasicDataSettings from "./settings/BasicData";
+import UsersSettings from "./settings/Users";
+import RolesSettings from "./settings/Roles";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -15,10 +17,12 @@ export default function SettingsPage() {
 
       <DashboardSection>
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mb-8">
+          <TabsList className="grid grid-cols-6 w-full max-w-3xl mb-8">
             <TabsTrigger value="profile">Profil</TabsTrigger>
             <TabsTrigger value="security">Sécurité</TabsTrigger>
             <TabsTrigger value="localization">Localisation</TabsTrigger>
+            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="roles">Rôles</TabsTrigger>
             <TabsTrigger value="basicData">Données de Base</TabsTrigger>
           </TabsList>
 
@@ -32,6 +36,14 @@ export default function SettingsPage() {
 
           <TabsContent value="localization" className="pt-4">
             <LocalizationSettings />
+          </TabsContent>
+
+          <TabsContent value="users" className="pt-4">
+            <UsersSettings />
+          </TabsContent>
+
+          <TabsContent value="roles" className="pt-4">
+            <RolesSettings />
           </TabsContent>
 
           <TabsContent value="basicData" className="pt-4">

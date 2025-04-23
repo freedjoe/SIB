@@ -2,43 +2,18 @@ import { useState } from "react";
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { FileCog, SearchIcon, Eye, Plus, FileEdit, Trash2, Pencil } from "lucide-react";
+import { FileCog, SearchIcon, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import { OperationsTable, Operation } from "@/components/tables/OperationsTable";
 
 // Mock data
-interface Operation {
-  id: string;
-  name: string;
-  description: string;
-  actionId: string;
-  actionName: string;
-  programId: string;
-  programName: string;
-  code_operation: string;
-  wilaya: string;
-  titre_budgetaire: number;
-  origine_financement: "budget_national" | "financement_exterieur";
-  allocatedAmount: number;
-  usedAmount: number;
-  montant_consomme: number;
-  progress: number;
-  taux_physique: number;
-  taux_financier: number;
-  engagements: number;
-  payments: number;
-  status: "in_progress" | "completed" | "planned";
-  start_date: string;
-  end_date: string;
-}
-
 const mockOperations: Operation[] = [
   {
     id: "op1",
@@ -757,123 +732,22 @@ export default function OperationsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Wilaya</TableHead>
-                        <TableHead>Titre</TableHead>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Programme / Action</TableHead>
-                        <TableHead>Budget</TableHead>
-                        <TableHead>Utilisé</TableHead>
-                        <TableHead>Montant consommé</TableHead>
-                        <TableHead>Prog. Financier</TableHead>
-                        <TableHead>Prog. Physique</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Origine financement</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOperations.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={13} className="text-center">
-                            Aucune opération trouvée
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredOperations.map((operation) => (
-                          <TableRow key={operation.id}>
-                            <TableCell className="font-medium">{operation.code_operation}</TableCell>
-                            <TableCell>{operation.wilaya}</TableCell>
-                            <TableCell>
-                              {mockTitresBudgetaires.find((t) => t.id === Number(operation.titre_budgetaire))?.shortLabel ||
-                                `T${operation.titre_budgetaire}`}
-                            </TableCell>
-                            <TableCell>{operation.name}</TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{mockPrograms.find((p) => p.id === operation.programId)?.name}</span>
-                                <span className="text-muted-foreground text-sm">{operation.actionName}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat("fr-DZ", {
-                                style: "currency",
-                                currency: "DZD",
-                                maximumFractionDigits: 0,
-                              }).format(operation.allocatedAmount)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat("fr-DZ", {
-                                style: "currency",
-                                currency: "DZD",
-                                maximumFractionDigits: 0,
-                              }).format(operation.usedAmount)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat("fr-DZ", {
-                                style: "currency",
-                                currency: "DZD",
-                                maximumFractionDigits: 0,
-                              }).format(operation.montant_consomme)}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                                  <div className="h-2.5 rounded-full bg-violet-600" style={{ width: `${operation.taux_financier}%` }}></div>
-                                </div>
-                                <span className="text-sm font-medium text-violet-600">{operation.taux_financier}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                                  <div className="h-2.5 rounded-full bg-indigo-600" style={{ width: `${operation.taux_physique}%` }}></div>
-                                </div>
-                                <span className="text-sm font-medium text-indigo-600">{operation.taux_physique}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                className={
-                                  operation.status === "completed"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
-                                    : operation.status === "in_progress"
-                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
-                                    : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400"
-                                }
-                                variant="outline"
-                              >
-                                {operation.status === "completed" ? "Terminé" : operation.status === "in_progress" ? "En cours" : "Planifié"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {operation.origine_financement === "budget_national"
-                                ? "Budget national"
-                                : operation.origine_financement === "financement_exterieur"
-                                ? "Financement extérieur"
-                                : "-"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenViewDialog(operation)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(operation)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(operation)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                <OperationsTable
+                  operations={filteredOperations}
+                  formatCurrency={formatCurrency}
+                  onView={handleOpenViewDialog}
+                  onEdit={handleOpenEditDialog}
+                  onDelete={handleOpenDeleteDialog}
+                  onRefresh={() => {
+                    // Simulate refresh
+                    toast({
+                      title: "Données actualisées",
+                      description: "La liste des opérations a été actualisée",
+                    });
+                    setOperations([...mockOperations]);
+                  }}
+                  onAddNew={handleOpenAddDialog}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1466,8 +1340,8 @@ export default function OperationsPage() {
                     currentOperation.status === "completed"
                       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                       : currentOperation.status === "in_progress"
-                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
-                      : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                        : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400"
                   }
                   variant="outline"
                 >

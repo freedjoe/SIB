@@ -1,12 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Eye, FileEdit, Trash2, Check, X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "@/components/ui/data-table";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 
-interface PaymentRequest {
+export interface PaymentRequest {
   id: string;
   engagementId: string;
   engagementRef: string;
@@ -34,6 +30,7 @@ interface PaymentRequestTableProps {
   onApprove?: (request: PaymentRequest) => void;
   onReject?: (request: PaymentRequest) => void;
   showApprovalActions?: boolean;
+  onRefresh?: () => void;
 }
 
 export function PaymentRequestTable({
@@ -47,8 +44,9 @@ export function PaymentRequestTable({
   onApprove,
   onReject,
   showApprovalActions = false,
+  onRefresh,
 }: PaymentRequestTableProps) {
-  const columns: ColumnDef<PaymentRequest>[] = [
+  const columns: ColumnDef<PaymentRequest, unknown>[] = [
     {
       accessorKey: "programName",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Programme" />,
@@ -94,65 +92,24 @@ export function PaymentRequestTable({
       cell: ({ row }) => formatDate(row.getValue("requestDate")),
       filterFn: "includesString",
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const request = row.original;
-        return (
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onView(request)} title="Voir les détails">
-              <Eye className="h-4 w-4" />
-            </Button>
-
-            {onEdit && (
-              <Button variant="ghost" size="icon" onClick={() => onEdit(request)} title="Modifier">
-                <FileEdit className="h-4 w-4" />
-              </Button>
-            )}
-
-            {onDelete && (
-              <Button variant="ghost" size="icon" onClick={() => onDelete(request)} title="Supprimer">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-
-            {showApprovalActions && onApprove && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onApprove(request)}
-                title="Approuver"
-                className="text-green-600 hover:text-green-700"
-                disabled={request.status === "approved"}
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            )}
-
-            {showApprovalActions && onReject && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onReject(request)}
-                title="Rejeter"
-                className="text-red-600 hover:text-red-700"
-                disabled={request.status === "rejected"}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
   ];
 
+  const actionHandlers: ActionHandlers<PaymentRequest> = {
+    onView,
+    onEdit,
+    onDelete,
+    onApprove: showApprovalActions ? onApprove : undefined,
+    onReject: showApprovalActions ? onReject : undefined,
+  };
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <DataTable columns={columns} data={paymentRequests} />
-      </CardContent>
-    </Card>
+    <ReusableDataTable
+      columns={columns}
+      data={paymentRequests}
+      actionHandlers={actionHandlers}
+      filterColumn="operationName"
+      onRefresh={onRefresh}
+      tableName="Demandes de Paiement"
+    />
   );
 }

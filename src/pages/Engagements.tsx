@@ -16,18 +16,7 @@ import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
 import { useEffect } from "react";
 import { ReevaluationsTable } from "@/components/tables/ReevaluationsTable";
 import { getAllEngagementReevaluations, EngagementReevaluationWithRelations } from "@/services/engagementReevaluationsService";
-
-interface Engagement {
-  id: string;
-  operation: string;
-  beneficiaire: string;
-  montant_demande: number;
-  montant_approuve: number | null;
-  statut: "En attente" | "Approuvé" | "Rejeté";
-  date: string;
-  priorite: "Haute" | "Moyenne" | "Basse";
-  demande_par: string;
-}
+import { EngagementsTable, Engagement } from "@/components/tables/EngagementsTable";
 
 const mockEngagements: Engagement[] = [
   {
@@ -397,11 +386,21 @@ export default function Engagements() {
   };
 
   const handleReevaluationSuccess = () => {
-    fetchReevaluations();
+    setIsReevaluationDialogOpen(false);
+    setSelectedEngagementForReevaluation(null);
     toast({
-      title: "Succès",
-      description: "La demande de réévaluation a été créée avec succès",
+      title: "Réévaluation d'engagement",
+      description: "La demande de réévaluation a été soumise avec succès.",
     });
+
+    // Refresh the reevaluations list
+    getAllEngagementReevaluations()
+      .then((res) => {
+        setReevaluations(res);
+      })
+      .catch((error) => {
+        console.error("Error fetching reevaluations:", error);
+      });
   };
 
   return (
@@ -440,57 +439,26 @@ export default function Engagements() {
                 </Button>
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Opération</TableHead>
-                    <TableHead>Bénéficiaire</TableHead>
-                    <TableHead className="text-right">Montant demandé</TableHead>
-                    <TableHead className="text-right">Montant approuvé</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEngagements.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4">
-                        Aucun engagement trouvé
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredEngagements.map((engagement) => (
-                      <TableRow key={engagement.id}>
-                        <TableCell>{engagement.id}</TableCell>
-                        <TableCell className="font-medium">{engagement.operation}</TableCell>
-                        <TableCell>{engagement.beneficiaire}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(engagement.montant_demande)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(engagement.montant_approuve)}</TableCell>
-                        <TableCell>{getStatusBadge(engagement.statut)}</TableCell>
-                        <TableCell>{formatDate(engagement.date)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenViewDialog(engagement)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(engagement)}>
-                              <FileEdit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(engagement)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenReevaluationDialog(engagement)} title="Réévaluer">
-                              <ArrowUpDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+              <EngagementsTable
+                engagements={filteredEngagements}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                onEdit={handleOpenEditDialog}
+                onDelete={handleOpenDeleteDialog}
+                onView={handleOpenViewDialog}
+                onReevaluate={handleOpenReevaluationDialog}
+                onApprove={handleOpenApproveDialog}
+                onReject={handleRejectEngagement}
+                onRefresh={() => {
+                  // Simulate refresh
+                  toast({
+                    title: "Données actualisées",
+                    description: "La liste des engagements a été actualisée",
+                  });
+                  setEngagements([...mockEngagements]);
+                }}
+                onAddNew={handleOpenAddDialog}
+              />
             </CardContent>
           </Card>
         </TabsContent>

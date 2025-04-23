@@ -1,9 +1,6 @@
-import { Eye, FileEdit, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 
 interface Payment {
   id: string;
@@ -27,10 +24,11 @@ interface PaymentTableProps {
   onView: (payment: Payment) => void;
   onEdit: (payment: Payment) => void;
   onDelete: (payment: Payment) => void;
+  onRefresh?: () => void;
 }
 
-export function PaymentTable({ payments, formatCurrency, formatDate, getStatusBadge, onView, onEdit, onDelete }: PaymentTableProps) {
-  const columns: ColumnDef<Payment>[] = [
+export function PaymentTable({ payments, formatCurrency, formatDate, getStatusBadge, onView, onEdit, onDelete, onRefresh }: PaymentTableProps) {
+  const columns: ColumnDef<Payment, unknown>[] = [
     {
       accessorKey: "engagementRef",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Référence" />,
@@ -73,33 +71,22 @@ export function PaymentTable({ payments, formatCurrency, formatDate, getStatusBa
       cell: ({ row }) => formatDate(row.getValue("paymentDate")),
       filterFn: "includesString",
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const payment = row.original;
-        return (
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onView(payment)}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onEdit(payment)}>
-              <FileEdit className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(payment)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
   ];
 
+  const actionHandlers: ActionHandlers<Payment> = {
+    onView,
+    onEdit,
+    onDelete,
+  };
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <DataTable columns={columns} data={payments} />
-      </CardContent>
-    </Card>
+    <ReusableDataTable
+      columns={columns}
+      data={payments}
+      actionHandlers={actionHandlers}
+      filterColumn="operationName"
+      onRefresh={onRefresh}
+      tableName="Paiements"
+    />
   );
 }

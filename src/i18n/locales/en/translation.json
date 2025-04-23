@@ -348,7 +348,9 @@
       "security": "Security",
       "localization": "Localization",
       "basicData": "Basic Data",
-      "modules": "Modules"
+      "modules": "Modules",
+      "users": "Users",
+      "roles": "Roles"
     }
   },
   "PrevisionsCP": {

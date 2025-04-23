@@ -14,10 +14,11 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  RowSelectionState,
+  Table as TableInstance,
 } from "@tanstack/react-table";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 
@@ -25,10 +26,47 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   toolbar?: boolean;
+  pagination?: boolean;
+  filterColumn?: string;
+  toolbarExtra?: React.ReactNode;
+  rowSelection?: boolean;
+  onRowSelectionChange?: (selection: RowSelectionState) => void;
+  onRefresh?: () => void;
+  onExportCSV?: () => void;
+  onPrint?: () => void;
+  state?: {
+    sorting?: SortingState;
+    columnFilters?: ColumnFiltersState;
+    columnVisibility?: VisibilityState;
+    rowSelection?: RowSelectionState;
+  };
+  onSortingChange?: (sorting: SortingState) => void;
+  onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+  onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+  className?: string;
+  emptyMessage?: string;
 }
 
-export function DataTable<TData, TValue>({ columns, data, toolbar = true }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({});
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  toolbar = true,
+  pagination = true,
+  filterColumn = "name",
+  toolbarExtra,
+  rowSelection: enableRowSelection = false,
+  onRowSelectionChange,
+  onRefresh,
+  onExportCSV,
+  onPrint,
+  state,
+  onSortingChange,
+  onColumnFiltersChange,
+  onColumnVisibilityChange,
+  className,
+  emptyMessage = "Aucun résultat.",
+}: DataTableProps<TData, TValue>) {
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -37,16 +75,16 @@ export function DataTable<TData, TValue>({ columns, data, toolbar = true }: Data
     data,
     columns,
     state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
+      sorting: state?.sorting || sorting,
+      columnVisibility: state?.columnVisibility || columnVisibility,
+      rowSelection: state?.rowSelection || rowSelection,
+      columnFilters: state?.columnFilters || columnFilters,
     },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    enableRowSelection,
+    onRowSelectionChange: onRowSelectionChange || setRowSelection,
+    onSortingChange: onSortingChange || setSorting,
+    onColumnFiltersChange: onColumnFiltersChange || setColumnFilters,
+    onColumnVisibilityChange: onColumnVisibilityChange || setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -56,8 +94,17 @@ export function DataTable<TData, TValue>({ columns, data, toolbar = true }: Data
   });
 
   return (
-    <div className="space-y-4">
-      {toolbar && <DataTableToolbar table={table} />}
+    <div className={`space-y-4 ${className || ""}`}>
+      {toolbar && (
+        <DataTableToolbar
+          table={table}
+          filterColumn={filterColumn}
+          extraContent={toolbarExtra}
+          onRefresh={onRefresh}
+          onExportCSV={onExportCSV}
+          onPrint={onPrint}
+        />
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -76,7 +123,12 @@ export function DataTable<TData, TValue>({ columns, data, toolbar = true }: Data
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  onClick={() => enableRowSelection && row.toggleSelected()}
+                  className={enableRowSelection ? "cursor-pointer" : ""}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
@@ -85,14 +137,14 @@ export function DataTable<TData, TValue>({ columns, data, toolbar = true }: Data
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Aucun résultat.
+                  {emptyMessage}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      {pagination && <DataTablePagination table={table} />}
     </div>
   );
 }

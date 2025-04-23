@@ -26,6 +26,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create enterprise types enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enterprise_type') THEN
+        CREATE TYPE enterprise_type AS ENUM ('public', 'private', 'mixed');
+    END IF;
+END $$;
+
+-- Create user types enum
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_type') THEN
+        CREATE TYPE user_type AS ENUM (
+            'ordonnateur',
+            'comptable',
+            'controleur_financier',
+            'tresorier',
+            'directeur',
+            'ministre',
+            'president',
+            'admin',
+            'gestionnaire'
+        );
+    END IF;
+END $$;
+
 -- Create or update system_parameters table
 DO $$ 
 BEGIN
@@ -444,6 +470,56 @@ BEGIN
     END IF;
 END $$;
 
+-- Add missing code column to portfolios if not exists
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'portfolios' AND column_name = 'code'
+    ) THEN
+        ALTER TABLE portfolios ADD COLUMN code TEXT UNIQUE;
+    END IF;
+END $$;
+
+-- Add missing type column to engagements if not exists
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'engagements' AND column_name = 'type'
+    ) THEN
+        ALTER TABLE engagements ADD COLUMN type TEXT CHECK (type IN ('initial', 'adjusted', 'revalued'));
+    END IF;
+END $$;
+
+-- Add missing timestamp columns if not exists
+DO $$ 
+BEGIN
+    -- For portfolios
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'portfolios' AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE portfolios ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+    END IF;
+
+    -- For programs
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'programs' AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE programs ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+    END IF;
+
+    -- For actions
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'actions' AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE actions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+    END IF;
+END $$;
+
 -- Create or update programs table
 DO $$ 
 BEGIN
@@ -837,3 +913,246 @@ BEGIN
         ALTER TABLE wilayas ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL;
     END IF;
 END $$;
+
+-- Add missing ministries table if not exists
+CREATE TABLE IF NOT EXISTS ministries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Add missing budget_categories table if not exists
+CREATE TABLE IF NOT EXISTS budget_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Add missing cp_alerts table if not exists
+CREATE TABLE IF NOT EXISTS cp_alerts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    operation_id UUID REFERENCES operations(id),
+    threshold_exceeded BOOLEAN NOT NULL DEFAULT false,
+    alert_level TEXT CHECK (alert_level IN ('LOW', 'MEDIUM', 'HIGH')),
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Add missing financial_operations table if not exists
+CREATE TABLE IF NOT EXISTS financial_operations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    operation_id UUID REFERENCES operations(id),
+    executed_ae BIGINT NOT NULL,
+    executed_cp BIGINT NOT NULL,
+    execution_date DATE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Add missing more_engagements_2025 table if not exists
+CREATE TABLE IF NOT EXISTS more_engagements_2025 (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    operation_id UUID REFERENCES operations(id),
+    requested_amount BIGINT NOT NULL,
+    justification TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Enable RLS on new tables
+ALTER TABLE ministries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budget_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cp_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE financial_operations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE more_engagements_2025 ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for new tables
+CREATE POLICY "Enable all access for authenticated users" ON ministries
+    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON budget_categories
+    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON cp_alerts
+    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON financial_operations
+    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON more_engagements_2025
+    FOR ALL USING (auth.role() = 'authenticated');
+
+-- Create or update drb_regions table
+CREATE TABLE IF NOT EXISTS drb_regions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    wilaya_ids UUID[] REFERENCES wilayas(id)[],
+    director_id UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create or update enterprises table
+CREATE TABLE IF NOT EXISTS enterprises (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    type enterprise_type NOT NULL,
+    registration_number TEXT UNIQUE,
+    tax_number TEXT UNIQUE,
+    address TEXT,
+    phone TEXT,
+    email TEXT,
+    website TEXT,
+    legal_representative_name TEXT,
+    ministry_id UUID REFERENCES ministries(id),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create or update user_profiles table
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) NOT NULL UNIQUE,
+    type user_type NOT NULL,
+    ministry_id UUID REFERENCES ministries(id),
+    enterprise_id UUID REFERENCES enterprises(id),
+    drb_region_id UUID REFERENCES drb_regions(id),
+    wilaya_id UUID REFERENCES wilayas(id),
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    signature_path TEXT,
+    phone TEXT,
+    office_address TEXT,
+    position_title TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create or update delegations table
+CREATE TABLE IF NOT EXISTS delegations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    delegator_id UUID REFERENCES auth.users(id) NOT NULL,
+    delegate_id UUID REFERENCES auth.users(id) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    reason TEXT NOT NULL,
+    permissions TEXT[],
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    CONSTRAINT valid_delegation_period CHECK (end_date >= start_date)
+);
+
+-- Create or update signatures table
+CREATE TABLE IF NOT EXISTS signatures (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    document_type TEXT NOT NULL,
+    document_id UUID NOT NULL,
+    signer_id UUID REFERENCES auth.users(id) NOT NULL,
+    signature_date TIMESTAMPTZ NOT NULL,
+    signature_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    comments TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create or update access_logs table
+CREATE TABLE IF NOT EXISTS access_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) NOT NULL,
+    action TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    resource_id UUID,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Add indexes
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_ministry_id ON user_profiles(ministry_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_type ON user_profiles(type);
+CREATE INDEX IF NOT EXISTS idx_enterprises_ministry_id ON enterprises(ministry_id);
+CREATE INDEX IF NOT EXISTS idx_delegations_delegator ON delegations(delegator_id);
+CREATE INDEX IF NOT EXISTS idx_delegations_delegate ON delegations(delegate_id);
+CREATE INDEX IF NOT EXISTS idx_signatures_document ON signatures(document_type, document_id);
+CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id);
+
+-- Enable Row Level Security
+ALTER TABLE drb_regions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enterprises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE delegations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE signatures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE access_logs ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable read access for authenticated users" ON drb_regions
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable read access for authenticated users" ON enterprises
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable read access for all users" ON user_profiles
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can update their own profile" ON user_profiles
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Enable read access for authenticated users" ON delegations
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable read access for authenticated users" ON signatures
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable insert for authenticated users" ON access_logs
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Add triggers for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_timestamp_drb_regions
+    BEFORE UPDATE ON drb_regions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER set_timestamp_enterprises
+    BEFORE UPDATE ON enterprises
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER set_timestamp_user_profiles
+    BEFORE UPDATE ON user_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER set_timestamp_delegations
+    BEFORE UPDATE ON delegations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default enterprises
+INSERT INTO enterprises (name, code, type, registration_number, tax_number)
+VALUES 
+    ('Direction Générale du Budget', 'DGB', 'public', 'DGB-001', 'TAX-DGB-001'),
+    ('Direction Générale de la Comptabilité', 'DGC', 'public', 'DGC-001', 'TAX-DGC-001'),
+    ('Direction Générale du Trésor', 'DGT', 'public', 'DGT-001', 'TAX-DGT-001')
+ON CONFLICT (code) DO NOTHING;
+
+-- Insert some DRB regions
+INSERT INTO drb_regions (name, code)
+VALUES 
+    ('DRB Alger', 'DRB-16'),
+    ('DRB Oran', 'DRB-31'),
+    ('DRB Constantine', 'DRB-25'),
+    ('DRB Ouargla', 'DRB-30'),
+    ('DRB Bechar', 'DRB-08')
+ON CONFLICT (code) DO NOTHING;

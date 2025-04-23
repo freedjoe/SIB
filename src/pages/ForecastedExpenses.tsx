@@ -15,8 +15,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 
 import { ForecastedExpenseDialog } from "@/components/dialogs/ForecastedExpenseDialog";
+import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
+import { StatCard } from "@/components/ui-custom/StatCard";
+import { PlusCircle, FileText, BarChart } from "lucide-react";
 
 type ForecastedExpense = {
   id: string;
@@ -63,427 +70,295 @@ const ForecastedExpenses = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ForecastedExpense | null>(null);
+  const [activeTab, setActiveTab] = useState("planned");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Define the type for the expected data
-  type ForecastedExpenseResponse = ForecastedExpense[]; // Adjust as necessary
-
-  // Fetch forecasted expenses with related data
-  const fetchForecastedExpenses = async () => {
-    const { data, error } = await supabase.from<ForecastedExpenseResponse>("cp_forecasts").select(`
-        *,
-        programs:program_id (name),
-        ministries:ministry_id (name)
-      `);
-
-    if (error) {
-      console.error("Error fetching forecasted expenses:", error);
-      throw error;
-    }
-
-    console.log("Fetched data:", data);
-
-    // Map the results to include program and ministry names
-    return data.map((expense: any) => ({
-      ...expense,
-      program_name: expense.programs?.name,
-      ministry_name: expense.ministries?.name,
-    }));
-  };
-
-  // Fetch programs for the dropdown
-  const fetchPrograms = async () => {
-    const { data, error } = await supabase.from("programs").select("*").order("name");
-
-    if (error) {
-      console.error("Error fetching programs:", error);
-      throw error;
-    }
-
-    return data;
-  };
-
-  // Fetch ministries for the dropdown
-  const fetchMinistries = async () => {
-    const { data, error } = await supabase.from("ministries").select("*").order("name");
-
-    if (error) {
-      console.error("Error fetching ministries:", error);
-      throw error;
-    }
-
-    return data;
-  };
-
-  const {
-    data: forecastedExpenses,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["forecasted-expenses"],
-    queryFn: fetchForecastedExpenses,
+  // New forecast expense form state
+  const [formData, setFormData] = useState({
+    program_id: "",
+    forecasted_amount: 0,
+    mobilized_amount: 0,
+    period: "Q1",
+    start_date: new Date().toISOString(),
+    end_date: new Date().toISOString(),
+    ministry_id: "",
+    category: "",
+    description: "",
   });
 
-  const { data: programs = [] } = useQuery({
-    queryKey: ["programs"],
-    queryFn: fetchPrograms,
-  });
+  // Mock data for dropdowns
+  const programs = [
+    { id: "prog1", name: "Infrastructure Urbaine" },
+    { id: "prog2", name: "Éducation" },
+    { id: "prog3", name: "Santé" },
+  ];
 
-  const { data: ministries = [] } = useQuery({
-    queryKey: ["ministries"],
-    queryFn: fetchMinistries,
-  });
+  const ministries = [
+    { id: "min1", name: "Ministère des Finances" },
+    { id: "min2", name: "Ministère de l'Éducation" },
+    { id: "min3", name: "Ministère de la Santé" },
+  ];
 
-  // Filter by period
-  const filteredByPeriod = React.useMemo(() => {
-    if (!forecastedExpenses) return [];
-    if (selectedPeriod === "all") return forecastedExpenses;
-    return forecastedExpenses.filter((expense: ForecastedExpense) => expense.period === selectedPeriod);
-  }, [forecastedExpenses, selectedPeriod]);
-
-  // Filter by category
-  const filteredExpenses = React.useMemo(() => {
-    if (selectedCategory === "all") return filteredByPeriod;
-    return filteredByPeriod.filter((expense: ForecastedExpense) => expense.category === selectedCategory);
-  }, [filteredByPeriod, selectedCategory]);
-
-  // Calculate summary metrics
-  const summary = React.useMemo(() => {
-    if (!filteredExpenses?.length)
-      return {
-        total: 0,
-        mobilized: 0,
-        mobilizationRate: 0,
-        count: 0,
-      };
-
-    const total = filteredExpenses.reduce((sum, expense) => sum + expense.forecasted_amount, 0);
-    const mobilized = filteredExpenses.reduce((sum, expense) => sum + expense.mobilized_amount, 0);
-
-    return {
-      total,
-      mobilized,
-      mobilizationRate: total > 0 ? (mobilized / total) * 100 : 0,
-      count: filteredExpenses.length,
-    };
-  }, [filteredExpenses]);
-
-  // Handle creating a new forecasted expense
-  const handleCreateExpense = async (expense: Partial<ForecastedExpense>) => {
-    try {
-      // Use any() method to specify a table not defined in the TypeScript types
-      const { data, error } = await supabase
-        .from("cp_forecasts" as any)
-        .insert([expense])
-        .select();
-
-      if (error) throw error;
-
-      toast({
-        title: t("app.common.success"),
-        description: t("app.expenses.createSuccess"),
-      });
-
-      setIsDialogOpen(false);
-      refetch();
-    } catch (error: any) {
-      console.error("Error creating forecasted expense:", error);
-      toast({
-        title: t("app.common.error"),
-        description: error.message || t("app.expenses.createError"),
-        variant: "destructive",
-      });
-    }
+  // Mock function for form submission
+  const handleSubmit = () => {
+    console.log("Form submitted:", formData);
+    toast({
+      title: "Prévision ajoutée",
+      description: "La prévision de dépense a été ajoutée avec succès.",
+    });
+    setIsDialogOpen(false);
+    // Here you would normally add API call to save the data
   };
 
-  // Handle updating an expense
-  const handleUpdateExpense = async (id: string, updates: Partial<ForecastedExpense>) => {
-    try {
-      // Use any() method to specify a table not defined in the TypeScript types
-      const { error } = await supabase
-        .from("cp_forecasts" as any)
-        .update(updates)
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: t("app.common.success"),
-        description: t("app.expenses.updateSuccess"),
-      });
-
-      setIsDialogOpen(false);
-      setEditingExpense(null);
-      refetch();
-    } catch (error: any) {
-      console.error("Error updating forecasted expense:", error);
-      toast({
-        title: t("app.common.error"),
-        description: error.message || t("app.expenses.updateError"),
-        variant: "destructive",
-      });
-    }
+  // Handle opening the dialog when clicking on the add button
+  const handleAddClick = () => {
+    setEditingExpense(null);
+    setIsDialogOpen(true);
   };
 
-  // Handle deleting an expense
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm(t("app.expenses.confirmDelete"))) return;
-
-    try {
-      // Use any() method to specify a table not defined in the TypeScript types
-      const { error } = await supabase
-        .from("cp_forecasts" as any)
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: t("app.common.success"),
-        description: t("app.expenses.deleteSuccess"),
-      });
-
-      refetch();
-    } catch (error: any) {
-      console.error("Error deleting forecasted expense:", error);
-      toast({
-        title: t("app.common.error"),
-        description: error.message || t("app.expenses.deleteError"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Format currency values
+  // Format currency helper
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-DZ", {
       style: "currency",
       currency: "DZD",
-      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  // Calculate mobilization percentage
-  const getMobilizationPercentage = (forecasted: number, mobilized: number) => {
-    if (forecasted === 0) return 0;
-    return Math.min(100, Math.round((mobilized / forecasted) * 100));
-  };
-
-  // Get badge color based on mobilization rate
-  const getMobilizationBadgeVariant = (percentage: number) => {
-    if (percentage < 30) return "destructive";
-    if (percentage < 70) return "default";
-    return "success";
-  };
-
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t("app.navigation.forecastedExpenses")}</h1>
-          <p className="text-muted-foreground">{t("app.expenses.subtitle")}</p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingExpense(null);
-            setIsDialogOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {t("app.expenses.addNew")}
+    <Dashboard>
+      <DashboardHeader title="Prévisions de Dépenses" description="Planifiez et suivez les prévisions de dépenses budgétaires">
+        <Button onClick={handleAddClick}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Ajouter une prévision
         </Button>
-      </div>
+      </DashboardHeader>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <DashboardSection>
+        <DashboardGrid columns={4}>
+          <StatCard
+            title="Total Prévisions"
+            value={formatCurrency(125000000)}
+            description="Budget total prévu"
+            icon={<FileText className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Prévisions Trimestrielles"
+            value={formatCurrency(42000000)}
+            description="Trimestre en cours"
+            icon={<Calendar className="h-4 w-4" />}
+          />
+          <StatCard title="Taux d'Exécution Prévu" value="68%" description="Trimestre en cours" icon={<BarChart className="h-4 w-4" />} />
+          <StatCard
+            title="Écart Prévisionnel"
+            value={formatCurrency(5600000)}
+            description="Par rapport au budget réel"
+            icon={<BarChart className="h-4 w-4" />}
+          />
+        </DashboardGrid>
+      </DashboardSection>
+
+      <DashboardSection>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t("app.expenses.totalForecasted")}</CardTitle>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Prévisions de Dépenses</CardTitle>
+                <CardDescription>Gérez les prévisions de dépenses par programme et par période</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-32" /> : formatCurrency(summary.total)}</div>
+            <div className="flex justify-between items-center mb-6">
+              <Input
+                placeholder="Rechercher des prévisions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+                <TabsList>
+                  <TabsTrigger value="planned">Planifiées</TabsTrigger>
+                  <TabsTrigger value="inProgress">En cours</TabsTrigger>
+                  <TabsTrigger value="completed">Terminées</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <Tabs value={activeTab} className="mt-0">
+              <TabsContent value="planned">
+                <div className="text-center py-10 text-muted-foreground">
+                  Aucune prévision planifiée disponible.
+                  <div className="mt-4">
+                    <Button onClick={handleAddClick}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Ajouter une prévision
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="inProgress">
+                <div className="text-center py-10 text-muted-foreground">Aucune prévision en cours disponible.</div>
+              </TabsContent>
+
+              <TabsContent value="completed">
+                <div className="text-center py-10 text-muted-foreground">Aucune prévision terminée disponible.</div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
+      </DashboardSection>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t("app.expenses.mobilized")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-32" /> : formatCurrency(summary.mobilized)}</div>
-          </CardContent>
-        </Card>
+      {/* Add Forecast Expense Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter une prévision de dépense</DialogTitle>
+            <DialogDescription>
+              Entrez les détails de la nouvelle prévision de dépense. Tous les champs marqués d'un * sont obligatoires.
+            </DialogDescription>
+          </DialogHeader>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t("app.expenses.mobilizationRate")}</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="program_id" className="text-sm font-medium">
+                  Programme *
+                </Label>
+                <Select value={formData.program_id} onValueChange={(value) => setFormData({ ...formData, program_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un programme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programs.map((program) => (
+                      <SelectItem key={program.id} value={program.id}>
+                        {program.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ministry_id" className="text-sm font-medium">
+                  Ministère
+                </Label>
+                <Select value={formData.ministry_id} onValueChange={(value) => setFormData({ ...formData, ministry_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un ministère" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ministries.map((ministry) => (
+                      <SelectItem key={ministry.id} value={ministry.id}>
+                        {ministry.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="forecasted_amount" className="text-sm font-medium">
+                  Montant prévu (DZD) *
+                </Label>
+                <Input
+                  id="forecasted_amount"
+                  type="number"
+                  value={formData.forecasted_amount}
+                  onChange={(e) => setFormData({ ...formData, forecasted_amount: parseFloat(e.target.value) })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobilized_amount" className="text-sm font-medium">
+                  Montant mobilisé (DZD)
+                </Label>
+                <Input
+                  id="mobilized_amount"
+                  type="number"
+                  value={formData.mobilized_amount}
+                  onChange={(e) => setFormData({ ...formData, mobilized_amount: parseFloat(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="period" className="text-sm font-medium">
+                  Période *
+                </Label>
+                <Select value={formData.period} onValueChange={(value) => setFormData({ ...formData, period: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une période" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Q1">Trimestre 1</SelectItem>
+                    <SelectItem value="Q2">Trimestre 2</SelectItem>
+                    <SelectItem value="Q3">Trimestre 3</SelectItem>
+                    <SelectItem value="Q4">Trimestre 4</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-sm font-medium">
+                  Catégorie *
+                </Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ExpenseCategories.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Date de début *</Label>
+                <Input
+                  type="date"
+                  value={formData.start_date.split("T")[0]}
+                  onChange={(e) => setFormData({ ...formData, start_date: new Date(e.target.value).toISOString() })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Date de fin *</Label>
+                <Input
+                  type="date"
+                  value={formData.end_date.split("T")[0]}
+                  onChange={(e) => setFormData({ ...formData, end_date: new Date(e.target.value).toISOString() })}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              {isLoading ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">{summary.mobilizationRate.toFixed(1)}%</div>
-                  <Progress value={summary.mobilizationRate} />
-                </>
-              )}
+              <Label htmlFor="description" className="text-sm font-medium">
+                Description
+              </Label>
+              <Input id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t("app.expenses.totalForecasts")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-32" /> : summary.count}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="w-full md:w-auto">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder={t("app.expenses.selectPeriod")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("app.expenses.allPeriods")}</SelectItem>
-              <SelectItem value="monthly">{t("app.expenses.monthly")}</SelectItem>
-              <SelectItem value="quarterly">{t("app.expenses.quarterly")}</SelectItem>
-              <SelectItem value="annual">{t("app.expenses.annual")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="w-full md:w-auto">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-[220px]">
-              <SelectValue placeholder={t("app.expenses.selectCategory")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("app.expenses.allCategories")}</SelectItem>
-              {ExpenseCategories.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Table */}
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>{t("app.expenses.forecasts")}</CardTitle>
-          <CardDescription>{t("app.expenses.tableDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            // Loading skeleton
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : filteredExpenses?.length === 0 ? (
-            // No data state
-            <div className="text-center py-10">
-              <div className="text-muted-foreground">{t("app.expenses.noData")}</div>
-            </div>
-          ) : (
-            // Data table
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("app.expenses.program")}</TableHead>
-                    <TableHead>{t("app.expenses.ministry")}</TableHead>
-                    <TableHead>{t("app.expenses.period")}</TableHead>
-                    <TableHead>{t("app.expenses.forecasted")}</TableHead>
-                    <TableHead>{t("app.expenses.mobilized")}</TableHead>
-                    <TableHead>{t("app.expenses.mobilizationStatus")}</TableHead>
-                    <TableHead className="text-right">{t("app.common.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredExpenses.map((expense: ForecastedExpense) => {
-                    const mobilizationPercentage = getMobilizationPercentage(expense.forecasted_amount, expense.mobilized_amount);
-                    const badgeVariant = getMobilizationBadgeVariant(mobilizationPercentage);
-
-                    const dateValue = expense.start_date;
-                    const formattedDate = dateValue ? format(new Date(dateValue), "yyyy-MM-dd") : "N/A";
-
-                    return (
-                      <TableRow key={expense.id}>
-                        <TableCell className="font-medium">{expense.program_name}</TableCell>
-                        <TableCell>{expense.ministry_name || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{t(`app.expenses.${expense.period}`)}</Badge>
-                          <div className="text-xs text-muted-foreground mt-1">{formattedDate}</div>
-                        </TableCell>
-                        <TableCell>{formatCurrency(expense.forecasted_amount)}</TableCell>
-                        <TableCell>{formatCurrency(expense.mobilized_amount)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={badgeVariant as any}>{mobilizationPercentage}%</Badge>
-                            <Progress value={mobilizationPercentage} className="h-1" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => {
-                                setEditingExpense(expense);
-                                setIsDialogOpen(true);
-                              }}
-                              title={t("app.common.edit")}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleDeleteExpense(expense.id)} title={t("app.common.delete")}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Warning for low mobilization */}
-      {summary.mobilizationRate < 30 && !isLoading && filteredExpenses && filteredExpenses.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTitle>{t("app.expenses.lowMobilizationAlert")}</AlertTitle>
-          <AlertDescription>{t("app.expenses.lowMobilizationDescription")}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Dialog for adding/editing forecasted expenses */}
-      <ForecastedExpenseDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        expense={editingExpense}
-        programs={programs || []}
-        ministries={ministries || []}
-        onSubmit={(data) => {
-          if (editingExpense) {
-            handleUpdateExpense(editingExpense.id, data);
-          } else {
-            handleCreateExpense(data as any);
-          }
-        }}
-      />
-    </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleSubmit}>Ajouter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Dashboard>
   );
 };
 
