@@ -5,8 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
-import Dashboard from "./pages/Dashboard";
-import Budgets from "./pages/Budgets";
+import DashboardPage from "./pages/Dashboard";
+import BudgetaryExercises from "./pages/BudgetaryExercises";
 import Programs from "./pages/Programs";
 import Portfolios from "./pages/Portfolios";
 import Actions from "./pages/Actions";
@@ -15,7 +15,7 @@ import Engagements from "./pages/Engagements";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
-import Settings from "./pages/Settings";
+import Settings from "./pages/settings";
 import Profile from "./pages/settings/Profile";
 import Localization from "./pages/settings/Localization";
 import Security from "./pages/settings/Security";
@@ -92,9 +92,9 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<DashboardPage />} />
         <Route path="/chat" element={<Chat />} />
-        <Route path="/budgets" element={<Budgets />} />
+        <Route path="/budgetary-exercises" element={<BudgetaryExercises />} />
         <Route path="/programs" element={<Programs />} />
         <Route path="/portfolios" element={<Portfolios />} />
         <Route path="/actions" element={<Actions />} />

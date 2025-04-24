@@ -1,0 +1,315 @@
+[
+  {
+    "name": "fiscal_years",
+    "type": "base",
+    "schema": [
+      { "name": "year", "type": "number", "required": true, "unique": true },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "ministries",
+    "type": "base",
+    "schema": [
+      { "name": "code", "type": "text", "required": true, "unique": true },
+      { "name": "name", "type": "text", "required": true },
+      { "name": "parent_id", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "budget_categories",
+    "type": "base",
+    "schema": [
+      { "name": "code", "type": "text" },
+      { "name": "label", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "portfolios",
+    "type": "base",
+    "schema": [
+      { "name": "ministry_id", "type": "text" },
+      { "name": "name", "type": "text", "required": true },
+      { "name": "code", "type": "text" },
+      { "name": "allocated_ae", "type": "number" },
+      { "name": "allocated_cp", "type": "number" },
+      { "name": "fiscal_year_id", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "program_structures",
+    "type": "base",
+    "schema": [
+      { "name": "portfolio_id", "type": "text" },
+      { "name": "code", "type": "text" },
+      { "name": "type", "type": "text" },
+      { "name": "parent_id", "type": "text" },
+      { "name": "allocated_ae", "type": "number" },
+      { "name": "allocated_cp", "type": "number" },
+      { "name": "fiscal_year_id", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "actions",
+    "type": "base",
+    "schema": [
+      { "name": "program_id", "type": "text" },
+      { "name": "code", "type": "text" },
+      { "name": "name", "type": "text" },
+      { "name": "allocated_ae", "type": "number" },
+      { "name": "allocated_cp", "type": "number" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "wilayas",
+    "type": "base",
+    "schema": [
+      { "name": "code", "type": "text" },
+      { "name": "name", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "operations",
+    "type": "base",
+    "schema": [
+      { "name": "action_id", "type": "text" },
+      { "name": "wilaya_id", "type": "text" },
+      { "name": "code", "type": "text" },
+      { "name": "title", "type": "text" },
+      { "name": "inscription_date", "type": "text" },
+      { "name": "budget_category_id", "type": "text" },
+      { "name": "allocated_ae", "type": "number" },
+      { "name": "allocated_cp", "type": "number" },
+      { "name": "consumed_ae", "type": "number" },
+      { "name": "consumed_cp", "type": "number" },
+      { "name": "physical_rate", "type": "number" },
+      { "name": "financial_rate", "type": "number" },
+      { "name": "delay", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "engagements",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "code", "type": "text" },
+      { "name": "inscription_date", "type": "text" },
+      { "name": "amount", "type": "number" },
+      { "name": "year", "type": "number" },
+      { "name": "type", "type": "text" },
+      { "name": "history", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "revaluations",
+    "type": "base",
+    "schema": [
+      { "name": "engagement_id", "type": "text" },
+      { "name": "code", "type": "text" },
+      { "name": "revaluation_amount", "type": "number" },
+      { "name": "reason", "type": "text" },
+      { "name": "description", "type": "text" },
+      { "name": "revaluation_date", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "credit_payments",
+    "type": "base",
+    "schema": [
+      { "name": "code", "type": "text" },
+      { "name": "operation_id", "type": "text" },
+      { "name": "fiscal_year_id", "type": "text" },
+      { "name": "amount", "type": "number" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "cp_forecasts",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "fiscal_year_id", "type": "text" },
+      { "name": "forecast_cp", "type": "number" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "cp_mobilisations",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "mobilised_cp", "type": "number" },
+      { "name": "mobilisation_date", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "cp_consumptions",
+    "type": "base",
+    "schema": [
+      { "name": "mobilisation_id", "type": "text" },
+      { "name": "consumed_cp", "type": "number" },
+      { "name": "consumption_date", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "payments",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "amount", "type": "number" },
+      { "name": "payment_date", "type": "text" },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "payment_requests",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "requested_amount", "type": "number" },
+      { "name": "period", "type": "text" },
+      { "name": "status", "type": "text" },
+      { "name": "justification", "type": "text" },
+      { "name": "document", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "cp_alerts",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "threshold_exceeded", "type": "bool" },
+      { "name": "alert_level", "type": "text" },
+      { "name": "message", "type": "text" },
+      { "name": "alert_date", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "extra_engagements",
+    "type": "base",
+    "schema": [
+      { "name": "operation_id", "type": "text" },
+      { "name": "requested_amount", "type": "number" },
+      { "name": "justification", "type": "text" },
+      { "name": "engagement_date", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "tax_revenues",
+    "type": "base",
+    "schema": [
+      { "name": "tax_name", "type": "text" },
+      { "name": "beneficiary", "type": "text" },
+      { "name": "allocation_percent", "type": "number" },
+      { "name": "amount", "type": "number" },
+      { "name": "fiscal_year_id", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "special_funds",
+    "type": "base",
+    "schema": [
+      { "name": "account_number", "type": "text" },
+      { "name": "name", "type": "text" },
+      { "name": "description", "type": "text" },
+      { "name": "category", "type": "text" },
+      { "name": "balance_2023", "type": "number" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "roles",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true, "unique": true },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "users",
+    "type": "base",
+    "schema": [
+      { "name": "email", "type": "text", "required": true, "unique": true },
+      { "name": "password", "type": "text", "required": true },
+      { "name": "full_name", "type": "text" },
+      { "name": "role_id", "type": "text" },
+      { "name": "organization", "type": "text" },
+      { "name": "phone", "type": "text" },
+      { "name": "created_at", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "user_profiles",
+    "type": "base",
+    "schema": [
+      { "name": "user_id", "type": "text" },
+      { "name": "position", "type": "text" },
+      { "name": "structure", "type": "text" },
+      { "name": "wilaya_id", "type": "text" },
+      { "name": "created_at", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "enterprises",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "nif", "type": "text" },
+      { "name": "rc", "type": "text" },
+      { "name": "address", "type": "text" },
+      { "name": "phone", "type": "text" },
+      { "name": "email", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "report_types",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  },
+  {
+    "name": "statuses",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "description", "type": "text" }
+    ],
+    "options": {}
+  }
+]

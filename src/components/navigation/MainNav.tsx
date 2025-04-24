@@ -62,10 +62,10 @@ export function MainNav() {
       description: "Vue d'ensemble du budget",
     },
     {
-      label: t("app.navigation.budgets"),
-      href: "/budgets",
+      label: t("app.navigation.budgetaryExercises"),
+      href: "/budgetary-exercises",
       icon: BarChart3,
-      description: "Gestion des budgets",
+      description: "Gestion des exercices budgétaires",
     },
     {
       label: t("app.navigation.portfolios"),

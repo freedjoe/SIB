@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
+import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/DashboardComponents";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye } from "lucide-react";
+import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 // Mock data
@@ -30,6 +30,7 @@ interface Program {
 
 interface Portfolio {
   id: string;
+  code: string;
   name: string;
   description: string;
   totalAmount: number;
@@ -37,6 +38,16 @@ interface Portfolio {
   programs: number;
   ministryId: string;
   ministryName: string;
+  status: "active" | "archived" | "draft";
+  fiscalYears: {
+    id: string;
+    year: number;
+    allocatedAE: number;
+    allocatedCP: number;
+    consumedAE: number;
+    consumedCP: number;
+    programs: Program[];
+  }[];
 }
 
 const mockPrograms: Program[] = [
@@ -141,6 +152,7 @@ const mockPrograms: Program[] = [
 const mockPortfolios: Portfolio[] = [
   {
     id: "port1",
+    code: "PE-001",
     name: "Portfolio Éducation",
     description: "Regroupe tous les programmes éducatifs",
     totalAmount: 870000000,
@@ -148,9 +160,31 @@ const mockPortfolios: Portfolio[] = [
     programs: 2,
     ministryId: "m1",
     ministryName: "Ministère de l'Éducation",
+    status: "active",
+    fiscalYears: [
+      {
+        id: "fy1",
+        year: 2024,
+        allocatedAE: 870000000,
+        allocatedCP: 750000000,
+        consumedAE: 525000000,
+        consumedCP: 480000000,
+        programs: [],
+      },
+      {
+        id: "fy2",
+        year: 2023,
+        allocatedAE: 820000000,
+        allocatedCP: 720000000,
+        consumedAE: 820000000,
+        consumedCP: 720000000,
+        programs: [],
+      },
+    ],
   },
   {
     id: "port2",
+    code: "PS-002",
     name: "Portfolio Santé",
     description: "Programmes de santé publique et prévention",
     totalAmount: 730000000,
@@ -158,9 +192,31 @@ const mockPortfolios: Portfolio[] = [
     programs: 2,
     ministryId: "m2",
     ministryName: "Ministère de la Santé",
+    status: "active",
+    fiscalYears: [
+      {
+        id: "fy1",
+        year: 2024,
+        allocatedAE: 730000000,
+        allocatedCP: 650000000,
+        consumedAE: 540000000,
+        consumedCP: 490000000,
+        programs: [],
+      },
+      {
+        id: "fy2",
+        year: 2023,
+        allocatedAE: 680000000,
+        allocatedCP: 610000000,
+        consumedAE: 680000000,
+        consumedCP: 610000000,
+        programs: [],
+      },
+    ],
   },
   {
     id: "port3",
+    code: "PI-003",
     name: "Portfolio Infrastructure",
     description: "Développement des infrastructures de transport",
     totalAmount: 710000000,
@@ -168,9 +224,31 @@ const mockPortfolios: Portfolio[] = [
     programs: 2,
     ministryId: "m3",
     ministryName: "Ministère des Transports",
+    status: "active",
+    fiscalYears: [
+      {
+        id: "fy1",
+        year: 2024,
+        allocatedAE: 710000000,
+        allocatedCP: 630000000,
+        consumedAE: 210000000,
+        consumedCP: 180000000,
+        programs: [],
+      },
+      {
+        id: "fy2",
+        year: 2023,
+        allocatedAE: 650000000,
+        allocatedCP: 590000000,
+        consumedAE: 650000000,
+        consumedCP: 590000000,
+        programs: [],
+      },
+    ],
   },
   {
     id: "port4",
+    code: "PA-004",
     name: "Portfolio Agriculture",
     description: "Soutien à l'agriculture et l'élevage",
     totalAmount: 380000000,
@@ -178,9 +256,31 @@ const mockPortfolios: Portfolio[] = [
     programs: 1,
     ministryId: "m4",
     ministryName: "Ministère de l'Agriculture",
+    status: "active",
+    fiscalYears: [
+      {
+        id: "fy1",
+        year: 2024,
+        allocatedAE: 380000000,
+        allocatedCP: 340000000,
+        consumedAE: 145000000,
+        consumedCP: 120000000,
+        programs: [],
+      },
+      {
+        id: "fy2",
+        year: 2023,
+        allocatedAE: 350000000,
+        allocatedCP: 310000000,
+        consumedAE: 350000000,
+        consumedCP: 310000000,
+        programs: [],
+      },
+    ],
   },
   {
     id: "port5",
+    code: "PD-005",
     name: "Portfolio Défense",
     description: "Sécurité nationale et protection civile",
     totalAmount: 410000000,
@@ -188,6 +288,27 @@ const mockPortfolios: Portfolio[] = [
     programs: 1,
     ministryId: "m5",
     ministryName: "Ministère de la Défense",
+    status: "archived",
+    fiscalYears: [
+      {
+        id: "fy1",
+        year: 2024,
+        allocatedAE: 410000000,
+        allocatedCP: 380000000,
+        consumedAE: 290000000,
+        consumedCP: 250000000,
+        programs: [],
+      },
+      {
+        id: "fy2",
+        year: 2023,
+        allocatedAE: 390000000,
+        allocatedCP: 350000000,
+        consumedAE: 390000000,
+        consumedCP: 350000000,
+        programs: [],
+      },
+    ],
   },
 ];
 
@@ -201,10 +322,29 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+interface NewPortfolioData {
+  name?: string;
+  code?: string;
+  description?: string;
+  ministryId?: string;
+  ministryName?: string;
+  totalAmount?: number;
+  usedAmount?: number;
+  programs?: number;
+  status?: "active" | "archived" | "draft";
+}
+
 export default function ProgramsPage() {
   const [portfolioFilter, setPortfolioFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [portfolioNameFilter, setPortfolioNameFilter] = useState(""); // New state for portfolio name filter
+  const [portfolioStatusFilter, setPortfolioStatusFilter] = useState("all"); // Changed default to 'all'
   const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
+  const [filteredPortfolios, setFilteredPortfolios] = useState<Portfolio[]>([]); // New state for filtered portfolios
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("fy1"); // For dialog view
+  const [portfolioFiscalYears, setPortfolioFiscalYears] = useState<{ [key: string]: string }>({}); // For individual cards
+  const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
+  const [programs, setPrograms] = useState<Program[]>(mockPrograms);
 
   // Modal states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -221,17 +361,66 @@ export default function ProgramsPage() {
     actions: 0,
     operations: 0,
   });
-  const [programs, setPrograms] = useState<Program[]>(mockPrograms);
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
   const [isAddPortfolioOpen, setIsAddPortfolioOpen] = useState(false);
   const [isEditPortfolioOpen, setIsEditPortfolioOpen] = useState(false);
   const [isViewPortfolioOpen, setIsViewPortfolioOpen] = useState(false);
   const [isDeletePortfolioOpen, setIsDeletePortfolioOpen] = useState(false);
-  const [newPortfolioData, setNewPortfolioData] = useState<Partial<Portfolio>>({
+  const [newPortfolioData, setNewPortfolioData] = useState<NewPortfolioData>({
     totalAmount: 0,
     usedAmount: 0,
     programs: 0,
+    status: "draft",
   });
+  const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  // Set default fiscal year for each portfolio on component mount
+  useEffect(() => {
+    const defaultFiscalYears: { [key: string]: string } = {};
+    portfolios.forEach((portfolio) => {
+      // Set fy1 (2024) as default for each portfolio
+      defaultFiscalYears[portfolio.id] = "fy1";
+    });
+    setPortfolioFiscalYears(defaultFiscalYears);
+  }, []);
+
+  // Initialize filteredPortfolios with all portfolios initially (or based on default filter)
+  useEffect(() => {
+    const initialPortfolios =
+      portfolioStatusFilter === "all" ? portfolios : portfolios.filter((portfolio) => portfolio.status === portfolioStatusFilter);
+    setFilteredPortfolios(initialPortfolios);
+  }, [portfolios, portfolioStatusFilter]); // Depend on portfolioStatusFilter as well
+
+  // Update the existing useEffect for filtering to depend on portfolios changes
+  useEffect(() => {
+    let result = portfolios;
+
+    if (portfolioNameFilter) {
+      result = result.filter(
+        (portfolio) =>
+          portfolio.name.toLowerCase().includes(portfolioNameFilter.toLowerCase()) ||
+          portfolio.code.toLowerCase().includes(portfolioNameFilter.toLowerCase())
+      );
+    }
+
+    if (portfolioStatusFilter && portfolioStatusFilter !== "all") {
+      result = result.filter((portfolio) => portfolio.status === portfolioStatusFilter);
+    }
+
+    setFilteredPortfolios(result);
+  }, [portfolioNameFilter, portfolioStatusFilter, portfolios]);
+
+  // Function to get or set fiscal year for a specific portfolio
+  const getPortfolioFiscalYear = (portfolioId: string) => {
+    return portfolioFiscalYears[portfolioId] || "fy1"; // Default to fy1 if not set
+  };
+
+  const setPortfolioFiscalYear = (portfolioId: string, fiscalYearId: string) => {
+    setPortfolioFiscalYears((prev) => ({
+      ...prev,
+      [portfolioId]: fiscalYearId,
+    }));
+  };
 
   useEffect(() => {
     let result = programs;
@@ -317,6 +506,7 @@ export default function ProgramsPage() {
       totalAmount: 0,
       usedAmount: 0,
       programs: 0,
+      status: "draft",
     });
     setIsAddPortfolioOpen(true);
   };
@@ -331,6 +521,7 @@ export default function ProgramsPage() {
       totalAmount: portfolio.totalAmount,
       usedAmount: portfolio.usedAmount,
       programs: portfolio.programs,
+      status: portfolio.status,
     });
     setIsEditPortfolioOpen(true);
   };
@@ -426,7 +617,7 @@ export default function ProgramsPage() {
 
   // CRUD operations for portfolios
   const handleAddPortfolio = () => {
-    if (!newPortfolioData.name || !newPortfolioData.ministryName) {
+    if (!newPortfolioData.name || !newPortfolioData.code || !newPortfolioData.ministryName) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis.",
@@ -437,13 +628,35 @@ export default function ProgramsPage() {
 
     const newPortfolio: Portfolio = {
       id: `port${portfolios.length + 6}`,
+      code: newPortfolioData.code!,
       name: newPortfolioData.name!,
       description: newPortfolioData.description || "",
       ministryId: newPortfolioData.ministryId || `m${Math.floor(Math.random() * 100)}`,
       ministryName: newPortfolioData.ministryName!,
       totalAmount: newPortfolioData.totalAmount || 0,
       usedAmount: 0,
-      programs: 0,
+      programs: newPortfolioData.programs || 0,
+      status: (newPortfolioData.status as "active" | "archived" | "draft") || "draft",
+      fiscalYears: [
+        {
+          id: "fy1",
+          year: 2024,
+          allocatedAE: newPortfolioData.totalAmount || 0,
+          allocatedCP: Math.round((newPortfolioData.totalAmount || 0) * 0.9),
+          consumedAE: 0,
+          consumedCP: 0,
+          programs: [],
+        },
+        {
+          id: "fy2",
+          year: 2023,
+          allocatedAE: 0,
+          allocatedCP: 0,
+          consumedAE: 0,
+          consumedCP: 0,
+          programs: [],
+        },
+      ],
     };
 
     setPortfolios([...portfolios, newPortfolio]);
@@ -457,7 +670,7 @@ export default function ProgramsPage() {
   const handleEditPortfolio = () => {
     if (!currentPortfolio) return;
 
-    if (!newPortfolioData.name) {
+    if (!newPortfolioData.name || !newPortfolioData.code) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis.",
@@ -470,11 +683,22 @@ export default function ProgramsPage() {
       portfolio.id === currentPortfolio.id
         ? {
             ...portfolio,
+            code: newPortfolioData.code!,
             name: newPortfolioData.name!,
             description: newPortfolioData.description || portfolio.description,
             ministryName: newPortfolioData.ministryName || portfolio.ministryName,
             totalAmount: newPortfolioData.totalAmount || portfolio.totalAmount,
             usedAmount: newPortfolioData.usedAmount || portfolio.usedAmount,
+            status: (newPortfolioData.status as "active" | "archived" | "draft") || portfolio.status,
+            fiscalYears: portfolio.fiscalYears.map((fy) =>
+              fy.id === "fy1"
+                ? {
+                    ...fy,
+                    allocatedAE: newPortfolioData.totalAmount || fy.allocatedAE,
+                    allocatedCP: Math.round((newPortfolioData.totalAmount || fy.allocatedAE) * 0.9),
+                  }
+                : fy
+            ),
           }
         : portfolio
     );
@@ -514,47 +738,154 @@ export default function ProgramsPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader title="Portefeuille des Programmes" description="Gérez les programmes et leurs actions associées"></DashboardHeader>
+      <DashboardHeader title="Portefeuille des Programmes" description="Gérez les programmes et leurs actions associées">
+        {/* Moved Button Here */}
+        <Button onClick={handleOpenAddPortfolio} className="ml-auto">
+          <FolderPlus className="mr-2 h-4 w-4" />
+          Nouveau Portefeuille
+        </Button>
+      </DashboardHeader>
+
+      {/* Moved Filter Card Here */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Filtrer les portefeuilles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Label htmlFor="portfolio-name-filter" className="mb-2 block">
+                Recherche
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="portfolio-name-filter"
+                  placeholder="Rechercher par nom ou code..."
+                  value={portfolioNameFilter}
+                  onChange={(e) => setPortfolioNameFilter(e.target.value)}
+                  className="w-full pl-8" // Added padding for the icon
+                />
+              </div>
+            </div>
+            <div className="w-full sm:w-[200px]">
+              {" "}
+              {/* Adjusted width */}
+              <Label htmlFor="portfolio-status-filter" className="mb-2 block">
+                Statut
+              </Label>
+              <Select value={portfolioStatusFilter} onValueChange={setPortfolioStatusFilter}>
+                <SelectTrigger id="portfolio-status-filter" className="w-full">
+                  {" "}
+                  {/* Made trigger full width */}
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="archived">Archivé</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <DashboardSection>
         <Tabs defaultValue="portfolios" className="w-full">
-          {/*<TabsList className="mb-6">
+          {/* Commented out TabsList as it wasn't used */}
+          {/* <TabsList className="mb-6">
             <TabsTrigger value="portfolios">Portefeuilles</TabsTrigger>
             <TabsTrigger value="programs">Programmes</TabsTrigger>
-          </TabsList>*/}
+          </TabsList> */}
 
           <TabsContent value="portfolios" className="animate-fade-in">
-            <div className="flex justify-end mb-4">
-              <Button onClick={handleOpenAddPortfolio}>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                Nouveau Portefeuille
-              </Button>
-            </div>
+            {/* Removed the outer div and filter card that were here */}
             <DashboardGrid columns={2}>
-              {portfolios.map((portfolio) => (
+              {filteredPortfolios.map((portfolio) => (
                 <Card key={portfolio.id} className="budget-card transition-all duration-300 hover:shadow-elevation">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{portfolio.name}</CardTitle>
-                    <CardDescription>{portfolio.description}</CardDescription>
+                    <div className="flex justify-between items-start gap-4">
+                      {" "}
+                      {/* Added gap */}
+                      <div className="flex-1">
+                        {" "}
+                        {/* Allow title/desc to take space */}
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{portfolio.name}</CardTitle>
+                          <span className="text-sm text-muted-foreground">({portfolio.code})</span>
+                        </div>
+                        <CardDescription className="mt-1 line-clamp-2">{portfolio.description}</CardDescription> {/* Added line-clamp */}
+                      </div>
+                      {/* Added whitespace-nowrap to prevent wrapping */}
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "whitespace-nowrap",
+                          portfolio.status === "active"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
+                            : portfolio.status === "archived"
+                              ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                        )}
+                      >
+                        {portfolio.status === "active" ? "Actif" : portfolio.status === "archived" ? "Archivé" : "Brouillon"}
+                      </Badge>
+                    </div>
                   </CardHeader>
                   <CardContent className="pb-2">
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-muted-foreground">Utilisation du budget</span>
-                          <span className="text-sm font-medium">{Math.round((portfolio.usedAmount / portfolio.totalAmount) * 100)}%</span>
+                          <span className="text-sm font-medium">
+                            {portfolio.totalAmount > 0 // Added check for zero total amount
+                              ? Math.round(
+                                  ((portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.consumedAE ||
+                                    portfolio.usedAmount) /
+                                    (portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE ||
+                                      portfolio.totalAmount)) *
+                                    100
+                                )
+                              : 0}
+                            %
+                          </span>
                         </div>
-                        <Progress value={Math.round((portfolio.usedAmount / portfolio.totalAmount) * 100)} className="h-2" />
+                        <Progress
+                          value={
+                            portfolio.totalAmount > 0
+                              ? Math.round(
+                                  // Added check for zero total amount
+                                  ((portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.consumedAE ||
+                                    portfolio.usedAmount) /
+                                    (portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE ||
+                                      portfolio.totalAmount)) *
+                                    100
+                                )
+                              : 0
+                          }
+                          className="h-2"
+                        />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget total</p>
-                          <p className="font-medium">{formatCurrency(portfolio.totalAmount)}</p>
+                          <p className="text-sm text-muted-foreground mb-1">Budget AE</p>
+                          <p className="font-medium">
+                            {formatCurrency(
+                              portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE || portfolio.totalAmount
+                            )}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget utilisé</p>
-                          <p className="font-medium">{formatCurrency(portfolio.usedAmount)}</p>
+                          <p className="text-sm text-muted-foreground mb-1">Budget CP</p>
+                          <p className="font-medium">
+                            {formatCurrency(
+                              portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedCP ||
+                                portfolio.totalAmount * 0.9 // Consider default if CP is 0
+                            )}
+                          </p>
                         </div>
                       </div>
 
@@ -582,10 +913,15 @@ export default function ProgramsPage() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Button variant="ghost" size="sm" className="justify-between">
-                      <span>Voir les programmes</span>
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <Select value={getPortfolioFiscalYear(portfolio.id)} onValueChange={(value) => setPortfolioFiscalYear(portfolio.id, value)}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Année fiscale" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fy1">Année 2024</SelectItem>
+                        <SelectItem value="fy2">Année 2023</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </CardFooter>
                 </Card>
               ))}
@@ -1016,6 +1352,17 @@ export default function ProgramsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="portfolio-code" className="text-right">
+                Code
+              </Label>
+              <Input
+                id="portfolio-code"
+                className="col-span-3"
+                value={newPortfolioData.code || ""}
+                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, code: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-name" className="text-right">
                 Nom
               </Label>
@@ -1024,17 +1371,6 @@ export default function ProgramsPage() {
                 className="col-span-3"
                 value={newPortfolioData.name || ""}
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portfolio-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="portfolio-description"
-                className="col-span-3"
-                value={newPortfolioData.description || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -1058,8 +1394,37 @@ export default function ProgramsPage() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="portfolio-status" className="text-right">
+                Statut
+              </Label>
+              <Select
+                value={newPortfolioData.status}
+                onValueChange={(value: "active" | "archived" | "draft") => setNewPortfolioData({ ...newPortfolioData, status: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="archived">Archivé</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="portfolio-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="portfolio-description"
+                className="col-span-3"
+                value={newPortfolioData.description || ""}
+                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-amount" className="text-right">
-                Budget total
+                Budget AE
               </Label>
               <Input
                 id="portfolio-amount"
@@ -1092,6 +1457,17 @@ export default function ProgramsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-portfolio-code" className="text-right">
+                Code
+              </Label>
+              <Input
+                id="edit-portfolio-code"
+                className="col-span-3"
+                value={newPortfolioData.code || ""}
+                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, code: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-name" className="text-right">
                 Nom
               </Label>
@@ -1100,17 +1476,6 @@ export default function ProgramsPage() {
                 className="col-span-3"
                 value={newPortfolioData.name || ""}
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-portfolio-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="edit-portfolio-description"
-                className="col-span-3"
-                value={newPortfolioData.description || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -1134,8 +1499,37 @@ export default function ProgramsPage() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-portfolio-status" className="text-right">
+                Statut
+              </Label>
+              <Select
+                value={newPortfolioData.status}
+                onValueChange={(value: "active" | "archived" | "draft") => setNewPortfolioData({ ...newPortfolioData, status: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="archived">Archivé</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-portfolio-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="edit-portfolio-description"
+                className="col-span-3"
+                value={newPortfolioData.description || ""}
+                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-amount" className="text-right">
-                Budget total
+                Budget AE
               </Label>
               <Input
                 id="edit-portfolio-amount"
@@ -1161,69 +1555,511 @@ export default function ProgramsPage() {
       </Dialog>
 
       <Dialog open={isViewPortfolioOpen} onOpenChange={setIsViewPortfolioOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        {/* Increased max-w for better spacing */}
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Détails du portefeuille</DialogTitle>
+            <div className="flex justify-between items-start gap-4">
+              {" "}
+              {/* Added gap */}
+              <div className="flex-1">
+                {" "}
+                {/* Allow title/desc to take space */}
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  {currentPortfolio?.name} <span className="text-sm font-normal text-muted-foreground">({currentPortfolio?.code})</span>
+                </DialogTitle>
+                {/* Added description display */}
+                {currentPortfolio?.description && (
+                  <DialogDescription className="mt-1 text-sm text-muted-foreground">{currentPortfolio.description}</DialogDescription>
+                )}
+              </div>
+              {/* Added whitespace-nowrap */}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "ml-2 whitespace-nowrap",
+                  currentPortfolio?.status === "active"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
+                    : currentPortfolio?.status === "archived"
+                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                )}
+              >
+                {currentPortfolio?.status === "active" ? "Actif" : currentPortfolio?.status === "archived" ? "Archivé" : "Brouillon"}
+              </Badge>
+            </div>
           </DialogHeader>
+
           {currentPortfolio && (
-            <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Nom:</div>
-                <div>{currentPortfolio.name}</div>
+            <div className="py-6 space-y-8">
+              {" "}
+              {/* Increased py and space-y */}
+              {/* Select Fiscal Year */}
+              <div className="flex justify-end">
+                <Select value={selectedFiscalYear} onValueChange={setSelectedFiscalYear}>
+                  <SelectTrigger className="w-[200px]">
+                    {" "}
+                    {/* Slightly wider */}
+                    <SelectValue placeholder="Année Fiscale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fy1">Année Fiscale 2024</SelectItem>
+                    <SelectItem value="fy2">Année Fiscale 2023</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Description:</div>
-                <div>{currentPortfolio.description}</div>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {" "}
+                {/* Adjusted grid for responsiveness */}
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Allouées</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-secondary">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Alloués</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Consommées</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0 > 0 // Check for division by zero
+                        ? Math.round(
+                            ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                              (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                              100
+                          )
+                        : 0}
+                      % utilisés
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Consommés</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0 > 0 // Check for division by zero
+                        ? Math.round(
+                            ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                              (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                              100
+                          )
+                        : 0}
+                      % utilisés
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Ministère:</div>
-                <div>{currentPortfolio.ministryName}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Budget total:</div>
-                <div>{formatCurrency(currentPortfolio.totalAmount)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Budget utilisé:</div>
-                <div>{formatCurrency(currentPortfolio.usedAmount)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Programmes:</div>
-                <div>{currentPortfolio.programs}</div>
-              </div>
+              {/* Progress Charts - Wrapped in a Card for consistency */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Progression de la Consommation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    {" "}
+                    {/* Increased gap */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-40 h-40 relative flex items-center justify-center">
+                        {" "}
+                        {/* Slightly smaller */}
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                          <circle
+                            className="text-gray-200 dark:text-gray-700 stroke-current" // Adjusted colors
+                            strokeWidth="10"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="40"
+                            cx="50"
+                            cy="50"
+                          />
+                          <circle
+                            className="text-primary stroke-current"
+                            strokeWidth="10"
+                            strokeDasharray={`${Math.round(
+                              ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                                (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) * // Handled potential division by zero
+                                100 *
+                                2.51
+                            )} 251.2`}
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="40"
+                            cx="50"
+                            cy="50"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-xl font-bold">
+                            {" "}
+                            {/* Slightly smaller text */}
+                            {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0 > 0 // Check for division by zero
+                              ? Math.round(
+                                  ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                                    (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                                    100
+                                )
+                              : 0}
+                            %
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm font-medium">Consommation AE</p> {/* Added margin */}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-40 h-40 relative flex items-center justify-center">
+                        {" "}
+                        {/* Slightly smaller */}
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                          <circle
+                            className="text-gray-200 dark:text-gray-700 stroke-current" // Adjusted colors
+                            strokeWidth="10"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="40"
+                            cx="50"
+                            cy="50"
+                          />
+                          <circle
+                            className="text-secondary stroke-current"
+                            strokeWidth="10"
+                            strokeDasharray={`${Math.round(
+                              ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                                (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) * // Handled potential division by zero
+                                100 *
+                                2.51
+                            )} 251.2`}
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="40"
+                            cx="50"
+                            cy="50"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-xl font-bold">
+                            {" "}
+                            {/* Slightly smaller text */}
+                            {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0 > 0 // Check for division by zero
+                              ? Math.round(
+                                  ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                                    (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                                    100
+                                )
+                              : 0}
+                            %
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm font-medium">Consommation CP</p> {/* Added margin */}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Programs Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Programmes associés</CardTitle> {/* Increased title size */}
+                  <CardDescription>Liste des programmes liés à ce portefeuille pour l'année fiscale sélectionnée</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border overflow-x-auto">
+                    {" "}
+                    {/* Added overflow */}
+                    <table className="w-full min-w-[600px]">
+                      {" "}
+                      {/* Added min-width */}
+                      <thead>
+                        <tr className="border-b bg-muted/50 text-sm text-muted-foreground">
+                          {" "}
+                          {/* Styled header row */}
+                          <th className="py-3 px-4 text-left font-medium">Nom</th>
+                          <th className="py-3 px-4 text-right font-medium">AE Allouées</th>
+                          <th className="py-3 px-4 text-right font-medium">CP Alloués</th>
+                          <th className="py-3 px-4 text-center font-medium w-[150px]">Progression</th> {/* Added width */}
+                          <th className="py-3 px-4 text-center font-medium w-[120px]">Statut</th> {/* Added width */}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {programs
+                          .filter((program) => program.portfolioId === currentPortfolio.id)
+                          .map((program) => (
+                            <tr key={program.id} className="border-b hover:bg-muted/30 transition-colors">
+                              {" "}
+                              {/* Added hover effect */}
+                              <td className="py-3 px-4">{program.name}</td>
+                              <td className="py-3 px-4 text-right">{formatCurrency(program.allocatedAmount)}</td>
+                              <td className="py-3 px-4 text-right">{formatCurrency(Math.round(program.allocatedAmount * 0.9))}</td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center justify-center gap-2">
+                                  {" "}
+                                  {/* Centered */}
+                                  <Progress value={program.progress} className="h-2 w-16" /> {/* Added width */}
+                                  <span
+                                    className={cn(
+                                      "text-xs font-medium",
+                                      program.progress < 40
+                                        ? "text-budget-danger"
+                                        : program.progress < 70
+                                          ? "text-budget-warning"
+                                          : "text-budget-success"
+                                    )}
+                                  >
+                                    {program.progress}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-center">{getStatusBadge(program.status)}</td>
+                            </tr>
+                          ))}
+                        {/* Add a row if no programs */}
+                        {programs.filter((program) => program.portfolioId === currentPortfolio.id).length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="text-center py-4 text-muted-foreground">
+                              Aucun programme associé pour cette année fiscale.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Distribution Charts (Placeholder) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Répartition budgétaire</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border rounded-md p-4">
+                      <p className="font-medium mb-2">Répartition par programme</p>
+                      <p className="text-sm">[Graphique à venir]</p>
+                    </div>
+                    <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border rounded-md p-4">
+                      <p className="font-medium mb-2">Répartition par action</p>
+                      <p className="text-sm">[Graphique à venir]</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="gap-2 pt-4 border-t">
+            {" "}
+            {/* Added padding and border */}
+            <Button
+              variant="outline"
+              disabled={generatingPdf}
+              onClick={() => {
+                setGeneratingPdf(true);
+                // Simulate PDF generation with a delay
+                setTimeout(() => {
+                  setGeneratingPdf(false);
+                  setIsPdfPreviewOpen(true);
+
+                  toast({
+                    title: "Rapport généré",
+                    description: "Le rapport détaillé a été généré avec succès",
+                  });
+                }, 1500);
+              }}
+            >
+              {generatingPdf ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Génération en cours...
+                </>
+              ) : (
+                <>Générer un rapport</>
+              )}
+            </Button>
             <Button onClick={() => setIsViewPortfolioOpen(false)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeletePortfolioOpen} onOpenChange={setIsDeletePortfolioOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      {/* PDF Preview Dialog */}
+      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce portefeuille? Cette action est irréversible.</DialogDescription>
+            <DialogTitle>Rapport détaillé - {currentPortfolio?.name}</DialogTitle>
+            <DialogDescription>Aperçu du rapport détaillé pour l'année fiscale {selectedFiscalYear === "fy1" ? "2024" : "2023"}</DialogDescription>
           </DialogHeader>
-          {currentPortfolio && (
-            <div className="py-4">
-              <p>
-                <strong>Nom:</strong> {currentPortfolio.name}
-              </p>
-              <p>
-                <strong>Description:</strong> {currentPortfolio.description}
-              </p>
-              <p>
-                <strong>Ministère:</strong> {currentPortfolio.ministryName}
-              </p>
+
+          <div className="space-y-6 py-4">
+            {/* Mock PDF Preview */}
+            <div className="border rounded-lg p-6 bg-white">
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold">Rapport de Portefeuille</h1>
+                <p className="text-lg">
+                  {currentPortfolio?.name} ({currentPortfolio?.code})
+                </p>
+                <p className="text-muted-foreground">Année Fiscale {selectedFiscalYear === "fy1" ? "2024" : "2023"}</p>
+                <p className="text-muted-foreground">Généré le {new Date().toLocaleDateString()}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold mb-2">Informations générales</h2>
+                  <p>
+                    <strong>Ministère:</strong> {currentPortfolio?.ministryName}
+                  </p>
+                  <p>
+                    <strong>Statut:</strong>{" "}
+                    {currentPortfolio?.status === "active" ? "Actif" : currentPortfolio?.status === "archived" ? "Archivé" : "Brouillon"}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {currentPortfolio?.description}
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold mb-2">Budget</h2>
+                  <p>
+                    <strong>AE Allouées:</strong>{" "}
+                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
+                  </p>
+                  <p>
+                    <strong>CP Alloués:</strong>{" "}
+                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
+                  </p>
+                  <p>
+                    <strong>AE Consommées:</strong>{" "}
+                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
+                  </p>
+                  <p>
+                    <strong>CP Consommés:</strong>{" "}
+                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Consommation budgétaire</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="mb-1">
+                      AE:{" "}
+                      {Math.round(
+                        ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                          (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                          100
+                      )}
+                      %
+                    </p>
+                    <div className="h-2 w-full bg-gray-200 rounded-full">
+                      <div
+                        className="h-2 bg-blue-500 rounded-full"
+                        style={{
+                          width: `${Math.round(
+                            ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                              (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                              100
+                          )}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1">
+                      CP:{" "}
+                      {Math.round(
+                        ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                          (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                          100
+                      )}
+                      %
+                    </p>
+                    <div className="h-2 w-full bg-gray-200 rounded-full">
+                      <div
+                        className="h-2 bg-green-500 rounded-full"
+                        style={{
+                          width: `${Math.round(
+                            ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                              (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                              100
+                          )}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Programmes associés</h2>
+                <table className="w-full border">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border p-2 text-left">Programme</th>
+                      <th className="border p-2 text-right">AE Allouées</th>
+                      <th className="border p-2 text-right">CP Alloués</th>
+                      <th className="border p-2 text-center">Progression</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {programs
+                      .filter((program) => program.portfolioId === currentPortfolio?.id)
+                      .map((program) => (
+                        <tr key={program.id}>
+                          <td className="border p-2">{program.name}</td>
+                          <td className="border p-2 text-right">{formatCurrency(program.allocatedAmount)}</td>
+                          <td className="border p-2 text-right">{formatCurrency(Math.round(program.allocatedAmount * 0.9))}</td>
+                          <td className="border p-2 text-center">{program.progress}%</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold mb-2">Notes et observations</h2>
+                <p className="text-muted-foreground">
+                  Ce rapport présente une synthèse des données budgétaires du portefeuille {currentPortfolio?.name} pour l'année fiscale{" "}
+                  {selectedFiscalYear === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégré de Gestion Budgétaire (SIB).
+                </p>
+              </div>
             </div>
-          )}
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeletePortfolioOpen(false)}>
-              Annuler
+            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+              Fermer
             </Button>
-            <Button variant="destructive" onClick={handleDeletePortfolio}>
-              Supprimer
+            <Button
+              onClick={() => {
+                setIsPdfPreviewOpen(false);
+                toast({
+                  title: "Rapport téléchargé",
+                  description: "Le rapport détaillé a été téléchargé avec succès",
+                });
+              }}
+            >
+              Télécharger le PDF
             </Button>
           </DialogFooter>
         </DialogContent>
