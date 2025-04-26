@@ -90,6 +90,7 @@
       "allocationByProgram": "Allocation par programme",
       "pendingApprovals": "Approbations en attente",
       "recentActivity": "Activités récentes",
+      "engagementStatus": "Statut de l'engagement",
       "todayOverview": "Aperçu d'aujourd'hui",
       "month": "Mois",
       "quarter": "Trimestre",
@@ -183,6 +184,12 @@
       "medium": "Moyenne",
       "high": "Haute",
       "requestedBy": "Demandé par"
+    },
+    "paymentStats": {
+      "totalRequestsAmount": "Montant total des demandes",
+      "pendingAmount": "Montant en attente",
+      "approvedAmount": "Montant approuvé",
+      "rejectedAmount": "Montant rejeté"
     },
     "payments": {
       "title": "Paiements",

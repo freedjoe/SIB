@@ -192,12 +192,7 @@ export function ReusableDataTable<T>({
     window.print();
   };
 
-  const toolbarExtra = onAddNew ? (
-    <Button variant="default" size="sm" onClick={onAddNew} className="ml-4">
-      <Plus className="mr-2 h-4 w-4" />
-      {addNewLabel}
-    </Button>
-  ) : null;
+  const toolbarExtra = null;
 
   const table = (
     <DataTable

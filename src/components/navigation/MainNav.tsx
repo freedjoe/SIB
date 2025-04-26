@@ -116,6 +116,12 @@ export function MainNav() {
       description: "Prévisions et mobilisation des CP",
     },
     {
+      label: "Ministry Requests",
+      href: "/ministry-requests",
+      icon: Briefcase,
+      description: "Gestion des demandes des ministères",
+    },
+    {
       label: t("app.navigation.reports"),
       href: "/reports",
       icon: BookOpenText,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface BudgetItem {
@@ -17,6 +18,7 @@ interface BudgetChartProps {
 }
 
 export function BudgetChart({ title, data, className, showLegend = true }: BudgetChartProps) {
+  const { t } = useTranslation();
   const [chartData, setChartData] = useState<BudgetItem[]>([]);
 
   // Animate chart data on mount
@@ -40,7 +42,7 @@ export function BudgetChart({ title, data, className, showLegend = true }: Budge
   return (
     <Card className={cn("budget-card h-full", className)}>
       <CardHeader>
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
+        <CardTitle className="text-base font-medium">{title === "dashboard.engagementStatus" ? t("dashboard.engagementStatus") : title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[240px]">

@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { FileCog, SearchIcon, Plus } from "lucide-react";
+import { FileCog, SearchIcon, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { OperationsTable, Operation } from "@/components/tables/OperationsTable";
@@ -480,9 +482,457 @@ export default function OperationsPage() {
     setIsViewDialogOpen(true);
   };
 
+  const getProgressBarColor = (progress: number) => {
+    if (progress >= 90) return "bg-green-600";
+    if (progress >= 50) return "bg-yellow-500";
+    return "bg-blue-600";
+  };
+
+  const getProgressTextColor = (progress: number) => {
+    if (progress >= 90) return "text-green-600";
+    if (progress >= 50) return "text-yellow-600";
+    return "text-blue-600";
+  };
+
+  // Données fictives pour les tableaux dans la vue détaillée
+  const mockEngagementsHistory = [
+    {
+      id: "eng1",
+      date: "2023-02-15",
+      reference: "ENG-2023-001",
+      montant_initial: 35000000,
+      montant_actuel: 35000000,
+      statut: "Approuvé",
+      beneficiaire: "Entreprise de construction ABC",
+    },
+    {
+      id: "eng2",
+      date: "2023-04-20",
+      reference: "ENG-2023-002",
+      montant_initial: 25000000,
+      montant_actuel: 30000000,
+      statut: "Réévalué",
+      beneficiaire: "Fournisseur XYZ",
+    },
+    {
+      id: "eng3",
+      date: "2023-06-10",
+      reference: "ENG-2023-003",
+      montant_initial: 15000000,
+      montant_actuel: 15000000,
+      statut: "En cours",
+      beneficiaire: "Consultant DEF",
+    },
+  ];
+
+  const mockReevaluations = [
+    {
+      id: "reev1",
+      date: "2023-05-10",
+      engagement_ref: "ENG-2023-002",
+      montant_initial: 25000000,
+      montant_reevalue: 30000000,
+      motif: "Augmentation du périmètre des travaux",
+      statut: "Approuvée",
+    },
+  ];
+
+  const mockCPAnnuels = [
+    {
+      id: "cp1",
+      annee: "2023",
+      montant_alloue: 50000000,
+      montant_consomme: 35000000,
+      taux_consommation: 70,
+      statut: "En cours",
+    },
+    {
+      id: "cp2",
+      annee: "2024",
+      montant_alloue: 40000000,
+      montant_consomme: 0,
+      taux_consommation: 0,
+      statut: "Planifié",
+    },
+  ];
+
+  const mockDemandesCP = [
+    {
+      id: "dcp1",
+      date: "2023-01-20",
+      montant: 30000000,
+      motif: "Démarrage des travaux",
+      statut: "Approuvée",
+    },
+    {
+      id: "dcp2",
+      date: "2023-05-15",
+      montant: 20000000,
+      motif: "Phase intermédiaire",
+      statut: "En attente",
+    },
+  ];
+
+  const mockContrats = [
+    {
+      id: "cont1",
+      reference: "CTR-2023-001",
+      entreprise: "Entreprise de construction ABC",
+      date_signature: "2023-02-01",
+      montant: 35000000,
+      objet: "Construction principale",
+      statut: "En cours",
+    },
+    {
+      id: "cont2",
+      reference: "CTR-2023-002",
+      entreprise: "Fournisseur XYZ",
+      date_signature: "2023-04-05",
+      montant: 25000000,
+      objet: "Fourniture d'équipements",
+      statut: "En cours",
+    },
+  ];
+
   const handleOpenDeleteDialog = (operation: Operation) => {
     setCurrentOperation(operation);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Dialogue de visualisation détaillée
+  const ViewDialog = () => {
+    if (!currentOperation) return null;
+
+    return (
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCog className="h-6 w-6" />
+              {currentOperation.name}
+            </DialogTitle>
+            <DialogDescription>{currentOperation.description}</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-6">
+            {/* Informations générales */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations générales</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Code opération</Label>
+                    <div className="mt-1 font-medium">{currentOperation.code_operation}</div>
+                  </div>
+                  <div>
+                    <Label>Statut</Label>
+                    <div className="mt-1">{getStatusBadge(currentOperation.status)}</div>
+                  </div>
+                  <div>
+                    <Label>Programme</Label>
+                    <div className="mt-1 font-medium">{currentOperation.programName}</div>
+                  </div>
+                  <div>
+                    <Label>Action</Label>
+                    <div className="mt-1 font-medium">{currentOperation.actionName}</div>
+                  </div>
+                  <div>
+                    <Label>Wilaya</Label>
+                    <div className="mt-1 font-medium">{currentOperation.wilaya}</div>
+                  </div>
+                  <div>
+                    <Label>Titre budgétaire</Label>
+                    <div className="mt-1 font-medium">T{currentOperation.titre_budgetaire}</div>
+                  </div>
+                  <div>
+                    <Label>Date de début</Label>
+                    <div className="mt-1 font-medium">{currentOperation.start_date}</div>
+                  </div>
+                  <div>
+                    <Label>Date de fin</Label>
+                    <div className="mt-1 font-medium">{currentOperation.end_date}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Indicateurs de performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Indicateurs de performance</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Taux d'avancement global */}
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Taux d'avancement global</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-2xl font-bold">{currentOperation.progress}%</div>
+                        <div className={cn("text-sm", getProgressTextColor(currentOperation.progress))}>
+                          {currentOperation.progress >= 100 ? "Complété" : "En cours"}
+                        </div>
+                      </div>
+                      <Progress
+                        value={currentOperation.progress}
+                        className="mt-2"
+                        indicatorClassName={getProgressBarColor(currentOperation.progress)}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Taux d'avancement physique */}
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Taux d'avancement physique</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-2xl font-bold">{currentOperation.taux_physique}%</div>
+                        <div className={cn("text-sm", getProgressTextColor(currentOperation.taux_physique))}>
+                          {currentOperation.taux_physique >= 100 ? "Complété" : "En cours"}
+                        </div>
+                      </div>
+                      <Progress
+                        value={currentOperation.taux_physique}
+                        className="mt-2"
+                        indicatorClassName={getProgressBarColor(currentOperation.taux_physique)}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Taux d'avancement financier */}
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Taux d'avancement financier</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-2xl font-bold">{currentOperation.taux_financier}%</div>
+                        <div className={cn("text-sm", getProgressTextColor(currentOperation.taux_financier))}>
+                          {currentOperation.taux_financier >= 100 ? "Complété" : "En cours"}
+                        </div>
+                      </div>
+                      <Progress
+                        value={currentOperation.taux_financier}
+                        className="mt-2"
+                        indicatorClassName={getProgressBarColor(currentOperation.taux_financier)}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Indicateurs financiers */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Montant alloué</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.allocatedAmount)}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Montant consommé</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.montant_consomme)}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Montant restant</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(currentOperation.allocatedAmount - currentOperation.montant_consomme)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Historique des engagements */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Historique des engagements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Référence</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Bénéficiaire</TableHead>
+                        <TableHead>Montant initial</TableHead>
+                        <TableHead>Montant actuel</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mockEngagementsHistory.map((engagement) => (
+                        <TableRow key={engagement.id}>
+                          <TableCell className="font-medium">{engagement.reference}</TableCell>
+                          <TableCell>{engagement.date}</TableCell>
+                          <TableCell>{engagement.beneficiaire}</TableCell>
+                          <TableCell>{formatCurrency(engagement.montant_initial)}</TableCell>
+                          <TableCell>{formatCurrency(engagement.montant_actuel)}</TableCell>
+                          <TableCell>{engagement.statut}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Historique des réévaluations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Historique des réévaluations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Engagement</TableHead>
+                        <TableHead>Montant initial</TableHead>
+                        <TableHead>Montant réévalué</TableHead>
+                        <TableHead>Motif</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mockReevaluations.map((reevaluation) => (
+                        <TableRow key={reevaluation.id}>
+                          <TableCell>{reevaluation.date}</TableCell>
+                          <TableCell className="font-medium">{reevaluation.engagement_ref}</TableCell>
+                          <TableCell>{formatCurrency(reevaluation.montant_initial)}</TableCell>
+                          <TableCell>{formatCurrency(reevaluation.montant_reevalue)}</TableCell>
+                          <TableCell>{reevaluation.motif}</TableCell>
+                          <TableCell>{reevaluation.statut}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Crédits de paiement */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Crédits de paiement</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="annuels" className="w-full">
+                  <TabsList className="w-full justify-start">
+                    <TabsTrigger value="annuels">CP Annuels</TabsTrigger>
+                    <TabsTrigger value="demandes">Demandes de CP</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="annuels">
+                    <div className="rounded-md border mt-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Année</TableHead>
+                            <TableHead>Montant alloué</TableHead>
+                            <TableHead>Montant consommé</TableHead>
+                            <TableHead>Taux de consommation</TableHead>
+                            <TableHead>Statut</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {mockCPAnnuels.map((cp) => (
+                            <TableRow key={cp.id}>
+                              <TableCell className="font-medium">{cp.annee}</TableCell>
+                              <TableCell>{formatCurrency(cp.montant_alloue)}</TableCell>
+                              <TableCell>{formatCurrency(cp.montant_consomme)}</TableCell>
+                              <TableCell>{cp.taux_consommation}%</TableCell>
+                              <TableCell>{cp.statut}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="demandes">
+                    <div className="rounded-md border mt-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Montant</TableHead>
+                            <TableHead>Motif</TableHead>
+                            <TableHead>Statut</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {mockDemandesCP.map((demande) => (
+                            <TableRow key={demande.id}>
+                              <TableCell>{demande.date}</TableCell>
+                              <TableCell>{formatCurrency(demande.montant)}</TableCell>
+                              <TableCell>{demande.motif}</TableCell>
+                              <TableCell>{demande.statut}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Contrats */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Contrats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Référence</TableHead>
+                        <TableHead>Entreprise</TableHead>
+                        <TableHead>Date de signature</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Objet</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mockContrats.map((contrat) => (
+                        <TableRow key={contrat.id}>
+                          <TableCell className="font-medium">{contrat.reference}</TableCell>
+                          <TableCell>{contrat.entreprise}</TableCell>
+                          <TableCell>{contrat.date_signature}</TableCell>
+                          <TableCell>{formatCurrency(contrat.montant)}</TableCell>
+                          <TableCell>{contrat.objet}</TableCell>
+                          <TableCell>{contrat.statut}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   const handleAddOperation = () => {
@@ -686,8 +1136,11 @@ export default function OperationsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tous les statuts</SelectItem>
+                        <SelectItem value="draft">Brouillon</SelectItem>
                         <SelectItem value="planned">Planifié</SelectItem>
                         <SelectItem value="in_progress">En cours</SelectItem>
+                        <SelectItem value="en_pause">En pause</SelectItem>
+                        <SelectItem value="arreter">Arrêté</SelectItem>
                         <SelectItem value="completed">Terminé</SelectItem>
                       </SelectContent>
                     </Select>
@@ -715,10 +1168,6 @@ export default function OperationsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Ajouter une opération
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -746,7 +1195,6 @@ export default function OperationsPage() {
                     });
                     setOperations([...mockOperations]);
                   }}
-                  onAddNew={handleOpenAddDialog}
                 />
               </CardContent>
             </Card>
@@ -780,10 +1228,18 @@ export default function OperationsPage() {
 
       {/* Add Operation Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ajouter une opération</DialogTitle>
             <DialogDescription>Remplissez les informations pour créer une nouvelle opération.</DialogDescription>
+            <Button
+              variant="ghost"
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+              onClick={() => setIsAddDialogOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fermer</span>
+            </Button>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -901,38 +1357,41 @@ export default function OperationsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="allocatedAmount">Montant alloué</Label>
+                <Label htmlFor="allocatedAmount">AE Allouées</Label>
                 <Input
                   id="allocatedAmount"
                   type="number"
                   value={newOperation.allocatedAmount}
                   onChange={(e) => setNewOperation({ ...newOperation, allocatedAmount: parseFloat(e.target.value) })}
-                  placeholder="Montant alloué"
+                  placeholder="AE Allouées"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="montant_consomme">Montant consommé</Label>
+              <Label htmlFor="montant_consomme">AE Engagées</Label>
               <Input
                 id="montant_consomme"
                 type="number"
                 value={newOperation.montant_consomme}
                 onChange={(e) => setNewOperation({ ...newOperation, montant_consomme: parseFloat(e.target.value) })}
-                placeholder="Montant consommé"
+                placeholder="AE Engagées"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Statut</Label>
               <Select
                 value={newOperation.status}
-                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" })}
+                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">Brouillon</SelectItem>
                   <SelectItem value="planned">Planifié</SelectItem>
                   <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="en_pause">En pause</SelectItem>
+                  <SelectItem value="arreter">Arrêté</SelectItem>
                   <SelectItem value="completed">Terminé</SelectItem>
                 </SelectContent>
               </Select>
@@ -995,10 +1454,18 @@ export default function OperationsPage() {
 
       {/* Edit Operation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'opération</DialogTitle>
             <DialogDescription>Modifiez les informations de l'opération.</DialogDescription>
+            <Button
+              variant="ghost"
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fermer</span>
+            </Button>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1140,14 +1607,17 @@ export default function OperationsPage() {
               <Label htmlFor="edit-status">Statut</Label>
               <Select
                 value={newOperation.status}
-                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" })}
+                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">Brouillon</SelectItem>
                   <SelectItem value="planned">Planifié</SelectItem>
                   <SelectItem value="in_progress">En cours</SelectItem>
+                  <SelectItem value="en_pause">En pause</SelectItem>
+                  <SelectItem value="arreter">Arrêté</SelectItem>
                   <SelectItem value="completed">Terminé</SelectItem>
                 </SelectContent>
               </Select>
@@ -1208,153 +1678,7 @@ export default function OperationsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Operation Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Détails de l'opération</DialogTitle>
-          </DialogHeader>
-          {currentOperation && (
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Nom:</p>
-                  <p>{currentOperation.name}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Code opération:</p>
-                  <p>{currentOperation.code_operation}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium">Description:</p>
-                <p>{currentOperation.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Programme:</p>
-                  <p>{currentOperation.programName}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Action:</p>
-                  <p>{currentOperation.actionName}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Wilaya:</p>
-                  <p>{currentOperation.wilaya}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Titre budgétaire:</p>
-                  <p>
-                    {mockTitresBudgetaires.find((t) => t.id === currentOperation.titre_budgetaire)?.shortLabel ||
-                      `T${currentOperation.titre_budgetaire}`}{" "}
-                    -{" "}
-                    {mockTitresBudgetaires.find((t) => t.id === currentOperation.titre_budgetaire)?.name ||
-                      `Titre ${currentOperation.titre_budgetaire}`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Origine du financement:</p>
-                  <p>{currentOperation.origine_financement === "budget_national" ? "Budget national" : "Financement extérieur"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Dates:</p>
-                  <p>
-                    Du {new Date(currentOperation.start_date).toLocaleDateString()} au {new Date(currentOperation.end_date).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="font-medium">Montant alloué:</p>
-                  <p className="text-lg">{formatCurrency(currentOperation.allocatedAmount)}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Montant utilisé:</p>
-                  <p className="text-lg">{formatCurrency(currentOperation.usedAmount)}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Montant consommé:</p>
-                  <p className="text-lg">{formatCurrency(currentOperation.montant_consomme)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium">Progression:</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
-                    <div
-                      className={`h-4 rounded-full ${getProgressBarColor(currentOperation.progress)}`}
-                      style={{ width: `${currentOperation.progress}%` }}
-                    ></div>
-                  </div>
-                  <span className={`text-base font-medium ${getProgressTextColor(currentOperation.progress)}`}>{currentOperation.progress}%</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Taux physique:</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div className="h-3 rounded-full bg-indigo-600" style={{ width: `${currentOperation.taux_physique}%` }}></div>
-                    </div>
-                    <span className="text-base font-medium text-indigo-600">{currentOperation.taux_physique}%</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="font-medium">Taux financier:</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div className="h-3 rounded-full bg-violet-600" style={{ width: `${currentOperation.taux_financier}%` }}></div>
-                    </div>
-                    <span className="text-base font-medium text-violet-600">{currentOperation.taux_financier}%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Engagements:</p>
-                  <p>{currentOperation.engagements}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Paiements:</p>
-                  <p>{currentOperation.payments}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium">Statut:</p>
-                <Badge
-                  className={
-                    currentOperation.status === "completed"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
-                      : currentOperation.status === "in_progress"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
-                        : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400"
-                  }
-                  variant="outline"
-                >
-                  {currentOperation.status === "planned" ? "Planifié" : currentOperation.status === "in_progress" ? "En cours" : "Terminé"}
-                </Badge>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ViewDialog />
     </Dashboard>
   );
 }

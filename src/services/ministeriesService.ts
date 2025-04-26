@@ -8,7 +8,7 @@ export async function getAllMinistries(): Promise<Ministry[]> {
   const { data, error } = await supabase
     .from('ministries')
     .select('*')
-    .order('name');
+    .order('name_fr');
   
   if (error) {
     console.error("Error fetching ministries:", error);

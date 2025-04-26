@@ -36,6 +36,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ForecastedExpenses from "./pages/ForecastedExpenses";
 import PrevisionsCP from "./pages/PrevisionsCP";
+import MinistryRequests from "./pages/MinistryRequests";
 import Chat from "./pages/Chat";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -103,6 +104,7 @@ const AppRoutes = () => {
         <Route path="/payments" element={<Payments />} />
         <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
         <Route path="/previsions-cp" element={<PrevisionsCP />} />
+        <Route path="/ministry-requests" element={<MinistryRequests />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/settings/profile" element={<Profile />} />

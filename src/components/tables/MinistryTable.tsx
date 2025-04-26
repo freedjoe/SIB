@@ -6,14 +6,13 @@ import { Badge } from "@/components/ui/badge";
 
 interface Ministry {
   id: string;
-  name: string;
+  name_ar: string;
+  name_en: string;
+  name_fr: string;
   code: string;
   description?: string;
-  head_name?: string;
   is_active: boolean;
-  programs_count?: number;
   created_at: string;
-  updated_at: string;
 }
 
 interface MinistryTableProps {
@@ -28,12 +27,19 @@ interface MinistryTableProps {
 export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete, onRefresh }: MinistryTableProps) {
   const columns: ColumnDef<Ministry, unknown>[] = [
     {
-      accessorKey: "name",
+      accessorKey: "name_fr",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nom" />,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Building className="h-4 w-4 text-gray-500" />
-          <span className="font-medium">{row.getValue("name")}</span>
+          <div className="space-y-1">
+            <span className="font-medium">{row.getValue("name_fr")}</span>
+            <div className="flex gap-2 text-sm text-muted-foreground">
+              <span dir="rtl">{row.original.name_ar}</span>
+              <span>|</span>
+              <span>{row.original.name_en}</span>
+            </div>
+          </div>
         </div>
       ),
       filterFn: "includesString",
@@ -50,15 +56,6 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
       cell: ({ row }) => {
         const description = row.getValue("description") as string | undefined;
         return description ? description : "N/A";
-      },
-      filterFn: "includesString",
-    },
-    {
-      accessorKey: "head_name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Responsable" />,
-      cell: ({ row }) => {
-        const headName = row.getValue("head_name") as string | undefined;
-        return headName ? headName : "Non assigné";
       },
       filterFn: "includesString",
     },
@@ -81,25 +78,6 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
       },
       filterFn: "includesString",
     },
-    {
-      accessorKey: "programs_count",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Programmes" />,
-      cell: ({ row }) => {
-        const count = row.original.programs_count || 0;
-        return (
-          <Badge variant="outline" className="bg-gray-50">
-            {count}
-          </Badge>
-        );
-      },
-      filterFn: "includesString",
-    },
-    {
-      accessorKey: "updated_at",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Dernière mise à jour" />,
-      cell: ({ row }) => formatDate(row.getValue("updated_at")),
-      filterFn: "includesString",
-    },
   ];
 
   const actionHandlers: ActionHandlers<Ministry> = {
@@ -113,9 +91,9 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
       columns={columns}
       data={ministries}
       actionHandlers={actionHandlers}
-      filterColumn="name"
+      filterColumn="name_fr"
       onRefresh={onRefresh}
-      tableName="Ministères"
+      tableName="Institutions gouvernementales"
     />
   );
 }

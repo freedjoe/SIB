@@ -25,7 +25,7 @@ export interface Operation {
   taux_financier: number;
   engagements: number;
   payments: number;
-  status: "in_progress" | "completed" | "planned";
+  status: "in_progress" | "completed" | "planned" | "en_pause" | "arreter" | "draft";
   start_date: string;
   end_date: string;
 }
@@ -59,6 +59,24 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
             Terminée
+          </Badge>
+        );
+      case "en_pause":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+            En pause
+          </Badge>
+        );
+      case "arreter":
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+            Arrêté
+          </Badge>
+        );
+      case "draft":
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">
+            Brouillon
           </Badge>
         );
       default:
@@ -101,10 +119,15 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
     },
     {
       accessorKey: "programName",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Programme" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Programme/Action" />,
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.getValue("programName")}>
-          {row.getValue("programName")}
+        <div className="max-w-[200px]">
+          <div className="truncate" title={row.getValue("programName")}>
+            {row.getValue("programName")}
+          </div>
+          <div className="text-xs text-gray-500 truncate" title={row.original.actionName}>
+            {row.original.actionName}
+          </div>
         </div>
       ),
       filterFn: "includesString",
@@ -117,7 +140,7 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
     },
     {
       accessorKey: "allocatedAmount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant alloué" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Allocated AE" />,
       cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue("allocatedAmount"))}</div>,
       filterFn: "includesString",
     },
@@ -139,6 +162,15 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
       accessorKey: "status",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "start_date",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Date début" />,
+      cell: ({ row }) => {
+        const date = row.getValue("start_date") as string;
+        return <div>{new Date(date).toLocaleDateString()}</div>;
+      },
       filterFn: "includesString",
     },
   ];

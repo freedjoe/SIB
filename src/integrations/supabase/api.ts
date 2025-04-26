@@ -2,7 +2,7 @@ import { supabase } from "./client";
 
 // Ministry APIs
 export const getMinistries = async () => {
-  const { data, error } = await supabase.from("ministries").select("*").order("name");
+  const { data, error } = await supabase.from("ministries").select("*").order("name_fr");
 
   if (error) throw error;
   return data;

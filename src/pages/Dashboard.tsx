@@ -479,7 +479,7 @@ export default function DashboardPage() {
           </div>
           <Button className="shadow-subtle" onClick={handleGenerateReport} disabled={generatingPdf}>
             <BarChart3 className="mr-2 h-4 w-4" />
-            {generatingPdf ? t("dashboard.generatingReport") : t("dashboard.detailedReport")}
+            {generatingPdf ? t("dashboard.generatingReport", "Génération du rapport...") : t("dashboard.detailedReport", "Rapport détaillé")}
           </Button>
         </div>
       </DashboardHeader>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
             trend={{ value: 12.5, isPositive: true }}
           />
           <StatCard
-            title={t("dashboard.totalUtilized")}
+            title={t("dashboard.totalUtilized", "Total Utilized")}
             value={formatCurrency(currentFiscalYear.paid)}
             description={`${Math.round((currentFiscalYear.paid / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
             icon={<CoinsIcon className="h-4 w-4" />}
@@ -659,7 +659,7 @@ export default function DashboardPage() {
                   <p className="font-semibold">{formatCurrency(currentFiscalYear.allocated)}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{t("dashboard.totalUtilized")}</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.totalUtilized", "Total Utilized")}</p>
                   <p className="font-semibold">{formatCurrency(currentFiscalYear.paid)}</p>
                 </div>
                 <div className="space-y-1">

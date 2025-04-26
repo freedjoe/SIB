@@ -880,7 +880,7 @@ export default function ProgramsPage() {
 
       {/* Add/Edit Program Dialog (Combined logic slightly, controlled by isEditDialogOpen) */}
       <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={isEditDialogOpen ? setIsEditDialogOpen : setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           {" "}
           {/* Slightly wider */}
           <DialogHeader>
@@ -889,7 +889,7 @@ export default function ProgramsPage() {
               {isEditDialogOpen ? "Modifiez les détails ci-dessous." : "Complétez le formulaire pour créer un nouvel élément."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+          <div className="grid gap-4 py-4 px-2">
             {" "}
             {/* Added scroll */}
             {/* Code */}
@@ -966,7 +966,7 @@ export default function ProgramsPage() {
                   <SelectValue placeholder="Sélectionner un parent (optionnel)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
+                  <SelectItem value="none">Aucun</SelectItem>
                   {/* Filter out the program being edited if applicable */}
                   {availableParentPrograms
                     .filter((p) => p.type === "program" || p.type === "subprogram") // Only allow program/subprogram as parent
