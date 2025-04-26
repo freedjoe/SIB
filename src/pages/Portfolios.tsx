@@ -281,7 +281,6 @@ export default function ProgramsPage() {
   // Modal states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
@@ -392,44 +391,6 @@ export default function ProgramsPage() {
     }
   };
 
-  // Program modal handlers
-  const handleOpenAddDialog = () => {
-    setNewProgramData({
-      status: "planned",
-      allocatedAmount: 0,
-      usedAmount: 0,
-      progress: 0,
-      actions: 0,
-      operations: 0,
-    });
-    setIsAddDialogOpen(true);
-  };
-
-  const handleOpenEditDialog = (program: Program) => {
-    setCurrentProgram(program);
-    setNewProgramData({
-      name: program.name,
-      description: program.description,
-      portfolioId: program.portfolioId,
-      allocatedAmount: program.allocatedAmount,
-      usedAmount: program.usedAmount,
-      progress: program.progress,
-      actions: program.actions,
-      operations: program.operations,
-      status: program.status,
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleOpenViewDialog = (program: Program) => {
-    setCurrentProgram(program);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleOpenDeleteDialog = (program: Program) => {
-    setCurrentProgram(program);
-    setIsDeleteDialogOpen(true);
-  };
 
   // Portfolio modal handlers
   const handleOpenAddPortfolio = () => {
@@ -466,84 +427,6 @@ export default function ProgramsPage() {
     setIsDeletePortfolioOpen(true);
   };
 
-  // CRUD operations for programs
-  const handleAddProgram = () => {
-    if (!newProgramData.name || !newProgramData.portfolioId) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newProgram: Program = {
-      id: `prog${programs.length + 9}`,
-      name: newProgramData.name!,
-      description: newProgramData.description || "",
-      portfolioId: newProgramData.portfolioId!,
-      allocatedAmount: newProgramData.allocatedAmount || 0,
-      usedAmount: 0,
-      progress: 0,
-      actions: 0,
-      operations: 0,
-      status: "planned",
-    };
-
-    setPrograms([...programs, newProgram]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Programme ajouté",
-      description: `Le programme "${newProgram.name}" a été ajouté avec succès.`,
-    });
-  };
-
-  const handleEditProgram = () => {
-    if (!currentProgram) return;
-
-    if (!newProgramData.name) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updatedPrograms = programs.map((program) =>
-      program.id === currentProgram.id
-        ? {
-            ...program,
-            name: newProgramData.name!,
-            description: newProgramData.description || program.description,
-            portfolioId: newProgramData.portfolioId || program.portfolioId,
-            allocatedAmount: newProgramData.allocatedAmount || program.allocatedAmount,
-            usedAmount: newProgramData.usedAmount || program.usedAmount,
-            status: newProgramData.status || program.status,
-            progress: newProgramData.progress || program.progress,
-          }
-        : program
-    );
-
-    setPrograms(updatedPrograms);
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Programme modifié",
-      description: `Le programme "${currentProgram.name}" a été modifié avec succès.`,
-    });
-  };
-
-  const handleDeleteProgram = () => {
-    if (!currentProgram) return;
-
-    const updatedPrograms = programs.filter((program) => program.id !== currentProgram.id);
-    setPrograms(updatedPrograms);
-    setIsDeleteDialogOpen(false);
-    toast({
-      title: "Programme supprimé",
-      description: `Le programme "${currentProgram.name}" a été supprimé avec succès.`,
-    });
-  };
 
   // CRUD operations for portfolios
   const handleAddPortfolio = () => {
@@ -709,11 +592,6 @@ export default function ProgramsPage() {
 
       <DashboardSection>
         <Tabs defaultValue="portfolios" className="w-full">
-          {/* Commented out TabsList as it wasn't used */}
-          {/* <TabsList className="mb-6">
-            <TabsTrigger value="portfolios">Portefeuilles</TabsTrigger>
-            <TabsTrigger value="programs">Programmes</TabsTrigger>
-          </TabsList> */}
 
           <TabsContent value="portfolios" className="animate-fade-in">
             {/* Removed the outer div and filter card that were here */}
@@ -813,423 +691,11 @@ export default function ProgramsPage() {
               ))}
             </DashboardGrid>
           </TabsContent>
-
-          <TabsContent value="programs" className="animate-fade-in">
-            <div className="flex justify-end mb-4">
-              <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                Nouveau Programme
-              </Button>
-            </div>
-            <Card className="budget-card mb-6">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-base">Filtrer les programmes</CardTitle>
-                    <CardDescription>Filtrez par portefeuille ou par statut</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Select value={portfolioFilter} onValueChange={setPortfolioFilter}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionner un portefeuille" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les portefeuilles</SelectItem>
-                      {portfolios.map((portfolio) => (
-                        <SelectItem key={portfolio.id} value={portfolio.id}>
-                          {portfolio.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      <SelectItem value="active">En cours</SelectItem>
-                      <SelectItem value="completed">Terminé</SelectItem>
-                      <SelectItem value="planned">Planifié</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <DashboardGrid columns={2}>
-              {filteredPrograms.map((program) => (
-                <Card key={program.id} className="budget-card transition-all duration-300 hover:shadow-elevation">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{program.name}</CardTitle>
-                      {getStatusBadge(program.status)}
-                    </div>
-                    <CardDescription>{program.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-muted-foreground">Progression</span>
-                          <span
-                            className={cn(
-                              "text-sm font-medium",
-                              program.progress < 40 ? "text-budget-danger" : program.progress < 70 ? "text-budget-warning" : "text-budget-success"
-                            )}
-                          >
-                            {program.progress}%
-                          </span>
-                        </div>
-                        <Progress value={program.progress} className="h-2" />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget alloué</p>
-                          <p className="font-medium">{formatCurrency(program.allocatedAmount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Budget utilisé</p>
-                          <p className="font-medium">{formatCurrency(program.usedAmount)}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Actions</p>
-                          <p className="font-medium">{program.actions}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Opérations</p>
-                          <p className="font-medium">{program.operations}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenViewDialog(program)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(program)}>
-                        <FileEdit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(program)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="sm" className="justify-between">
-                      <span>Voir les détails</span>
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </DashboardGrid>
-          </TabsContent>
         </Tabs>
       </DashboardSection>
 
-      {/* Add Program Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Ajouter un nouveau programme</DialogTitle>
-            <DialogDescription>Complétez le formulaire pour créer un nouveau programme.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-name" className="text-right">
-                Nom
-              </Label>
-              <Input
-                id="program-name"
-                className="col-span-3"
-                value={newProgramData.name || ""}
-                onChange={(e) => setNewProgramData({ ...newProgramData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="program-description"
-                className="col-span-3"
-                value={newProgramData.description || ""}
-                onChange={(e) => setNewProgramData({ ...newProgramData, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-portfolio" className="text-right">
-                Portefeuille
-              </Label>
-              <Select value={newProgramData.portfolioId} onValueChange={(value) => setNewProgramData({ ...newProgramData, portfolioId: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un portefeuille" />
-                </SelectTrigger>
-                <SelectContent>
-                  {portfolios.map((portfolio) => (
-                    <SelectItem key={portfolio.id} value={portfolio.id}>
-                      {portfolio.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-amount" className="text-right">
-                Budget alloué
-              </Label>
-              <Input
-                id="program-amount"
-                type="number"
-                className="col-span-3"
-                value={newProgramData.allocatedAmount || ""}
-                onChange={(e) =>
-                  setNewProgramData({
-                    ...newProgramData,
-                    allocatedAmount: parseFloat(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-status" className="text-right">
-                Statut
-              </Label>
-              <Select
-                value={newProgramData.status}
-                onValueChange={(value) =>
-                  setNewProgramData({
-                    ...newProgramData,
-                    status: value as "active" | "completed" | "planned",
-                  })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planned">Planifié</SelectItem>
-                  <SelectItem value="active">En cours</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleAddProgram}>Ajouter</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Edit Program Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Modifier le programme</DialogTitle>
-            <DialogDescription>Modifiez les détails du programme.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-name" className="text-right">
-                Nom
-              </Label>
-              <Input
-                id="edit-program-name"
-                className="col-span-3"
-                value={newProgramData.name || ""}
-                onChange={(e) => setNewProgramData({ ...newProgramData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="edit-program-description"
-                className="col-span-3"
-                value={newProgramData.description || ""}
-                onChange={(e) => setNewProgramData({ ...newProgramData, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-portfolio" className="text-right">
-                Portefeuille
-              </Label>
-              <Select value={newProgramData.portfolioId} onValueChange={(value) => setNewProgramData({ ...newProgramData, portfolioId: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un portefeuille" />
-                </SelectTrigger>
-                <SelectContent>
-                  {portfolios.map((portfolio) => (
-                    <SelectItem key={portfolio.id} value={portfolio.id}>
-                      {portfolio.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-allocated" className="text-right">
-                Budget alloué
-              </Label>
-              <Input
-                id="edit-program-allocated"
-                type="number"
-                className="col-span-3"
-                value={newProgramData.allocatedAmount || ""}
-                onChange={(e) =>
-                  setNewProgramData({
-                    ...newProgramData,
-                    allocatedAmount: parseFloat(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-used" className="text-right">
-                Budget utilisé
-              </Label>
-              <Input
-                id="edit-program-used"
-                type="number"
-                className="col-span-3"
-                value={newProgramData.usedAmount || ""}
-                onChange={(e) =>
-                  setNewProgramData({
-                    ...newProgramData,
-                    usedAmount: parseFloat(e.target.value),
-                    progress: newProgramData.allocatedAmount ? Math.round((parseFloat(e.target.value) / newProgramData.allocatedAmount) * 100) : 0,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-program-status" className="text-right">
-                Statut
-              </Label>
-              <Select
-                value={newProgramData.status}
-                onValueChange={(value) =>
-                  setNewProgramData({
-                    ...newProgramData,
-                    status: value as "active" | "completed" | "planned",
-                  })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planned">Planifié</SelectItem>
-                  <SelectItem value="active">En cours</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleEditProgram}>Enregistrer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Program Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Détails du programme</DialogTitle>
-          </DialogHeader>
-          {currentProgram && (
-            <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Nom:</div>
-                <div>{currentProgram.name}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Description:</div>
-                <div>{currentProgram.description}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Portefeuille:</div>
-                <div>{portfolios.find((p) => p.id === currentProgram.portfolioId)?.name}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Budget alloué:</div>
-                <div>{formatCurrency(currentProgram.allocatedAmount)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Budget utilisé:</div>
-                <div>{formatCurrency(currentProgram.usedAmount)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Progression:</div>
-                <div>{currentProgram.progress}%</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Actions:</div>
-                <div>{currentProgram.actions}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Opérations:</div>
-                <div>{currentProgram.operations}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Statut:</div>
-                <div>{getStatusBadge(currentProgram.status)}</div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Program Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce programme? Cette action est irréversible.</DialogDescription>
-          </DialogHeader>
-          {currentProgram && (
-            <div className="py-4">
-              <p>
-                <strong>Nom:</strong> {currentProgram.name}
-              </p>
-              <p>
-                <strong>Description:</strong> {currentProgram.description}
-              </p>
-              <p>
-                <strong>Budget alloué:</strong> {formatCurrency(currentProgram.allocatedAmount)}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteProgram}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Portfolio Dialogs */}
+       {/* Add Portfolio Dialog */}
       <Dialog open={isAddPortfolioOpen} onOpenChange={setIsAddPortfolioOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -1334,7 +800,7 @@ export default function ProgramsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+ {/* Edit portfolio Dialog */}
       <Dialog open={isEditPortfolioOpen} onOpenChange={setIsEditPortfolioOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -1439,7 +905,37 @@ export default function ProgramsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+ {/* Delete Portfolio Dialog */}
+ <Dialog open={isDeletePortfolioOpen} onOpenChange={setIsDeletePortfolioOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce portfolio? Cette action est irréversible.</DialogDescription>
+          </DialogHeader>
+          {currentPortfolio && (
+            <div className="py-4">
+              <p>
+                <strong>Nom:</strong> {currentPortfolio.name}
+              </p>
+              <p>
+                <strong>Description:</strong> {currentPortfolio.description}
+              </p>
+              <p>
+                <strong>Budget alloué:</strong> {formatCurrency(currentPortfolio.allocated_ae)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeletePortfolio}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* View Portfolio Dialog */}
       <Dialog open={isViewPortfolioOpen} onOpenChange={setIsViewPortfolioOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1743,19 +1239,19 @@ export default function ProgramsPage() {
                   <h2 className="text-lg font-semibold mb-2">Budget</h2>
                   <p>
                     <strong>AE Allouées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
+                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
                   </p>
                   <p>
                     <strong>CP Alloués:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
+                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
                   </p>
                   <p>
                     <strong>AE Consommées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
+                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
                   </p>
                   <p>
                     <strong>CP Consommés:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
+                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
                   </p>
                 </div>
               </div>
@@ -1767,8 +1263,8 @@ export default function ProgramsPage() {
                     <p className="mb-1">
                       AE:{" "}
                       {Math.round(
-                        ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                          (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                        ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                          (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
                           100
                       )}
                       %
@@ -1778,8 +1274,8 @@ export default function ProgramsPage() {
                         className="h-2 bg-blue-500 rounded-full"
                         style={{
                           width: `${Math.round(
-                            ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                              (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                            ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
+                              (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
                               100
                           )}%`,
                         }}
@@ -1790,8 +1286,8 @@ export default function ProgramsPage() {
                     <p className="mb-1">
                       CP:{" "}
                       {Math.round(
-                        ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                          (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                        ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                          (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
                           100
                       )}
                       %
@@ -1801,8 +1297,8 @@ export default function ProgramsPage() {
                         className="h-2 bg-green-500 rounded-full"
                         style={{
                           width: `${Math.round(
-                            ((currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                              (currentPortfolio?.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                            ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
+                              (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
                               100
                           )}%`,
                         }}
