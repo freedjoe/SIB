@@ -27,6 +27,12 @@ interface MinistryTableProps {
 export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete, onRefresh }: MinistryTableProps) {
   const columns: ColumnDef<Ministry, unknown>[] = [
     {
+      accessorKey: "code",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
+      cell: ({ row }) => <Badge variant="outline">{row.getValue("code")}</Badge>,
+      filterFn: "includesString",
+    },
+    {
       accessorKey: "name_fr",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nom" />,
       cell: ({ row }) => (
@@ -42,12 +48,6 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
           </div>
         </div>
       ),
-      filterFn: "includesString",
-    },
-    {
-      accessorKey: "code",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
-      cell: ({ row }) => <Badge variant="outline">{row.getValue("code")}</Badge>,
       filterFn: "includesString",
     },
     {

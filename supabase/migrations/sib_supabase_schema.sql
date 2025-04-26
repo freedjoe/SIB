@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS fiscal_years (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     year INTEGER UNIQUE NOT NULL,
+    status TEXT CHECK (status IN ('planning', 'active', 'closed', 'draft')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS portfolios (
     code VARCHAR(20),
     allocated_ae NUMERIC,
     allocated_cp NUMERIC,
-    fiscal_year_id UUID REFERENCES fiscal_years(id),
+    status TEXT CHECK (status IN ('draft', 'active', 'archived')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -56,7 +57,6 @@ CREATE TABLE IF NOT EXISTS program_structures (
     parent_id UUID REFERENCES program_structures(id),
     allocated_ae NUMERIC,
     allocated_cp NUMERIC,
-    fiscal_year_id UUID REFERENCES fiscal_years(id),
     description TEXT
 );
 
@@ -320,6 +320,7 @@ BEGIN
         SELECT * FROM (VALUES
             -- fiscal_years
             ('fiscal_years', 'year', 'INTEGER UNIQUE NOT NULL'),
+            ('fiscal_years', 'status', 'TEXT CHECK (status IN (''planning'', ''active'', ''closed'', ''draft'')) DEFAULT ''draft'''),
             ('fiscal_years', 'description', 'TEXT'),
 
             -- ministries
@@ -348,7 +349,7 @@ BEGIN
             ('portfolios', 'code', 'VARCHAR(20)'),
             ('portfolios', 'allocated_ae', 'NUMERIC'),
             ('portfolios', 'allocated_cp', 'NUMERIC'),
-            ('portfolios', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
+            ('portfolios', 'status', 'TEXT CHECK (status IN (''draft'', ''active'', ''archived'')) DEFAULT ''draft'''),
             ('portfolios', 'description', 'TEXT'),
 
             -- program_structures
@@ -358,7 +359,6 @@ BEGIN
             ('program_structures', 'parent_id', 'UUID REFERENCES program_structures(id)'),
             ('program_structures', 'allocated_ae', 'NUMERIC'),
             ('program_structures', 'allocated_cp', 'NUMERIC'),
-            ('program_structures', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
             ('program_structures', 'description', 'TEXT'),
 
             -- actions

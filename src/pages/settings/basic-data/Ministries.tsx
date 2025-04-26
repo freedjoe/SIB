@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { supabase, RealtimeChannel } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MinistryTable } from "@/components/tables/MinistryTable";
@@ -28,6 +28,7 @@ interface MinistryFormData {
   fax1?: string;
   fax2?: string;
   is_active: boolean;
+  parent_id?: string;
 }
 
 interface Ministry {
@@ -45,6 +46,8 @@ interface Ministry {
   fax2?: string;
   is_active: boolean;
   parent_id?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export default function Ministries() {
@@ -64,24 +67,23 @@ export default function Ministries() {
       address: "",
       email: "",
       phone: "",
+      phone2: "",
+      fax1: "",
+      fax2: "",
       is_active: true,
-      parent_id: "null" // Default to 'null' string for the 'Aucun' option
+      parent_id: "null", // Default to 'null' string for the 'Aucun' option
     },
   });
 
   useEffect(() => {
     fetchMinistries();
 
-    const channel: RealtimeChannel = supabase
-      .channel('ministries-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'ministries' },
-        (payload) => {
-          console.log('Change received!', payload);
-          fetchMinistries(); // Re-fetch data on any change
-        }
-      )
+    const channel = supabase
+      .channel("ministries-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "ministries" }, (payload) => {
+        console.log("Change received!", payload);
+        fetchMinistries();
+      })
       .subscribe();
 
     // Cleanup subscription on component unmount
@@ -114,7 +116,7 @@ export default function Ministries() {
   async function fetchMinistries() {
     try {
       // Get ministries
-      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name");
+      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr");
 
       if (ministriesError) throw ministriesError;
 
@@ -250,19 +252,19 @@ export default function Ministries() {
               {dialogMode === "add"
                 ? "Ajouter une institution gouvernementale"
                 : dialogMode === "edit"
-                  ? "Modifier l'institution gouvernementale"
-                  : dialogMode === "view"
-                    ? "Détails de l'institution gouvernementale"
-                    : "Supprimer l'institution gouvernementale"}
+                ? "Modifier l'institution gouvernementale"
+                : dialogMode === "view"
+                ? "Détails de l'institution gouvernementale"
+                : "Supprimer l'institution gouvernementale"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "add"
                 ? "Créer une nouvelle institution gouvernementale"
                 : dialogMode === "edit"
-                  ? "Modifier les informations de l'institution gouvernementale"
-                  : dialogMode === "view"
-                    ? "Voir les détails de l'institution gouvernementale"
-                    : "Êtes-vous sûr de vouloir supprimer cette institution gouvernementale ?"}
+                ? "Modifier les informations de l'institution gouvernementale"
+                : dialogMode === "view"
+                ? "Voir les détails de l'institution gouvernementale"
+                : "Êtes-vous sûr de vouloir supprimer cette institution gouvernementale ?"}
             </DialogDescription>
           </DialogHeader>
 
@@ -440,7 +442,7 @@ export default function Ministries() {
                             .filter((m) => !currentMinistry || m.id !== currentMinistry.id) // Prevent selecting self
                             .map((ministry) => (
                               <SelectItem key={ministry.id} value={ministry.id}>
-                                {ministry.name}
+                                {ministry.name_fr}
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -483,16 +485,23 @@ export default function Ministries() {
             <div className="space-y-6 p-4">
               <div className="flex justify-between items-start border-b pb-4 mb-6">
                 <div className="space-y-1">
-                   <Label className="text-sm font-medium text-gray-500">Code</Label>
+                  <Label className="text-sm font-medium text-gray-500">Code</Label>
                   <p className="font-mono text-base bg-muted px-3 py-1.5 rounded-md inline-block text-foreground">{currentMinistry.code}</p>
                 </div>
                 <div>
-                  <Badge variant={currentMinistry.is_active ? "default" : "destructive"} className={currentMinistry.is_active ? "bg-green-100 text-green-800 border-green-300 text-sm px-3 py-1" : "bg-red-100 text-red-800 border-red-300 text-sm px-3 py-1"}>
+                  <Badge
+                    variant={currentMinistry.is_active ? "default" : "destructive"}
+                    className={
+                      currentMinistry.is_active
+                        ? "bg-green-100 text-green-800 border-green-300 text-sm px-3 py-1"
+                        : "bg-red-100 text-red-800 border-red-300 text-sm px-3 py-1"
+                    }
+                  >
                     {currentMinistry.is_active ? "Actif" : "Inactif"}
                   </Badge>
                 </div>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-500">Noms</Label>
@@ -503,7 +512,9 @@ export default function Ministries() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Arabe</Label>
-                      <p className="text-base font-medium text-foreground" dir="rtl">{currentMinistry.name_ar}</p>
+                      <p className="text-base font-medium text-foreground" dir="rtl">
+                        {currentMinistry.name_ar}
+                      </p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Anglais</Label>
@@ -514,7 +525,9 @@ export default function Ministries() {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-500">Description</Label>
-                  <p className="text-base text-gray-700 leading-relaxed">{currentMinistry.description || <span className="italic text-gray-400">Non spécifiée</span>}</p>
+                  <p className="text-base text-gray-700 leading-relaxed">
+                    {currentMinistry.description || <span className="italic text-gray-400">Non spécifiée</span>}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -523,35 +536,45 @@ export default function Ministries() {
                 </div>
 
                 <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
-                  <p className="text-base text-foreground">{currentMinistry.email || <span className="italic text-muted-foreground">Non spécifié</span>}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Téléphone 1</Label>
-                      <p className="text-base text-foreground">{currentMinistry.phone || <span className="italic text-muted-foreground">Non spécifié</span>}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Téléphone 2</Label>
-                      <p className="text-base text-foreground">{currentMinistry.phone2 || <span className="italic text-muted-foreground">Non spécifié</span>}</p>
-                    </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                    <p className="text-base text-foreground">
+                      {currentMinistry.email || <span className="italic text-muted-foreground">Non spécifié</span>}
+                    </p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Fax 1</Label>
-                      <p className="text-base text-foreground">{currentMinistry.fax1 || <span className="italic text-muted-foreground">Non spécifié</span>}</p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Téléphone 1</Label>
+                        <p className="text-base text-foreground">
+                          {currentMinistry.phone || <span className="italic text-muted-foreground">Non spécifié</span>}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Téléphone 2</Label>
+                        <p className="text-base text-foreground">
+                          {currentMinistry.phone2 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Fax 2</Label>
-                      <p className="text-base text-foreground">{currentMinistry.fax2 || <span className="italic text-muted-foreground">Non spécifié</span>}</p>
+
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Fax 1</Label>
+                        <p className="text-base text-foreground">
+                          {currentMinistry.fax1 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Fax 2</Label>
+                        <p className="text-base text-foreground">
+                          {currentMinistry.fax2 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
               </div>
             </div>
           )}

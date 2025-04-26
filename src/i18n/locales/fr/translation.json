@@ -586,8 +586,9 @@
     },
     "status": {
       "planning": "En planification",
-      "active": "Actif",
-      "closed": "Clôturé"
+      "active": "En cours",
+      "closed": "Clôturé",
+      "draft": "Brouillon"
     }
   },
   "budgets": {

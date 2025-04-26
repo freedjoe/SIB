@@ -65,7 +65,7 @@ export default function BasicData() {
   const navigate = useNavigate();
 
   return (
-    <div>
+    <div className="p-8">
       <div className="mb-8">
         <h2 className="text-3xl font-bold tracking-tight">Données de Base</h2>
         <p className="text-muted-foreground mt-2">Gérez les données de référence du système</p>

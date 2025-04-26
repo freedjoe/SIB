@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
 import { Button } from "@/components/ui/button";
@@ -24,78 +24,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the interface for fiscal year data
 interface FiscalYear {
   id: string;
   year: number;
+  description?: string;
+  status: "planning" | "active" | "closed" | "draft";
+  // Calculated fields (not in database)
   totalAllocatedAE: number;
   totalAllocatedCP: number;
   consumedAE: number;
   consumedCP: number;
   engagementCount: number;
-  status: "active" | "closed" | "planning";
   ministryCount: number;
   portfolioCount: number;
   programCount: number;
-  description?: string;
 }
-
-// Mock data for fiscal years
-const mockFiscalYears: FiscalYear[] = [
-  {
-    id: "fy1",
-    year: 2024,
-    totalAllocatedAE: 3250000000,
-    totalAllocatedCP: 2680000000,
-    consumedAE: 1230000000,
-    consumedCP: 980000000,
-    engagementCount: 142,
-    status: "active",
-    ministryCount: 12,
-    portfolioCount: 35,
-    programCount: 78,
-  },
-  {
-    id: "fy2",
-    year: 2023,
-    totalAllocatedAE: 2950000000,
-    totalAllocatedCP: 2450000000,
-    consumedAE: 2780000000,
-    consumedCP: 2380000000,
-    engagementCount: 215,
-    status: "closed",
-    ministryCount: 12,
-    portfolioCount: 32,
-    programCount: 75,
-  },
-  {
-    id: "fy3",
-    year: 2022,
-    totalAllocatedAE: 2650000000,
-    totalAllocatedCP: 2280000000,
-    consumedAE: 2650000000,
-    consumedCP: 2280000000,
-    engagementCount: 189,
-    status: "closed",
-    ministryCount: 11,
-    portfolioCount: 28,
-    programCount: 68,
-  },
-  {
-    id: "fy4",
-    year: 2025,
-    totalAllocatedAE: 3450000000,
-    totalAllocatedCP: 2980000000,
-    consumedAE: 0,
-    consumedCP: 0,
-    engagementCount: 0,
-    status: "planning",
-    ministryCount: 12,
-    portfolioCount: 38,
-    programCount: 82,
-  },
-];
 
 // Sample chart data
 const monthlyConsumptionData = {
@@ -237,12 +183,28 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Helper function to get status level
+const getStatusVariant = (consumption: number) => {
+  if (consumption >= 0.9) return "success";
+  if (consumption >= 0.6) return "warning";
+  return "destructive";
+};
+
+// Helper function to get a badge for consumption status
+const getBadge = (label: string, value: number) => {
+  const variant = getStatusVariant(value);
+  return (
+    <Badge variant={variant}>
+      {label}: {Math.round(value * 100)}%
+    </Badge>
+  );
+};
+
 export default function BudgetaryExercisesPage() {
   const { t } = useTranslation();
   const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [filteredYears, setFilteredYears] = useState<FiscalYear[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<FiscalYear | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -250,74 +212,92 @@ export default function BudgetaryExercisesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newFiscalYearData, setNewFiscalYearData] = useState({
     year: new Date().getFullYear() + 1,
-    status: "planning" as FiscalYear["status"],
+    status: "draft" as FiscalYear["status"],
     description: "",
   });
 
+  // Fetch fiscal years data
+  const fetchFiscalYears = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from("fiscal_years").select("*").order("year", { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: FiscalYear[] = data.map((year) => ({
+        id: year.id,
+        year: year.year,
+        description: year.description || "",
+        status: year.status,
+        // Initialize calculated fields with zero values
+        totalAllocatedAE: 0,
+        totalAllocatedCP: 0,
+        consumedAE: 0,
+        consumedCP: 0,
+        engagementCount: 0,
+        ministryCount: 0,
+        portfolioCount: 0,
+        programCount: 0,
+      }));
+
+      setFiscalYears(formattedData);
+      setFilteredYears(formattedData);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching fiscal years:", error);
+      toast({
+        title: t("common.error"),
+        description: t("budgetaryExercises.fetchError"),
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  }, [t]);
+
+  // Initial data fetch and subscription setup
   useEffect(() => {
-    // Load fiscal years data (mock)
-    setFiscalYears(mockFiscalYears);
-    setFilteredYears(mockFiscalYears);
-  }, []);
+    fetchFiscalYears();
+
+    // Set up real-time subscription for fiscal years
+    const fiscalYearsSubscription = supabase
+      .channel("fiscal_years_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "fiscal_years",
+        },
+        () => {
+          fetchFiscalYears();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      fiscalYearsSubscription.unsubscribe();
+    };
+  }, [fetchFiscalYears]);
 
   useEffect(() => {
     let result = fiscalYears;
 
     // Filter by search term
     if (searchTerm) {
-      result = result.filter((fy) => fy.year.toString().includes(searchTerm));
-    }
-
-    // Filter by status
-    if (statusFilter && statusFilter !== "all") {
-      result = result.filter((fy) => fy.status === statusFilter);
+      result = result.filter((fy) => fy.year.toString().includes(searchTerm) || fy.description?.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
     // Sort by year (descending)
     result = [...result].sort((a, b) => b.year - a.year);
 
     setFilteredYears(result);
-  }, [fiscalYears, searchTerm, statusFilter]);
-
-  const getStatusBadge = (status: FiscalYear["status"]) => {
-    switch (status) {
-      case "planning":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
-            {t("budgetaryExercises.status.planning")}
-          </Badge>
-        );
-      case "active":
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-            {t("budgetaryExercises.status.active")}
-          </Badge>
-        );
-      case "closed":
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400">
-            {t("budgetaryExercises.status.closed")}
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
+  }, [fiscalYears, searchTerm]);
 
   const handleViewDetails = (fiscalYear: FiscalYear) => {
     setSelectedYear(fiscalYear);
     setIsDetailsDialogOpen(true);
-  };
-
-  const handleAddFiscalYear = () => {
-    setNewFiscalYearData({
-      year: new Date().getFullYear() + 1,
-      status: "planning",
-      description: "",
-    });
-    setIsAddDialogOpen(true);
   };
 
   const handleEditFiscalYear = (fiscalYear: FiscalYear) => {
@@ -335,66 +315,92 @@ export default function BudgetaryExercisesPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSaveFiscalYear = () => {
-    // Create a new fiscal year
-    const newFiscalYear: FiscalYear = {
-      id: `fy${Date.now()}`,
-      year: newFiscalYearData.year,
-      totalAllocatedAE: 0,
-      totalAllocatedCP: 0,
-      consumedAE: 0,
-      consumedCP: 0,
-      engagementCount: 0,
-      status: newFiscalYearData.status,
-      ministryCount: 0,
-      portfolioCount: 0,
-      programCount: 0,
-      description: newFiscalYearData.description,
-    };
+  const handleSaveFiscalYear = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("fiscal_years")
+        .insert({
+          year: newFiscalYearData.year,
+          status: newFiscalYearData.status,
+          description: newFiscalYearData.description || null,
+        })
+        .select()
+        .single();
 
-    setFiscalYears([...fiscalYears, newFiscalYear]);
-    setIsAddDialogOpen(false);
+      if (error) throw error;
 
-    toast({
-      title: t("budgetaryExercises.addedSuccess"),
-      description: t("budgetaryExercises.addedSuccessDescription"),
-    });
+      setIsAddDialogOpen(false);
+      toast({
+        title: t("budgetaryExercises.addedSuccess"),
+        description: t("budgetaryExercises.addedSuccessDescription"),
+      });
+
+      // Data will be updated via real-time subscription
+    } catch (error) {
+      console.error("Error creating fiscal year:", error);
+      toast({
+        title: t("common.error"),
+        description: t("budgetaryExercises.createError"),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateFiscalYear = () => {
+  const handleUpdateFiscalYear = async () => {
     if (!selectedYear) return;
 
-    const updatedFiscalYears = fiscalYears.map((year) =>
-      year.id === selectedYear.id
-        ? {
-            ...year,
-            year: newFiscalYearData.year,
-            status: newFiscalYearData.status,
-            description: newFiscalYearData.description,
-          }
-        : year
-    );
+    try {
+      const { error } = await supabase
+        .from("fiscal_years")
+        .update({
+          year: newFiscalYearData.year,
+          status: newFiscalYearData.status,
+          description: newFiscalYearData.description || null,
+        })
+        .eq("id", selectedYear.id);
 
-    setFiscalYears(updatedFiscalYears);
-    setIsEditDialogOpen(false);
+      if (error) throw error;
 
-    toast({
-      title: t("budgetaryExercises.updatedSuccess"),
-      description: t("budgetaryExercises.updatedSuccessDescription"),
-    });
+      setIsEditDialogOpen(false);
+      toast({
+        title: t("budgetaryExercises.updatedSuccess"),
+        description: t("budgetaryExercises.updatedSuccessDescription"),
+      });
+
+      // Data will be updated via real-time subscription
+    } catch (error) {
+      console.error("Error updating fiscal year:", error);
+      toast({
+        title: t("common.error"),
+        description: t("budgetaryExercises.updateError"),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!selectedYear) return;
 
-    const updatedFiscalYears = fiscalYears.filter((year) => year.id !== selectedYear.id);
-    setFiscalYears(updatedFiscalYears);
-    setIsDeleteDialogOpen(false);
+    try {
+      const { error } = await supabase.from("fiscal_years").delete().eq("id", selectedYear.id);
 
-    toast({
-      title: t("budgetaryExercises.deletedSuccess"),
-      description: t("budgetaryExercises.deletedSuccessDescription"),
-    });
+      if (error) throw error;
+
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: t("budgetaryExercises.deletedSuccess"),
+        description: t("budgetaryExercises.deletedSuccessDescription"),
+      });
+
+      // Data will be updated via real-time subscription
+    } catch (error) {
+      console.error("Error deleting fiscal year:", error);
+      toast({
+        title: t("common.error"),
+        description: t("budgetaryExercises.deleteError"),
+        variant: "destructive",
+      });
+    }
   };
 
   const handleGeneratePdf = (fiscalYear: FiscalYear) => {
@@ -422,10 +428,40 @@ export default function BudgetaryExercisesPage() {
     setIsPdfPreviewOpen(false);
   };
 
+  const getStatusBadge = (status: FiscalYear["status"]) => {
+    switch (status) {
+      case "active":
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
+            {t("budgetaryExercises.status.active")}
+          </Badge>
+        );
+      case "planning":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
+            {t("budgetaryExercises.status.planning")}
+          </Badge>
+        );
+      case "closed":
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
+            {t("budgetaryExercises.status.closed")}
+          </Badge>
+        );
+      case "draft":
+      default:
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
+            {t("budgetaryExercises.status.draft")}
+          </Badge>
+        );
+    }
+  };
+
   return (
     <Dashboard>
       <DashboardHeader title={t("budgetaryExercises.title")} description={t("budgetaryExercises.subtitle")}>
-        <Button onClick={handleAddFiscalYear} className="ml-auto">
+        <Button onClick={() => setIsAddDialogOpen(true)} className="ml-auto">
           <FilePlus className="mr-2 h-4 w-4" />
           {t("budgetaryExercises.addNew")}
         </Button>
@@ -453,7 +489,7 @@ export default function BudgetaryExercisesPage() {
           </div>
           <div className="w-full md:w-64">
             <Label htmlFor="statusFilter">{t("budgetaryExercises.filters.status")}</Label>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value)}>
+            <Select value="all">
               <SelectTrigger id="statusFilter">
                 <SelectValue placeholder={t("budgetaryExercises.filters.allStatuses")} />
               </SelectTrigger>
@@ -584,11 +620,13 @@ export default function BudgetaryExercisesPage() {
               <span className="sr-only">Close</span>
             </DialogClose>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                {t("budgetaryExercises.detailsTitle", { year: selectedYear.year })}
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  {t("budgetaryExercises.detailsTitle", { year: selectedYear.year })}
+                </DialogTitle>
                 {getStatusBadge(selectedYear.status)}
-              </DialogTitle>
+              </div>
               <DialogDescription>{t("budgetaryExercises.detailsSubtitle")}</DialogDescription>
             </DialogHeader>
 
@@ -732,10 +770,11 @@ export default function BudgetaryExercisesPage() {
                 value={newFiscalYearData.status}
                 onValueChange={(value: FiscalYear["status"]) => setNewFiscalYearData({ ...newFiscalYearData, status: value })}
               >
-                <SelectTrigger id="status">
+                <SelectTrigger>
                   <SelectValue placeholder={t("budgetaryExercises.selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">{t("budgetaryExercises.status.draft")}</SelectItem>
                   <SelectItem value="planning">{t("budgetaryExercises.status.planning")}</SelectItem>
                   <SelectItem value="active">{t("budgetaryExercises.status.active")}</SelectItem>
                   <SelectItem value="closed">{t("budgetaryExercises.status.closed")}</SelectItem>
@@ -792,10 +831,11 @@ export default function BudgetaryExercisesPage() {
                   value={newFiscalYearData.status}
                   onValueChange={(value: FiscalYear["status"]) => setNewFiscalYearData({ ...newFiscalYearData, status: value })}
                 >
-                  <SelectTrigger id="edit-status">
+                  <SelectTrigger>
                     <SelectValue placeholder={t("budgetaryExercises.selectStatus")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="draft">{t("budgetaryExercises.status.draft")}</SelectItem>
                     <SelectItem value="planning">{t("budgetaryExercises.status.planning")}</SelectItem>
                     <SelectItem value="active">{t("budgetaryExercises.status.active")}</SelectItem>
                     <SelectItem value="closed">{t("budgetaryExercises.status.closed")}</SelectItem>

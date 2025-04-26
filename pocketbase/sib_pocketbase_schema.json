@@ -13,10 +13,15 @@
     "type": "base",
     "schema": [
       { "name": "code", "type": "text", "required": true, "unique": true },
-      { "name": "name", "type": "text", "required": true },
-      { "name": "address", "type": "text"},
-      { "name": "email", "type": "text"},
+      { "name": "name_ar", "type": "text", "required": true },
+      { "name": "name_en", "type": "text" },
+      { "name": "name_fr", "type": "text", "required": true },
+      { "name": "address", "type": "text" },
+      { "name": "email", "type": "text" },
       { "name": "phone", "type": "text" },
+      { "name": "phone2", "type": "text" },
+      { "name": "fax", "type": "text" },
+      { "name": "fax2", "type": "text" },
       { "name": "is_active", "type": "bool" },
       { "name": "parent_id", "type": "text" },
       { "name": "description", "type": "text" }
@@ -320,15 +325,39 @@
     "name": "requests",
     "type": "base",
     "schema": [
-      { "name": "ministry", "type": "relation", "required": true, "options": { "collectionId": "ministries", "cascadeDelete": true } },
+      { "name": "ministry_id", "type": "relation", "required": true },
       { "name": "title", "type": "text" },
       { "name": "ref", "type": "text" },
       { "name": "fiscal_year_id", "type": "text" },
-      { "name": "type", "type": "select", "options": { "maxSelect": 1, "values": ["New registration","Revaluation","Payment credit","Allocation","Reallocation","Transfer","Additional request","Previous commitments","Balance to regularize","Other"] }, "required": true },
+      {
+        "name": "type",
+        "type": "select",
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "New registration",
+            "Revaluation",
+            "Payment credit",
+            "Allocation",
+            "Reallocation",
+            "Transfer",
+            "Additional request",
+            "Previous commitments",
+            "Balance to regularize",
+            "Other"
+          ]
+        },
+        "required": true
+      },
       { "name": "date_submitted", "type": "date", "options": { "auto": false } },
       { "name": "ae_amount", "type": "number" },
       { "name": "cp_amount", "type": "number" },
-      { "name": "status", "type": "select", "options": { "maxSelect": 1, "values": ["draft", "submitted", "reviewed", "approved", "rejected"] }, "required": true },
+      {
+        "name": "status",
+        "type": "select",
+        "options": { "maxSelect": 1, "values": ["draft", "submitted", "reviewed", "approved", "rejected"] },
+        "required": true
+      },
       { "name": "comments", "type": "text" },
       { "name": "description", "type": "text" }
     ]
@@ -337,7 +366,7 @@
     "name": "deals",
     "type": "base",
     "schema": [
-      { "name": "operation", "type": "relation", "required": true, "options": { "collectionId": "operations", "cascadeDelete": true } },
+      { "name": "operation", "type": "relation", "required": true },
       { "name": "company_name", "type": "text", "required": true },
       { "name": "amount", "type": "number", "options": { "min": 0 } },
       { "name": "physical_rate", "type": "number", "options": { "min": 0 } },

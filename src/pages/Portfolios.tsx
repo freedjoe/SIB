@@ -28,26 +28,45 @@ interface Program {
   status: "active" | "completed" | "planned";
 }
 
+interface FiscalYearData {
+  id: string;
+  year: number;
+  allocatedAE: number;
+  allocatedCP: number;
+  consumedAE: number;
+  consumedCP: number;
+  programs: string[];
+}
+
 interface Portfolio {
   id: string;
-  code: string;
+  ministry_id: string;
   name: string;
+  code: string;
+  allocated_ae: number;
+  allocated_cp: number;
+  fiscal_year_id: string;
+  status: "draft" | "active" | "archived";
   description: string;
-  totalAmount: number;
-  usedAmount: number;
-  programs: number;
-  ministryId: string;
-  ministryName: string;
-  status: "active" | "archived" | "draft";
-  fiscalYears: {
-    id: string;
-    year: number;
-    allocatedAE: number;
-    allocatedCP: number;
-    consumedAE: number;
-    consumedCP: number;
-    programs: Program[];
-  }[];
+  // Calculated fields (not in database)
+  ministryName?: string;
+  usedAmount?: number;
+  programs?: number;
+  consumedAE?: number;
+  consumedCP?: number;
+  fiscalYears?: FiscalYearData[];
+}
+
+interface NewPortfolioData {
+  code?: string;
+  name?: string;
+  description?: string;
+  ministry_id?: string;
+  ministryName?: string;
+  status?: Portfolio["status"];
+  allocated_ae?: number;
+  allocated_cp?: number;
+  fiscal_year_id?: string;
 }
 
 const mockPrograms: Program[] = [
@@ -152,163 +171,88 @@ const mockPrograms: Program[] = [
 const mockPortfolios: Portfolio[] = [
   {
     id: "port1",
+    ministry_id: "m1",
     code: "PE-001",
     name: "Portfolio Éducation",
     description: "Regroupe tous les programmes éducatifs",
-    totalAmount: 870000000,
+    allocated_ae: 870000000,
+    allocated_cp: 750000000,
+    fiscal_year_id: "fy1",
+    status: "active",
+    // Calculated fields
+    ministryName: "Ministère de l'Éducation",
     usedAmount: 525000000,
     programs: 2,
-    ministryId: "m1",
-    ministryName: "Ministère de l'Éducation",
-    status: "active",
-    fiscalYears: [
-      {
-        id: "fy1",
-        year: 2024,
-        allocatedAE: 870000000,
-        allocatedCP: 750000000,
-        consumedAE: 525000000,
-        consumedCP: 480000000,
-        programs: [],
-      },
-      {
-        id: "fy2",
-        year: 2023,
-        allocatedAE: 820000000,
-        allocatedCP: 720000000,
-        consumedAE: 820000000,
-        consumedCP: 720000000,
-        programs: [],
-      },
-    ],
+    consumedAE: 525000000,
+    consumedCP: 480000000,
   },
   {
     id: "port2",
+    ministry_id: "m2",
     code: "PS-002",
     name: "Portfolio Santé",
     description: "Programmes de santé publique et prévention",
-    totalAmount: 730000000,
+    allocated_ae: 730000000,
+    allocated_cp: 650000000,
+    fiscal_year_id: "fy1",
+    status: "active",
+    // Calculated fields
+    ministryName: "Ministère de la Santé",
     usedAmount: 540000000,
     programs: 2,
-    ministryId: "m2",
-    ministryName: "Ministère de la Santé",
-    status: "active",
-    fiscalYears: [
-      {
-        id: "fy1",
-        year: 2024,
-        allocatedAE: 730000000,
-        allocatedCP: 650000000,
-        consumedAE: 540000000,
-        consumedCP: 490000000,
-        programs: [],
-      },
-      {
-        id: "fy2",
-        year: 2023,
-        allocatedAE: 680000000,
-        allocatedCP: 610000000,
-        consumedAE: 680000000,
-        consumedCP: 610000000,
-        programs: [],
-      },
-    ],
+    consumedAE: 540000000,
+    consumedCP: 490000000,
   },
   {
     id: "port3",
+    ministry_id: "m3",
     code: "PI-003",
     name: "Portfolio Infrastructure",
     description: "Développement des infrastructures de transport",
-    totalAmount: 710000000,
+    allocated_ae: 710000000,
+    allocated_cp: 630000000,
+    fiscal_year_id: "fy1",
+    status: "active",
+    // Calculated fields
+    ministryName: "Ministère des Transports",
     usedAmount: 210000000,
     programs: 2,
-    ministryId: "m3",
-    ministryName: "Ministère des Transports",
-    status: "active",
-    fiscalYears: [
-      {
-        id: "fy1",
-        year: 2024,
-        allocatedAE: 710000000,
-        allocatedCP: 630000000,
-        consumedAE: 210000000,
-        consumedCP: 180000000,
-        programs: [],
-      },
-      {
-        id: "fy2",
-        year: 2023,
-        allocatedAE: 650000000,
-        allocatedCP: 590000000,
-        consumedAE: 650000000,
-        consumedCP: 590000000,
-        programs: [],
-      },
-    ],
+    consumedAE: 210000000,
+    consumedCP: 180000000,
   },
   {
     id: "port4",
+    ministry_id: "m4",
     code: "PA-004",
     name: "Portfolio Agriculture",
     description: "Soutien à l'agriculture et l'élevage",
-    totalAmount: 380000000,
+    allocated_ae: 380000000,
+    allocated_cp: 340000000,
+    fiscal_year_id: "fy1",
+    status: "active",
+    // Calculated fields
+    ministryName: "Ministère de l'Agriculture",
     usedAmount: 145000000,
     programs: 1,
-    ministryId: "m4",
-    ministryName: "Ministère de l'Agriculture",
-    status: "active",
-    fiscalYears: [
-      {
-        id: "fy1",
-        year: 2024,
-        allocatedAE: 380000000,
-        allocatedCP: 340000000,
-        consumedAE: 145000000,
-        consumedCP: 120000000,
-        programs: [],
-      },
-      {
-        id: "fy2",
-        year: 2023,
-        allocatedAE: 350000000,
-        allocatedCP: 310000000,
-        consumedAE: 350000000,
-        consumedCP: 310000000,
-        programs: [],
-      },
-    ],
+    consumedAE: 145000000,
+    consumedCP: 120000000,
   },
   {
     id: "port5",
+    ministry_id: "m5",
     code: "PD-005",
     name: "Portfolio Défense",
     description: "Sécurité nationale et protection civile",
-    totalAmount: 410000000,
+    allocated_ae: 410000000,
+    allocated_cp: 380000000,
+    fiscal_year_id: "fy1",
+    status: "archived",
+    // Calculated fields
+    ministryName: "Ministère de la Défense",
     usedAmount: 290000000,
     programs: 1,
-    ministryId: "m5",
-    ministryName: "Ministère de la Défense",
-    status: "archived",
-    fiscalYears: [
-      {
-        id: "fy1",
-        year: 2024,
-        allocatedAE: 410000000,
-        allocatedCP: 380000000,
-        consumedAE: 290000000,
-        consumedCP: 250000000,
-        programs: [],
-      },
-      {
-        id: "fy2",
-        year: 2023,
-        allocatedAE: 390000000,
-        allocatedCP: 350000000,
-        consumedAE: 390000000,
-        consumedCP: 350000000,
-        programs: [],
-      },
-    ],
+    consumedAE: 290000000,
+    consumedCP: 250000000,
   },
 ];
 
@@ -321,18 +265,6 @@ const formatCurrency = (amount: number) => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
-
-interface NewPortfolioData {
-  name?: string;
-  code?: string;
-  description?: string;
-  ministryId?: string;
-  ministryName?: string;
-  totalAmount?: number;
-  usedAmount?: number;
-  programs?: number;
-  status?: "active" | "archived" | "draft";
-}
 
 export default function ProgramsPage() {
   const [portfolioFilter, setPortfolioFilter] = useState("");
@@ -366,9 +298,8 @@ export default function ProgramsPage() {
   const [isViewPortfolioOpen, setIsViewPortfolioOpen] = useState(false);
   const [isDeletePortfolioOpen, setIsDeletePortfolioOpen] = useState(false);
   const [newPortfolioData, setNewPortfolioData] = useState<NewPortfolioData>({
-    totalAmount: 0,
-    usedAmount: 0,
-    programs: 0,
+    allocated_ae: 0,
+    allocated_cp: 0,
     status: "draft",
   });
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
@@ -382,7 +313,7 @@ export default function ProgramsPage() {
       defaultFiscalYears[portfolio.id] = "fy1";
     });
     setPortfolioFiscalYears(defaultFiscalYears);
-  }, []);
+  }, [portfolios]); // Added portfolios to dependency array
 
   // Initialize filteredPortfolios with all portfolios initially (or based on default filter)
   useEffect(() => {
@@ -503,9 +434,8 @@ export default function ProgramsPage() {
   // Portfolio modal handlers
   const handleOpenAddPortfolio = () => {
     setNewPortfolioData({
-      totalAmount: 0,
-      usedAmount: 0,
-      programs: 0,
+      allocated_ae: 0,
+      allocated_cp: 0,
       status: "draft",
     });
     setIsAddPortfolioOpen(true);
@@ -514,14 +444,14 @@ export default function ProgramsPage() {
   const handleOpenEditPortfolio = (portfolio: Portfolio) => {
     setCurrentPortfolio(portfolio);
     setNewPortfolioData({
+      code: portfolio.code,
       name: portfolio.name,
       description: portfolio.description,
-      ministryId: portfolio.ministryId,
+      ministry_id: portfolio.ministry_id,
       ministryName: portfolio.ministryName,
-      totalAmount: portfolio.totalAmount,
-      usedAmount: portfolio.usedAmount,
-      programs: portfolio.programs,
       status: portfolio.status,
+      allocated_ae: portfolio.allocated_ae,
+      allocated_cp: portfolio.allocated_cp,
     });
     setIsEditPortfolioOpen(true);
   };
@@ -628,35 +558,20 @@ export default function ProgramsPage() {
 
     const newPortfolio: Portfolio = {
       id: `port${portfolios.length + 6}`,
-      code: newPortfolioData.code!,
-      name: newPortfolioData.name!,
+      ministry_id: newPortfolioData.ministry_id || `m${Math.floor(Math.random() * 100)}`,
+      code: newPortfolioData.code,
+      name: newPortfolioData.name,
       description: newPortfolioData.description || "",
-      ministryId: newPortfolioData.ministryId || `m${Math.floor(Math.random() * 100)}`,
-      ministryName: newPortfolioData.ministryName!,
-      totalAmount: newPortfolioData.totalAmount || 0,
+      allocated_ae: 0,
+      allocated_cp: 0,
+      fiscal_year_id: "fy1",
+      status: newPortfolioData.status || "draft",
+      // Initialize calculated fields with zero/empty values
+      ministryName: newPortfolioData.ministryName,
       usedAmount: 0,
-      programs: newPortfolioData.programs || 0,
-      status: (newPortfolioData.status as "active" | "archived" | "draft") || "draft",
-      fiscalYears: [
-        {
-          id: "fy1",
-          year: 2024,
-          allocatedAE: newPortfolioData.totalAmount || 0,
-          allocatedCP: Math.round((newPortfolioData.totalAmount || 0) * 0.9),
-          consumedAE: 0,
-          consumedCP: 0,
-          programs: [],
-        },
-        {
-          id: "fy2",
-          year: 2023,
-          allocatedAE: 0,
-          allocatedCP: 0,
-          consumedAE: 0,
-          consumedCP: 0,
-          programs: [],
-        },
-      ],
+      programs: 0,
+      consumedAE: 0,
+      consumedCP: 0,
     };
 
     setPortfolios([...portfolios, newPortfolio]);
@@ -687,15 +602,15 @@ export default function ProgramsPage() {
             name: newPortfolioData.name!,
             description: newPortfolioData.description || portfolio.description,
             ministryName: newPortfolioData.ministryName || portfolio.ministryName,
-            totalAmount: newPortfolioData.totalAmount || portfolio.totalAmount,
-            usedAmount: newPortfolioData.usedAmount || portfolio.usedAmount,
+            allocated_ae: newPortfolioData.allocated_ae || portfolio.allocated_ae,
+            allocated_cp: newPortfolioData.allocated_cp || portfolio.allocated_cp,
             status: (newPortfolioData.status as "active" | "archived" | "draft") || portfolio.status,
             fiscalYears: portfolio.fiscalYears.map((fy) =>
               fy.id === "fy1"
                 ? {
                     ...fy,
-                    allocatedAE: newPortfolioData.totalAmount || fy.allocatedAE,
-                    allocatedCP: Math.round((newPortfolioData.totalAmount || fy.allocatedAE) * 0.9),
+                    allocatedAE: newPortfolioData.allocated_ae || fy.allocatedAE,
+                    allocatedCP: Math.round((newPortfolioData.allocated_cp || fy.allocatedCP) * 0.9),
                   }
                 : fy
             ),
@@ -826,8 +741,8 @@ export default function ProgramsPage() {
                           portfolio.status === "active"
                             ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                             : portfolio.status === "archived"
-                              ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
                         )}
                       >
                         {portfolio.status === "active" ? "Actif" : portfolio.status === "archived" ? "Archivé" : "Brouillon"}
@@ -840,31 +755,11 @@ export default function ProgramsPage() {
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-muted-foreground">Utilisation du budget</span>
                           <span className="text-sm font-medium">
-                            {portfolio.totalAmount > 0 // Added check for zero total amount
-                              ? Math.round(
-                                  ((portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.consumedAE ||
-                                    portfolio.usedAmount) /
-                                    (portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE ||
-                                      portfolio.totalAmount)) *
-                                    100
-                                )
-                              : 0}
-                            %
+                            {portfolio.allocated_ae > 0 ? Math.round(((portfolio.consumedAE || 0) / portfolio.allocated_ae) * 100) : 0}%
                           </span>
                         </div>
                         <Progress
-                          value={
-                            portfolio.totalAmount > 0
-                              ? Math.round(
-                                  // Added check for zero total amount
-                                  ((portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.consumedAE ||
-                                    portfolio.usedAmount) /
-                                    (portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE ||
-                                      portfolio.totalAmount)) *
-                                    100
-                                )
-                              : 0
-                          }
+                          value={portfolio.allocated_ae > 0 ? Math.round(((portfolio.consumedAE || 0) / portfolio.allocated_ae) * 100) : 0}
                           className="h-2"
                         />
                       </div>
@@ -872,20 +767,11 @@ export default function ProgramsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Budget AE</p>
-                          <p className="font-medium">
-                            {formatCurrency(
-                              portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedAE || portfolio.totalAmount
-                            )}
-                          </p>
+                          <p className="font-medium">{formatCurrency(portfolio.allocated_ae || 0)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Budget CP</p>
-                          <p className="font-medium">
-                            {formatCurrency(
-                              portfolio.fiscalYears.find((fy) => fy.id === getPortfolioFiscalYear(portfolio.id))?.allocatedCP ||
-                                portfolio.totalAmount * 0.9 // Consider default if CP is 0
-                            )}
-                          </p>
+                          <p className="font-medium">{formatCurrency(portfolio.allocated_cp || 0)}</p>
                         </div>
                       </div>
 
@@ -1430,11 +1316,11 @@ export default function ProgramsPage() {
                 id="portfolio-amount"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData.totalAmount || ""}
+                value={newPortfolioData.allocated_ae || ""}
                 onChange={(e) =>
                   setNewPortfolioData({
                     ...newPortfolioData,
-                    totalAmount: parseFloat(e.target.value),
+                    allocated_ae: parseFloat(e.target.value),
                   })
                 }
               />
@@ -1535,11 +1421,11 @@ export default function ProgramsPage() {
                 id="edit-portfolio-amount"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData.totalAmount || ""}
+                value={newPortfolioData.allocated_ae || ""}
                 onChange={(e) =>
                   setNewPortfolioData({
                     ...newPortfolioData,
-                    totalAmount: parseFloat(e.target.value),
+                    allocated_ae: parseFloat(e.target.value),
                   })
                 }
               />
@@ -1555,24 +1441,17 @@ export default function ProgramsPage() {
       </Dialog>
 
       <Dialog open={isViewPortfolioOpen} onOpenChange={setIsViewPortfolioOpen}>
-        {/* Increased max-w for better spacing */}
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex justify-between items-start gap-4">
-              {" "}
-              {/* Added gap */}
               <div className="flex-1">
-                {" "}
-                {/* Allow title/desc to take space */}
                 <DialogTitle className="text-xl flex items-center gap-2">
                   {currentPortfolio?.name} <span className="text-sm font-normal text-muted-foreground">({currentPortfolio?.code})</span>
                 </DialogTitle>
-                {/* Added description display */}
                 {currentPortfolio?.description && (
                   <DialogDescription className="mt-1 text-sm text-muted-foreground">{currentPortfolio.description}</DialogDescription>
                 )}
               </div>
-              {/* Added whitespace-nowrap */}
               <Badge
                 variant="outline"
                 className={cn(
@@ -1580,8 +1459,8 @@ export default function ProgramsPage() {
                   currentPortfolio?.status === "active"
                     ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                     : currentPortfolio?.status === "archived"
-                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                    ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
                 )}
               >
                 {currentPortfolio?.status === "active" ? "Actif" : currentPortfolio?.status === "archived" ? "Archivé" : "Brouillon"}
@@ -1591,14 +1470,9 @@ export default function ProgramsPage() {
 
           {currentPortfolio && (
             <div className="py-6 space-y-8">
-              {" "}
-              {/* Increased py and space-y */}
-              {/* Select Fiscal Year */}
               <div className="flex justify-end">
                 <Select value={selectedFiscalYear} onValueChange={setSelectedFiscalYear}>
                   <SelectTrigger className="w-[200px]">
-                    {" "}
-                    {/* Slightly wider */}
                     <SelectValue placeholder="Année Fiscale" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1607,18 +1481,15 @@ export default function ProgramsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               {/* Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {" "}
-                {/* Adjusted grid for responsiveness */}
                 <Card className="border-l-4 border-l-primary">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">AE Allouées</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
-                    </div>
+                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_ae || 0)}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-secondary">
@@ -1626,9 +1497,7 @@ export default function ProgramsPage() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">CP Alloués</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
-                    </div>
+                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_cp || 0)}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-blue-500">
@@ -1636,17 +1505,9 @@ export default function ProgramsPage() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">AE Consommées</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
-                    </div>
+                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedAE || 0)}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0 > 0 // Check for division by zero
-                        ? Math.round(
-                            ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                              (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
-                              100
-                          )
-                        : 0}
+                      {currentPortfolio.allocated_ae > 0 ? Math.round(((currentPortfolio.consumedAE || 0) / currentPortfolio.allocated_ae) * 100) : 0}
                       % utilisés
                     </div>
                   </CardContent>
@@ -1656,38 +1517,27 @@ export default function ProgramsPage() {
                     <CardTitle className="text-sm font-medium text-muted-foreground">CP Consommés</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
-                    </div>
+                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedCP || 0)}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0 > 0 // Check for division by zero
-                        ? Math.round(
-                            ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                              (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
-                              100
-                          )
-                        : 0}
+                      {currentPortfolio.allocated_cp > 0 ? Math.round(((currentPortfolio.consumedCP || 0) / currentPortfolio.allocated_cp) * 100) : 0}
                       % utilisés
                     </div>
                   </CardContent>
                 </Card>
               </div>
-              {/* Progress Charts - Wrapped in a Card for consistency */}
+
+              {/* Progress Charts */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Progression de la Consommation</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                    {" "}
-                    {/* Increased gap */}
                     <div className="flex flex-col items-center">
                       <div className="w-40 h-40 relative flex items-center justify-center">
-                        {" "}
-                        {/* Slightly smaller */}
                         <svg className="w-full h-full" viewBox="0 0 100 100">
                           <circle
-                            className="text-gray-200 dark:text-gray-700 stroke-current" // Adjusted colors
+                            className="text-gray-200 dark:text-gray-700 stroke-current"
                             strokeWidth="10"
                             stroke="currentColor"
                             fill="transparent"
@@ -1699,10 +1549,7 @@ export default function ProgramsPage() {
                             className="text-primary stroke-current"
                             strokeWidth="10"
                             strokeDasharray={`${Math.round(
-                              ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                                (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) * // Handled potential division by zero
-                                100 *
-                                2.51
+                              ((currentPortfolio.consumedAE || 0) / (currentPortfolio.allocated_ae || 1)) * 100 * 2.51
                             )} 251.2`}
                             strokeLinecap="round"
                             stroke="currentColor"
@@ -1714,28 +1561,20 @@ export default function ProgramsPage() {
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-xl font-bold">
-                            {" "}
-                            {/* Slightly smaller text */}
-                            {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0 > 0 // Check for division by zero
-                              ? Math.round(
-                                  ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                                    (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
-                                    100
-                                )
+                            {currentPortfolio.allocated_ae > 0
+                              ? Math.round(((currentPortfolio.consumedAE || 0) / currentPortfolio.allocated_ae) * 100)
                               : 0}
                             %
                           </div>
                         </div>
                       </div>
-                      <p className="mt-3 text-sm font-medium">Consommation AE</p> {/* Added margin */}
+                      <p className="mt-3 text-sm font-medium">Consommation AE</p>
                     </div>
                     <div className="flex flex-col items-center">
                       <div className="w-40 h-40 relative flex items-center justify-center">
-                        {" "}
-                        {/* Slightly smaller */}
                         <svg className="w-full h-full" viewBox="0 0 100 100">
                           <circle
-                            className="text-gray-200 dark:text-gray-700 stroke-current" // Adjusted colors
+                            className="text-gray-200 dark:text-gray-700 stroke-current"
                             strokeWidth="10"
                             stroke="currentColor"
                             fill="transparent"
@@ -1747,10 +1586,7 @@ export default function ProgramsPage() {
                             className="text-secondary stroke-current"
                             strokeWidth="10"
                             strokeDasharray={`${Math.round(
-                              ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                                (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) * // Handled potential division by zero
-                                100 *
-                                2.51
+                              ((currentPortfolio.consumedCP || 0) / (currentPortfolio.allocated_cp || 1)) * 100 * 2.51
                             )} 251.2`}
                             strokeLinecap="round"
                             stroke="currentColor"
@@ -1762,24 +1598,19 @@ export default function ProgramsPage() {
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-xl font-bold">
-                            {" "}
-                            {/* Slightly smaller text */}
-                            {currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0 > 0 // Check for division by zero
-                              ? Math.round(
-                                  ((currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                                    (currentPortfolio.fiscalYears.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
-                                    100
-                                )
+                            {currentPortfolio.allocated_cp > 0
+                              ? Math.round(((currentPortfolio.consumedCP || 0) / currentPortfolio.allocated_cp) * 100)
                               : 0}
                             %
                           </div>
                         </div>
                       </div>
-                      <p className="mt-3 text-sm font-medium">Consommation CP</p> {/* Added margin */}
+                      <p className="mt-3 text-sm font-medium">Consommation CP</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+
               {/* Programs Table */}
               <Card>
                 <CardHeader>
@@ -1788,20 +1619,14 @@ export default function ProgramsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border overflow-x-auto">
-                    {" "}
-                    {/* Added overflow */}
                     <table className="w-full min-w-[600px]">
-                      {" "}
-                      {/* Added min-width */}
                       <thead>
                         <tr className="border-b bg-muted/50 text-sm text-muted-foreground">
-                          {" "}
-                          {/* Styled header row */}
                           <th className="py-3 px-4 text-left font-medium">Nom</th>
                           <th className="py-3 px-4 text-right font-medium">AE Allouées</th>
                           <th className="py-3 px-4 text-right font-medium">CP Alloués</th>
-                          <th className="py-3 px-4 text-center font-medium w-[150px]">Progression</th> {/* Added width */}
-                          <th className="py-3 px-4 text-center font-medium w-[120px]">Statut</th> {/* Added width */}
+                          <th className="py-3 px-4 text-center font-medium">Progression</th> {/* Added width */}
+                          <th className="py-3 px-4 text-center font-medium">Statut</th> {/* Added width */}
                         </tr>
                       </thead>
                       <tbody>
@@ -1809,31 +1634,10 @@ export default function ProgramsPage() {
                           .filter((program) => program.portfolioId === currentPortfolio.id)
                           .map((program) => (
                             <tr key={program.id} className="border-b hover:bg-muted/30 transition-colors">
-                              {" "}
-                              {/* Added hover effect */}
                               <td className="py-3 px-4">{program.name}</td>
                               <td className="py-3 px-4 text-right">{formatCurrency(program.allocatedAmount)}</td>
                               <td className="py-3 px-4 text-right">{formatCurrency(Math.round(program.allocatedAmount * 0.9))}</td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center justify-center gap-2">
-                                  {" "}
-                                  {/* Centered */}
-                                  <Progress value={program.progress} className="h-2 w-16" /> {/* Added width */}
-                                  <span
-                                    className={cn(
-                                      "text-xs font-medium",
-                                      program.progress < 40
-                                        ? "text-budget-danger"
-                                        : program.progress < 70
-                                          ? "text-budget-warning"
-                                          : "text-budget-success"
-                                    )}
-                                  >
-                                    {program.progress}%
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-center">{getStatusBadge(program.status)}</td>
+                              <td className="py-3 px-4 text-center">{program.progress}%</td>
                             </tr>
                           ))}
                         {/* Add a row if no programs */}
@@ -1870,8 +1674,6 @@ export default function ProgramsPage() {
             </div>
           )}
           <DialogFooter className="gap-2 pt-4 border-t">
-            {" "}
-            {/* Added padding and border */}
             <Button
               variant="outline"
               disabled={generatingPdf}
@@ -2015,10 +1817,10 @@ export default function ProgramsPage() {
                 <table className="w-full border">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border p-2 text-left">Programme</th>
-                      <th className="border p-2 text-right">AE Allouées</th>
-                      <th className="border p-2 text-right">CP Alloués</th>
-                      <th className="border p-2 text-center">Progression</th>
+                      <th className="p-2 text-left border-b">Programme</th>
+                      <th className="p-2 text-right border-b">AE Allouées</th>
+                      <th className="p-2 text-right border-b">CP Alloués</th>
+                      <th className="p-2 text-center border-b">Progression</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2040,7 +1842,7 @@ export default function ProgramsPage() {
                 <h2 className="text-lg font-semibold mb-2">Notes et observations</h2>
                 <p className="text-muted-foreground">
                   Ce rapport présente une synthèse des données budgétaires du portefeuille {currentPortfolio?.name} pour l'année fiscale{" "}
-                  {selectedFiscalYear === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégré de Gestion Budgétaire (SIB).
+                  {selectedFiscalYear === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégréde Gestion Budgétaire (SIB).
                 </p>
               </div>
             </div>
