@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase"; // Import Supabase client
 
 // --- Interfaces ---
 interface FiscalYearData {
@@ -84,6 +85,22 @@ interface Operation {
   consumedCP: number;
   physical_rate: number;
   financial_rate: number;
+}
+
+// Interface for Ministry data
+interface Ministry {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+}
+
+// Interface for Fiscal Year data
+interface FiscalYear {
+  id: string;
+  year: number;
+  description?: string;
+  status: "planning" | "active" | "closed" | "draft";
 }
 
 // --- Mock Data ---
@@ -376,12 +393,21 @@ export default function ProgramsPage() {
   // State for data
   const [programs, setPrograms] = useState<Program[]>(mockPrograms);
   const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios); // Keep portfolios for dropdowns
+  const [ministries, setMinistries] = useState<Ministry[]>([]); // Add ministries state
+  const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]); // Add fiscal years state
+  const [currentFiscalYear, setCurrentFiscalYear] = useState<string>(""); // Current fiscal year ID
 
   // State for filters
   const [programNameFilter, setProgramNameFilter] = useState("");
+  const [searchInputValue, setSearchInputValue] = useState("");
   const [portfolioFilter, setPortfolioFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Program["status"]>("active"); // Default to 'active'
   const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
+
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [paginatedPrograms, setPaginatedPrograms] = useState<Program[]>([]);
 
   // State for fiscal year selection (per card and in view dialog)
   const [programFiscalYears, setProgramFiscalYears] = useState<{ [key: string]: string }>({}); // For individual cards { programId: fiscalYearId }
@@ -393,24 +419,257 @@ export default function ProgramsPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
-  const [programFormData, setProgramFormData] = useState<ProgramFormData>({}); // Use a separate state for form data
+
+  // Split form data into individual state variables to improve input responsiveness
+  const [formCode, setFormCode] = useState("");
+  const [formName, setFormName] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formPortfolioId, setFormPortfolioId] = useState("");
+  const [formParentId, setFormParentId] = useState<string | null>(null);
+  const [formType, setFormType] = useState<Program["type"] | undefined>(undefined);
+  const [formStatus, setFormStatus] = useState<Program["status"] | undefined>(undefined);
+  const [formAllocatedAE, setFormAllocatedAE] = useState<number | undefined>(undefined);
+  const [formAllocatedCP, setFormAllocatedCP] = useState<number | undefined>(undefined);
+  const [formFiscalYear, setFormFiscalYear] = useState("");
 
   const [loading, setLoading] = useState(false); // Add this if not already present
 
   // --- Effects ---
 
+  // Fetch programs and portfolios from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch fiscal years
+        const { data: fiscalYearsData, error: fiscalYearsError } = await supabase
+          .from("fiscal_years")
+          .select("*")
+          .order("year", { ascending: false });
+
+        if (fiscalYearsError) throw fiscalYearsError;
+
+        // Transform fiscal years data and find current year
+        const currentYear = new Date().getFullYear();
+        const transformedFiscalYears: FiscalYear[] = fiscalYearsData.map((fy) => ({
+          id: fy.id,
+          year: fy.year,
+          label: `Année ${fy.year}`,
+          isCurrent: fy.year === currentYear,
+          startDate: fy.start_date,
+          endDate: fy.end_date,
+        }));
+
+        setFiscalYears(transformedFiscalYears);
+
+        // Set current fiscal year
+        const currentFY = transformedFiscalYears.find((fy) => fy.year === currentYear);
+        if (currentFY) {
+          setCurrentFiscalYear(currentFY.id);
+        } else if (transformedFiscalYears.length > 0) {
+          // Default to the most recent if no current year is marked
+          setCurrentFiscalYear(transformedFiscalYears[0].id);
+        }
+
+        // Fetch ministries data
+        const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr", { ascending: true });
+
+        if (ministriesError) throw ministriesError;
+
+        // Transform ministries data
+        const transformedMinistries: Ministry[] = ministriesData.map((ministry) => ({
+          id: ministry.id,
+          name: ministry.name_fr || ministry.name_en || "",
+          code: ministry.code || "",
+          description: ministry.description,
+        }));
+
+        setMinistries(transformedMinistries);
+
+        // Fetch portfolios
+        const { data: portfoliosData, error: portfoliosError } = await supabase.from("portfolios").select("*");
+
+        if (portfoliosError) throw portfoliosError;
+
+        // Transform portfolios data
+        const transformedPortfolios: Portfolio[] = portfoliosData.map((portfolio) => ({
+          id: portfolio.id,
+          code: portfolio.name.substring(0, 2).toUpperCase() + "-" + portfolio.id.substring(0, 3), // Generate a code from name if none exists
+          name: portfolio.name,
+          description: portfolio.description || "",
+          totalAmount: 0, // This will be calculated after programs are fetched
+          usedAmount: 0, // This will be calculated after programs are fetched
+          programs: 0, // Count will be updated after programs are fetched
+          ministryId: "", // Not available in current data model
+          ministryName: "",
+          status: "active", // Default status
+          fiscalYears: [
+            { id: "fy1", year: 2025, allocatedAE: 0, allocatedCP: 0, consumedAE: 0, consumedCP: 0 },
+            { id: "fy2", year: 2024, allocatedAE: 0, allocatedCP: 0, consumedAE: 0, consumedCP: 0 },
+          ],
+        }));
+
+        // Fetch programs
+        const { data: programsData, error: programsError } = await supabase.from("programs").select("*");
+
+        if (programsError) throw programsError;
+
+        // Transform programs data
+        const transformedPrograms: Program[] = programsData.map((program) => {
+          const budget = program.budget || 0;
+          const allocated = program.allocated || 0;
+          // Calculate progress
+          const progress = budget > 0 ? Math.round((allocated / budget) * 100) : 0;
+
+          return {
+            id: program.id,
+            code: program.code_programme || `P${program.id.substring(0, 4)}`,
+            name: program.name,
+            description: program.description || "",
+            portfolioId: program.portfolio_id,
+            parentId: null, // Parent relationship not available in current schema
+            type: "program", // Default type
+            status: "active", // Default status
+            fiscalYears: [
+              {
+                id: "fy1",
+                year: program.fiscal_year || 2025,
+                allocatedAE: budget,
+                allocatedCP: budget * 0.8, // Assuming CP is 80% of AE for example
+                consumedAE: allocated,
+                consumedCP: allocated * 0.8, // Assuming CP consumption follows the same ratio
+                progress: progress,
+              },
+              {
+                id: "fy2",
+                year: (program.fiscal_year || 2025) - 1,
+                allocatedAE: 0,
+                allocatedCP: 0,
+                consumedAE: 0,
+                consumedCP: 0,
+                progress: 0,
+              },
+            ],
+          };
+        });
+
+        // Update portfolio statistics based on programs
+        const portfoliosWithStats = transformedPortfolios.map((portfolio) => {
+          const portfolioPrograms = transformedPrograms.filter((p) => p.portfolioId === portfolio.id);
+          const totalBudget = portfolioPrograms.reduce((sum, p) => sum + p.fiscalYears[0].allocatedAE, 0);
+          const totalAllocated = portfolioPrograms.reduce((sum, p) => sum + p.fiscalYears[0].consumedAE, 0);
+
+          // Update portfolio fiscal year data
+          const updatedFiscalYears = portfolio.fiscalYears.map((fy) => {
+            if (fy.id === "fy1") {
+              return {
+                ...fy,
+                allocatedAE: totalBudget,
+                allocatedCP: totalBudget * 0.8,
+                consumedAE: totalAllocated,
+                consumedCP: totalAllocated * 0.8,
+              };
+            }
+            return fy;
+          });
+
+          return {
+            ...portfolio,
+            totalAmount: totalBudget,
+            usedAmount: totalAllocated,
+            programs: portfolioPrograms.length,
+            fiscalYears: updatedFiscalYears,
+          };
+        });
+
+        // Fetch actions to associate with programs
+        const { data: actionsData, error: actionsError } = await supabase.from("actions").select("*");
+
+        // If there are actions, associate them with programs
+        if (actionsData && !actionsError) {
+          const actionsMap = actionsData.reduce((acc, action) => {
+            if (!acc[action.program_id]) {
+              acc[action.program_id] = [];
+            }
+
+            // Transform action data
+            const transformedAction: Action = {
+              id: action.id,
+              programId: action.program_id,
+              fiscalYearId: "fy1", // Assuming current fiscal year
+              code: action.code_action || `A-${action.id.substring(0, 4)}`,
+              name: action.name,
+              allocatedAE: 0, // Not available in current schema
+              allocatedCP: 0, // Not available in current schema
+              consumedAE: 0, // Not available in current schema
+              consumedCP: 0, // Not available in current schema
+            };
+
+            acc[action.program_id].push(transformedAction);
+            return acc;
+          }, {});
+
+          // Update programs with their actions
+          const programsWithActions = transformedPrograms.map((program) => {
+            const programActions = actionsMap[program.id] || [];
+            const updatedFiscalYears = program.fiscalYears.map((fy) => {
+              if (fy.id === "fy1") {
+                return {
+                  ...fy,
+                  actions: programActions,
+                };
+              }
+              return fy;
+            });
+
+            return {
+              ...program,
+              fiscalYears: updatedFiscalYears,
+            };
+          });
+
+          setPrograms(programsWithActions);
+        } else {
+          setPrograms(transformedPrograms);
+        }
+
+        setPortfolios(portfoliosWithStats);
+        setFilteredPrograms(transformedPrograms);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les données. Veuillez réessayer.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Empty dependency array means this runs once on mount
+
   // Initialize default fiscal year for each program card
   useEffect(() => {
-    const defaultFiscalYears: { [key: string]: string } = {};
+    const now = new Date().getFullYear();
+    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
+    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || "";
+    const defaultPrograms: { [key: string]: string } = {};
     programs.forEach((program) => {
-      if (program.fiscalYears.length > 0) {
-        // Find 2024 (fy1) or default to the first one
-        const defaultFy = program.fiscalYears.find((fy) => fy.id === "fy1") || program.fiscalYears[0];
-        defaultFiscalYears[program.id] = defaultFy.id;
-      }
+      defaultPrograms[program.id] = defaultFiscalYearId;
     });
-    setProgramFiscalYears(defaultFiscalYears);
-  }, []); // Run only once on mount
+    setProgramFiscalYears(defaultPrograms);
+  }, [fiscalYears]); // Run when programs change
+
+  // Add debounce effect for search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProgramNameFilter(searchInputValue);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchInputValue]);
 
   // Filter programs based on all filters
   useEffect(() => {
@@ -437,10 +696,22 @@ export default function ProgramsPage() {
     setFilteredPrograms(result);
   }, [programNameFilter, portfolioFilter, statusFilter, programs]);
 
+  // Paginate programs
+  useEffect(() => {
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+    setPaginatedPrograms(filteredPrograms.slice(start, end));
+  }, [filteredPrograms, currentPage, itemsPerPage]);
+
   // --- Helper Functions ---
 
   const getProgramFiscalYear = (programId: string) => {
-    return programFiscalYears[programId] || (programs.find((p) => p.id === programId)?.fiscalYears[0]?.id ?? "");
+    //return programFiscalYears[programId] || (programs.find((p) => p.id === programId)?.fiscalYears[0]?.id ?? "");
+    // Find the fiscal year object for the current year
+    const now = new Date().getFullYear();
+    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
+    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || ""; // fallback to first or empty
+    return programFiscalYears[programId] || defaultFiscalYearId;
   };
 
   const setProgramFiscalYear = (programId: string, fiscalYearId: string) => {
@@ -509,13 +780,17 @@ export default function ProgramsPage() {
   // --- Modal Handlers ---
 
   const handleOpenAddDialog = () => {
-    setProgramFormData({
-      status: "draft", // Default status for new
-      type: "program", // Default type
-      parentId: null,
-      allocatedAE: 0,
-      allocatedCP: 0,
-    });
+    setFormCode("");
+    setFormName("");
+    setFormDescription("");
+    setFormPortfolioId("");
+    setFormParentId(null);
+    setFormType(undefined);
+    setFormStatus(undefined);
+    setFormAllocatedAE(undefined);
+    setFormAllocatedCP(undefined);
+    setFormFiscalYear("");
+
     setIsAddDialogOpen(true);
   };
 
@@ -525,17 +800,16 @@ export default function ProgramsPage() {
     const defaultFyId = getProgramFiscalYear(program.id);
     const fiscalYearData = program.fiscalYears.find((fy) => fy.id === defaultFyId);
 
-    setProgramFormData({
-      code: program.code,
-      name: program.name,
-      description: program.description,
-      portfolioId: program.portfolioId,
-      parentId: program.parentId,
-      type: program.type,
-      status: program.status,
-      allocatedAE: fiscalYearData?.allocatedAE || 0, // Use data from specific year for edit form (simplification)
-      allocatedCP: fiscalYearData?.allocatedCP || 0, // Use data from specific year for edit form (simplification)
-    });
+    setFormCode(program.code);
+    setFormName(program.name);
+    setFormDescription(program.description);
+    setFormPortfolioId(program.portfolioId);
+    setFormParentId(program.parentId);
+    setFormType(program.type);
+    setFormStatus(program.status);
+    setFormAllocatedAE(fiscalYearData?.allocatedAE || 0); // Use data from specific year for edit form (simplification)
+    setFormAllocatedCP(fiscalYearData?.allocatedCP || 0); // Use data from specific year for edit form (simplification)
+
     setIsEditDialogOpen(true);
   };
 
@@ -554,8 +828,8 @@ export default function ProgramsPage() {
 
   // --- CRUD Operations ---
 
-  const handleAddProgram = () => {
-    if (!programFormData.name || !programFormData.code || !programFormData.portfolioId || !programFormData.type || !programFormData.status) {
+  const handleAddProgram = async () => {
+    if (!formName || !formCode || !formPortfolioId || !formType || !formStatus) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis (Nom, Code, Portefeuille, Type, Statut).",
@@ -564,49 +838,80 @@ export default function ProgramsPage() {
       return;
     }
 
-    const newProgram: Program = {
-      id: `prog${programs.length + 10}`, // Ensure unique ID
-      code: programFormData.code!,
-      name: programFormData.name!,
-      description: programFormData.description || "",
-      portfolioId: programFormData.portfolioId!,
-      parentId: programFormData.parentId || null,
-      type: programFormData.type!,
-      status: programFormData.status!,
-      fiscalYears: [
-        // Add default fiscal year structure
-        {
-          id: "fy1",
-          year: 2024,
-          allocatedAE: programFormData.allocatedAE || 0,
-          allocatedCP: programFormData.allocatedCP || 0,
-          consumedAE: 0,
-          consumedCP: 0,
-          progress: 0,
-        },
-        { id: "fy2", year: 2023, allocatedAE: 0, allocatedCP: 0, consumedAE: 0, consumedCP: 0, progress: 0 },
-      ],
-    };
+    setLoading(true);
+    try {
+      // Create the program in Supabase
+      const { data, error } = await supabase
+        .from("programs")
+        .insert({
+          name: formName,
+          code_programme: formCode,
+          description: formDescription || "",
+          portfolio_id: formPortfolioId,
+          budget: formAllocatedAE || 0,
+          allocated: 0, // Initially no allocation
+          fiscal_year: new Date().getFullYear(),
+        })
+        .select()
+        .single();
 
-    setPrograms([...programs, newProgram]);
-    // Add default fiscal year selection for the new program
-    setProgramFiscalYears((prev) => ({ ...prev, [newProgram.id]: "fy1" }));
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Élément ajouté",
-      description: `L'élément "${newProgram.name}" a été ajouté avec succès.`,
-    });
+      if (error) throw error;
+
+      // Create a new program object for the local state
+      const newProgram: Program = {
+        id: data.id,
+        code: data.code_programme || `P${data.id.substring(0, 4)}`,
+        name: data.name,
+        description: data.description || "",
+        portfolioId: data.portfolio_id,
+        parentId: formParentId || null,
+        type: formType!,
+        status: formStatus!,
+        fiscalYears: [
+          // Add default fiscal year structure
+          {
+            id: "fy1",
+            year: new Date().getFullYear(),
+            allocatedAE: formAllocatedAE || 0,
+            allocatedCP: formAllocatedCP || 0,
+            consumedAE: 0,
+            consumedCP: 0,
+            progress: 0,
+          },
+          {
+            id: "fy2",
+            year: new Date().getFullYear() - 1,
+            allocatedAE: 0,
+            allocatedCP: 0,
+            consumedAE: 0,
+            consumedCP: 0,
+            progress: 0,
+          },
+        ],
+      };
+
+      setPrograms([...programs, newProgram]);
+      // Add default fiscal year selection for the new program
+      setProgramFiscalYears((prev) => ({ ...prev, [newProgram.id]: "fy1" }));
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Programme ajouté",
+        description: `Le programme "${newProgram.name}" a été ajouté avec succès.`,
+      });
+    } catch (error) {
+      console.error("Error adding program:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'ajout du programme. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditProgram = () => {
-    if (
-      !currentProgram ||
-      !programFormData.name ||
-      !programFormData.code ||
-      !programFormData.portfolioId ||
-      !programFormData.type ||
-      !programFormData.status
-    ) {
+  const handleEditProgram = async () => {
+    if (!currentProgram || !formName || !formCode || !formPortfolioId || !formType || !formStatus) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis (Nom, Code, Portefeuille, Type, Statut).",
@@ -615,66 +920,112 @@ export default function ProgramsPage() {
       return;
     }
 
-    const updatedPrograms = programs.map((program) => {
-      if (program.id === currentProgram.id) {
-        // Update core data
-        const updatedProgram = {
-          ...program,
-          code: programFormData.code!,
-          name: programFormData.name!,
-          description: programFormData.description || program.description,
-          portfolioId: programFormData.portfolioId!,
-          parentId: programFormData.parentId === "" ? null : programFormData.parentId || program.parentId, // Handle empty string selection for parent
-          type: programFormData.type!,
-          status: programFormData.status!,
-        };
+    setLoading(true);
+    try {
+      // Update the program in Supabase
+      const { error } = await supabase
+        .from("programs")
+        .update({
+          name: formName,
+          code_programme: formCode,
+          description: formDescription || null,
+          portfolio_id: formPortfolioId,
+          budget: formAllocatedAE || 0,
+        })
+        .eq("id", currentProgram.id);
 
-        // Update fiscal year data (simplified: update the currently selected/default year in the form)
-        const currentFyId = getProgramFiscalYear(program.id); // Or maybe pass the edited year ID if form supports it
-        updatedProgram.fiscalYears = program.fiscalYears.map((fy) => {
-          if (fy.id === currentFyId) {
-            const newAllocatedAE = programFormData.allocatedAE ?? fy.allocatedAE; // Keep old value if undefined
-            const newConsumedAE = fy.consumedAE; // Consumed amount is not directly edited here
-            return {
-              ...fy,
-              allocatedAE: newAllocatedAE,
-              allocatedCP: programFormData.allocatedCP ?? fy.allocatedCP,
-              // Recalculate progress based on potentially updated allocated AE
-              progress: newAllocatedAE > 0 ? Math.round((newConsumedAE / newAllocatedAE) * 100) : 0,
-            };
-          }
-          return fy;
-        });
+      if (error) throw error;
 
-        return updatedProgram;
-      }
-      return program;
-    });
+      // Update local state
+      const updatedPrograms = programs.map((program) => {
+        if (program.id === currentProgram.id) {
+          // Update core data
+          const updatedProgram = {
+            ...program,
+            code: formCode!,
+            name: formName!,
+            description: formDescription || program.description,
+            portfolioId: formPortfolioId!,
+            parentId: formParentId === "" ? null : formParentId || program.parentId,
+            type: formType!,
+            status: formStatus!,
+          };
 
-    setPrograms(updatedPrograms);
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Élément modifié",
-      description: `L'élément "${currentProgram.name}" a été modifié avec succès.`,
-    });
+          // Update fiscal year data
+          const currentFyId = getProgramFiscalYear(program.id);
+          updatedProgram.fiscalYears = program.fiscalYears.map((fy) => {
+            if (fy.id === currentFyId) {
+              const newAllocatedAE = formAllocatedAE ?? fy.allocatedAE;
+              const newConsumedAE = fy.consumedAE;
+              return {
+                ...fy,
+                allocatedAE: newAllocatedAE,
+                allocatedCP: formAllocatedCP ?? fy.allocatedCP,
+                progress: newAllocatedAE > 0 ? Math.round((newConsumedAE / newAllocatedAE) * 100) : 0,
+              };
+            }
+            return fy;
+          });
+
+          return updatedProgram;
+        }
+        return program;
+      });
+
+      setPrograms(updatedPrograms);
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Programme modifié",
+        description: `Le programme "${currentProgram.name}" a été modifié avec succès.`,
+      });
+    } catch (error) {
+      console.error("Error updating program:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la modification du programme. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteProgram = () => {
+  const handleDeleteProgram = async () => {
     if (!currentProgram) return;
 
-    const updatedPrograms = programs.filter((program) => program.id !== currentProgram.id);
-    setPrograms(updatedPrograms);
-    // Clean up fiscal year state
-    setProgramFiscalYears((prev) => {
-      const newState = { ...prev };
-      delete newState[currentProgram.id];
-      return newState;
-    });
-    setIsDeleteDialogOpen(false);
-    toast({
-      title: "Élément supprimé",
-      description: `L'élément "${currentProgram.name}" a été supprimé avec succès.`,
-    });
+    setLoading(true);
+    try {
+      // Delete the program from Supabase
+      const { error } = await supabase.from("programs").delete().eq("id", currentProgram.id);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedPrograms = programs.filter((program) => program.id !== currentProgram.id);
+      setPrograms(updatedPrograms);
+
+      // Clean up fiscal year state
+      setProgramFiscalYears((prev) => {
+        const newState = { ...prev };
+        delete newState[currentProgram.id];
+        return newState;
+      });
+
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Programme supprimé",
+        description: `Le programme "${currentProgram.name}" a été supprimé avec succès.`,
+      });
+    } catch (error) {
+      console.error("Error deleting program:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la suppression du programme. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Filter programs for the parent dropdown (exclude the current program being edited)
@@ -719,8 +1070,8 @@ export default function ProgramsPage() {
                 <Input
                   id="program-name-filter"
                   placeholder="Rechercher par nom ou code..."
-                  value={programNameFilter}
-                  onChange={(e) => setProgramNameFilter(e.target.value)}
+                  value={searchInputValue}
+                  onChange={(e) => setSearchInputValue(e.target.value)}
                   className="w-full pl-8"
                 />
               </div>
@@ -769,7 +1120,7 @@ export default function ProgramsPage() {
       <DashboardSection>
         {/* Removed Tabs wrapper */}
         <DashboardGrid columns={2}>
-          {filteredPrograms.map((program) => {
+          {paginatedPrograms.map((program) => {
             const selectedFyId = getProgramFiscalYear(program.id);
             const fiscalYearData = program.fiscalYears.find((fy) => fy.id === selectedFyId);
             const allocatedAE = fiscalYearData?.allocatedAE || 0;
@@ -858,36 +1209,165 @@ export default function ProgramsPage() {
                     </Button>
                   </div>
                   {/* Fiscal Year Selector */}
-                  <Select value={selectedFyId} onValueChange={(value) => setProgramFiscalYear(program.id, value)}>
-                    <SelectTrigger className="w-[140px] h-9 text-xs">
-                      {" "}
-                      {/* Smaller trigger */}
+                  <Select value={getProgramFiscalYear(program.id)} onValueChange={(value) => setProgramFiscalYear(program.id, value)}>
+                    <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Année fiscale" />
                     </SelectTrigger>
                     <SelectContent>
-                      {program.fiscalYears.map((fy) => (
-                        <SelectItem key={fy.id} value={fy.id} className="text-xs">
-                          {" "}
-                          {/* Smaller item */}
-                          Année {fy.year}
+                      {fiscalYears?.map((fiscalYear) => (
+                        <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                          {"Année " + fiscalYear.year}
                         </SelectItem>
                       ))}
-                      {program.fiscalYears.length === 0 && (
-                        <SelectItem value="" disabled>
-                          N/A
-                        </SelectItem>
-                      )}
                     </SelectContent>
                   </Select>
                 </CardFooter>
               </Card>
             );
           })}
-          {/* Add message if no programs match filter */}
           {filteredPrograms.length === 0 && (
             <div className="col-span-full text-center text-muted-foreground py-10">Aucun programme ne correspond aux filtres sélectionnés.</div>
           )}
         </DashboardGrid>
+
+        {/* Pagination Controls */}
+        {filteredPrograms.length > 0 && (
+          <div className="flex items-center justify-between px-2 py-4 mt-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+              Affichage de {paginatedPrograms.length > 0 ? currentPage * itemsPerPage + 1 : 0} à{" "}
+              {Math.min((currentPage + 1) * itemsPerPage, filteredPrograms.length)} sur {filteredPrograms.length} programmes
+            </div>
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              {/* Items per page */}
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium">Éléments par page</p>
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={(value) => {
+                    setItemsPerPage(Number(value));
+                    setCurrentPage(0); // Reset to first page when changing items per page
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={itemsPerPage} />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[10, 20, 30, 50, 100].map((pageSize) => (
+                      <SelectItem key={pageSize} value={String(pageSize)}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Page info */}
+              <div className="flex items-center text-sm font-medium">
+                Page {currentPage + 1} sur {Math.max(1, Math.ceil(filteredPrograms.length / itemsPerPage))}
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setCurrentPage(0)}
+                  disabled={currentPage === 0}
+                  title="Première page"
+                >
+                  <span className="sr-only">Aller à la première page</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m11 17-5-5 5-5"></path>
+                    <path d="m18 17-5-5 5-5"></path>
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setCurrentPage(currentPage > 0 ? currentPage - 1 : 0)}
+                  disabled={currentPage === 0}
+                  title="Page précédente"
+                >
+                  <span className="sr-only">Aller à la page précédente</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m15 18-6-6 6-6"></path>
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={() => {
+                    const lastPage = Math.max(0, Math.ceil(filteredPrograms.length / itemsPerPage) - 1);
+                    setCurrentPage(currentPage < lastPage ? currentPage + 1 : lastPage);
+                  }}
+                  disabled={currentPage >= Math.ceil(filteredPrograms.length / itemsPerPage) - 1}
+                  title="Page suivante"
+                >
+                  <span className="sr-only">Aller à la page suivante</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m9 18 6-6-6-6"></path>
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={() => {
+                    const lastPage = Math.max(0, Math.ceil(filteredPrograms.length / itemsPerPage) - 1);
+                    setCurrentPage(lastPage);
+                  }}
+                  disabled={currentPage >= Math.ceil(filteredPrograms.length / itemsPerPage) - 1}
+                  title="Dernière page"
+                >
+                  <span className="sr-only">Aller à la dernière page</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m13 17 5-5-5-5"></path>
+                    <path d="m6 17 5-5-5-5"></path>
+                  </svg>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DashboardSection>
 
       {/* --- Dialogs --- */}
@@ -911,34 +1391,21 @@ export default function ProgramsPage() {
               <Label htmlFor="program-code" className="text-right">
                 Code*
               </Label>
-              <Input
-                id="program-code"
-                className="col-span-3"
-                value={programFormData.code || ""}
-                onChange={(e) => setProgramFormData({ ...programFormData, code: e.target.value })}
-              />
+              <Input id="program-code" className="col-span-3" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
             </div>
             {/* Name */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="program-name" className="text-right">
                 Nom*
               </Label>
-              <Input
-                id="program-name"
-                className="col-span-3"
-                value={programFormData.name || ""}
-                onChange={(e) => setProgramFormData({ ...programFormData, name: e.target.value })}
-              />
+              <Input id="program-name" className="col-span-3" value={formName} onChange={(e) => setFormName(e.target.value)} />
             </div>
             {/* Type */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="program-type" className="text-right">
                 Type*
               </Label>
-              <Select
-                value={programFormData.type}
-                onValueChange={(value: Program["type"]) => setProgramFormData({ ...programFormData, type: value })}
-              >
+              <Select value={formType} onValueChange={(value: Program["type"]) => setFormType(value)}>
                 <SelectTrigger id="program-type" className="col-span-3">
                   <SelectValue placeholder="Sélectionner un type" />
                 </SelectTrigger>
@@ -954,7 +1421,7 @@ export default function ProgramsPage() {
               <Label htmlFor="program-portfolio" className="text-right">
                 Portefeuille*
               </Label>
-              <Select value={programFormData.portfolioId} onValueChange={(value) => setProgramFormData({ ...programFormData, portfolioId: value })}>
+              <Select value={formPortfolioId} onValueChange={(value) => setFormPortfolioId(value)}>
                 <SelectTrigger id="program-portfolio" className="col-span-3">
                   <SelectValue placeholder="Sélectionner un portefeuille" />
                 </SelectTrigger>
@@ -973,8 +1440,8 @@ export default function ProgramsPage() {
                 Parent
               </Label>
               <Select
-                value={programFormData.parentId || ""} // Use empty string for 'None'
-                onValueChange={(value) => setProgramFormData({ ...programFormData, parentId: value || null })} // Set null if empty
+                value={formParentId || ""} // Use empty string for 'None'
+                onValueChange={(value) => setFormParentId(value || null)} // Set null if empty
               >
                 <SelectTrigger id="program-parent" className="col-span-3">
                   <SelectValue placeholder="Sélectionner un parent (optionnel)" />
@@ -997,10 +1464,7 @@ export default function ProgramsPage() {
               <Label htmlFor="program-status" className="text-right">
                 Statut*
               </Label>
-              <Select
-                value={programFormData.status}
-                onValueChange={(value: Program["status"]) => setProgramFormData({ ...programFormData, status: value })}
-              >
+              <Select value={formStatus} onValueChange={(value: Program["status"]) => setFormStatus(value)}>
                 <SelectTrigger id="program-status" className="col-span-3">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
@@ -1025,8 +1489,8 @@ export default function ProgramsPage() {
               <Textarea
                 id="program-description"
                 className="col-span-3"
-                value={programFormData.description || ""}
-                onChange={(e) => setProgramFormData({ ...programFormData, description: e.target.value })}
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
                 rows={3}
               />
             </div>
@@ -1039,10 +1503,8 @@ export default function ProgramsPage() {
                 id="program-ae"
                 type="number"
                 className="col-span-3"
-                value={programFormData.allocatedAE ?? ""}
-                onChange={(e) =>
-                  setProgramFormData({ ...programFormData, allocatedAE: e.target.value === "" ? undefined : parseFloat(e.target.value) })
-                }
+                value={formAllocatedAE ?? ""}
+                onChange={(e) => setFormAllocatedAE(e.target.value === "" ? undefined : parseFloat(e.target.value))}
                 placeholder="Ex: 1000000"
               />
             </div>
@@ -1054,10 +1516,8 @@ export default function ProgramsPage() {
                 id="program-cp"
                 type="number"
                 className="col-span-3"
-                value={programFormData.allocatedCP ?? ""}
-                onChange={(e) =>
-                  setProgramFormData({ ...programFormData, allocatedCP: e.target.value === "" ? undefined : parseFloat(e.target.value) })
-                }
+                value={formAllocatedCP ?? ""}
+                onChange={(e) => setFormAllocatedCP(e.target.value === "" ? undefined : parseFloat(e.target.value))}
                 placeholder="Ex: 900000"
               />
             </div>

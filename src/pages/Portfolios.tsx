@@ -60,16 +60,9 @@ interface Portfolio {
   allocated_cp: number;
   status: "draft" | "active" | "archived";
   description: string;
-}
-interface PortfolioData {
-  id: string;
-  ministry_id: string;
-  name: string;
-  code: string;
-  allocated_ae: number;
-  allocated_cp: number;
-  status: "draft" | "active" | "archived";
-  description: string;
+  consumedAE?: number;
+  consumedCP?: number;
+  programs?: number;
 }
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
@@ -86,15 +79,23 @@ export default function PortfoliosPage() {
   const [portfolioFilter, setPortfolioFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [portfolioNameFilter, setPortfolioNameFilter] = useState(""); // New state for portfolio name filter
+  const [portfolioNameFilter, setPortfolioNameFilter] = useState(""); // Name filter state
+  const [searchInputValue, setSearchInputValue] = useState(""); // Debounced search input
   const [portfolioStatusFilter, setPortfolioStatusFilter] = useState("all"); // Changed default to 'all'
   const [filteredPortfolios, setFilteredPortfolios] = useState<Portfolio[]>([]); // New state for filtered portfolios
-  const [selectedPortfolio, setSelectedPortfolio] = useState("fy1"); // For dialog view
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [paginatedPortfolios, setPaginatedPortfolios] = useState<Portfolio[]>([]);
+
+  const [selectedPortfolio, setSelectedPortfolio] = useState(""); // For dialog view
   const [portfolioPortfolios, setPortfolioPortfolios] = useState<{ [key: string]: string }>({}); // For individual cards
-  const [portfolios, setPortfolios] = useState([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [programs, setPrograms] = useState([]);
+  const [currentFiscalYear, setCurrentFiscalYear] = useState<string>(""); // Current fiscal year ID
 
   // Modal states
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
@@ -104,40 +105,98 @@ export default function PortfoliosPage() {
   const [isEditPortfolioOpen, setIsEditPortfolioOpen] = useState(false);
   const [isViewPortfolioOpen, setIsViewPortfolioOpen] = useState(false);
   const [isDeletePortfolioOpen, setIsDeletePortfolioOpen] = useState(false);
-  const [newPortfolioData, setNewPortfolioData] = useState<Portfolio | null>({
-    id: "", // Added default value for 'id'
-    ministry_id: "",
-    name: "",
-    code: "",
-    allocated_ae: 0,
-    allocated_cp: 0,
-    status: "draft",
-    description: "",
-  });
+
+  // Split form data into individual state variables to improve input responsiveness
+  const [formName, setFormName] = useState("");
+  const [formCode, setFormCode] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formMinistryId, setFormMinistryId] = useState("");
+  const [formAllocatedAE, setFormAllocatedAE] = useState<number>(0);
+  const [formAllocatedCP, setFormAllocatedCP] = useState<number>(0);
+  const [formStatus, setFormStatus] = useState<"draft" | "active" | "archived">("draft");
+
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // Fetch portfolios data
   const fetchPortfolios = useCallback(async () => {
     try {
+      setLoading(true);
+
+      // Fetch fiscal years
+      const { data: fiscalYearsData, error: fiscalYearsError } = await supabase.from("fiscal_years").select("*").order("year", { ascending: false });
+
+      if (fiscalYearsError) throw fiscalYearsError;
+
+      // Transform fiscal years data and find current year
+      const currentYear = new Date().getFullYear();
+      const transformedFiscalYears: FiscalYear[] = fiscalYearsData.map((fy) => ({
+        id: fy.id,
+        year: fy.year,
+        status: fy.status || "draft",
+        description: fy.description,
+      }));
+
+      setFiscalYears(transformedFiscalYears);
+
+      // Set current fiscal year
+      const currentFY = transformedFiscalYears.find((fy) => fy.year === currentYear);
+      if (currentFY) {
+        setCurrentFiscalYear(currentFY.id);
+      } else if (transformedFiscalYears.length > 0) {
+        // Default to the most recent if no current year is marked
+        setCurrentFiscalYear(transformedFiscalYears[0].id);
+      }
+
+      // Fetch ministries data
+      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr", { ascending: true });
+
+      if (ministriesError) throw ministriesError;
+
+      setMinistries(ministriesData || []);
+
+      // Fetch portfolios
       const { data: portfoliosData, error: portfoliosError } = await supabase.from("portfolios").select("*").order("name");
+
       if (portfoliosError) throw portfoliosError;
 
-      // Get ministries that might be associated with portfolios
-      // (this is a guess - we may need to find a different relationship)
-      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr");
-      if (ministriesError) throw ministriesError;
-      // Get FiscalYear that might be associated with portfolios
-      // (this is a guess - we may need to find a different relationship)
-      const { data: fiscalYearData, error: fiscalYearError } = await supabase.from("fiscal_years").select("*").order("year");
-      if (fiscalYearError) throw fiscalYearError;
+      // Map portfolios data
+      const mappedPortfolios: Portfolio[] = (portfoliosData || []).map((portfolio) => ({
+        id: portfolio.id,
+        ministry_id: portfolio.ministry_id || "",
+        name: portfolio.name || "",
+        code: portfolio.code || "",
+        allocated_ae: portfolio.allocated_ae || 0,
+        allocated_cp: portfolio.allocated_cp || 0,
+        status: portfolio.status || "draft",
+        description: portfolio.description || "",
+        // You can add calculated or transformed properties here
+        consumedAE: 0, // This would come from a related table
+        consumedCP: 0, // This would come from a related table
+        programs: 0, // Count would be calculated after fetching programs
+      }));
 
-      setPortfolios(portfoliosData || []);
-      setMinistries(ministriesData || []);
-      setFiscalYears(fiscalYearData || []);
+      setPortfolios(mappedPortfolios);
+
+      // Now fetch programs to calculate counts
+      const { data: programsData, error: programsError } = await supabase.from("programs").select("*");
+
+      if (!programsError && programsData) {
+        // Count programs per portfolio and update portfolio objects
+        const updatedPortfolios = mappedPortfolios.map((portfolio) => {
+          const portfolioPrograms = programsData.filter((p) => p.portfolio_id === portfolio.id);
+          return {
+            ...portfolio,
+            programs: portfolioPrograms.length,
+          };
+        });
+
+        setPortfolios(updatedPortfolios);
+      }
+
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching portfolios:", error);
+      console.error("Error fetching data:", error);
       toast({
         title: t("common.error"),
         description: t("budgetaryExercises.fetchError"),
@@ -210,6 +269,12 @@ export default function PortfoliosPage() {
     setFilteredPortfolios(result);
   }, [portfolioNameFilter, portfolioStatusFilter, portfolios]);
 
+  // Pagination logic
+  useEffect(() => {
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+    setPaginatedPortfolios(filteredPortfolios.slice(start, end));
+  }, [filteredPortfolios, currentPage, itemsPerPage]);
   // Function to get or set fiscal year for a specific portfolio
   const getPortfolioPortfolio = (portfolioId: string) => {
     // Find the fiscal year object for the current year
@@ -253,22 +318,30 @@ export default function PortfoliosPage() {
 
   // Portfolio modal handlers
   const handleOpenAddPortfolio = () => {
-    setNewPortfolioData({
-      id: "", // Added default value for 'id'
-      ministry_id: "",
-      name: "",
-      code: "",
-      allocated_ae: 0,
-      allocated_cp: 0,
-      status: "draft",
-      description: "",
-    });
+    // Reset form fields
+    setFormCode("");
+    setFormName("");
+    setFormDescription("");
+    setFormMinistryId("");
+    setFormAllocatedAE(0);
+    setFormAllocatedCP(0);
+    setFormStatus("draft");
+
     setIsAddPortfolioOpen(true);
   };
 
   const handleOpenEditPortfolio = (portfolio: Portfolio) => {
     setCurrentPortfolio(portfolio);
-    setNewPortfolioData(portfolio);
+
+    // Set form fields with portfolio data
+    setFormCode(portfolio.code);
+    setFormName(portfolio.name);
+    setFormDescription(portfolio.description);
+    setFormMinistryId(portfolio.ministry_id);
+    setFormAllocatedAE(portfolio.allocated_ae);
+    setFormAllocatedCP(portfolio.allocated_cp);
+    setFormStatus(portfolio.status);
+
     setIsEditPortfolioOpen(true);
   };
 
@@ -285,12 +358,32 @@ export default function PortfoliosPage() {
   // CRUD operations for portfolios
   const handleAddPortfolio = async () => {
     try {
-      await supabase.from("portfolios").insert([newPortfolioData]);
+      if (!formName || !formMinistryId) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez remplir au moins le nom et le ministère du portefeuille",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await supabase.from("portfolios").insert([
+        {
+          name: formName,
+          code: formCode,
+          ministry_id: formMinistryId,
+          allocated_ae: formAllocatedAE || 0,
+          allocated_cp: formAllocatedCP || 0,
+          status: formStatus,
+          description: formDescription,
+        },
+      ]);
+
       toast({
         title: "Portefeuille ajouté",
-        description: `Le portefeuille "${currentPortfolio.name}" a été ajouté avec succès.`,
+        description: `Le portefeuille "${formName}" a été ajouté avec succès.`,
       });
-      // fetchMinistries(); // Removed: Realtime handles updates
+
       setIsAddPortfolioOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -303,26 +396,25 @@ export default function PortfoliosPage() {
   };
 
   const handleEditPortfolio = async () => {
-    if (!newPortfolioData) return;
+    if (!currentPortfolio) return;
 
     try {
       await supabase
         .from("portfolios")
         .update({
-          ministry_id: newPortfolioData.ministry_id,
-          name: newPortfolioData.name,
-          code: newPortfolioData.code,
-          allocated_ae: newPortfolioData.allocated_ae,
-          allocated_cp: newPortfolioData.allocated_cp,
-          status: newPortfolioData.status,
-          description: newPortfolioData.description,
+          ministry_id: formMinistryId,
+          name: formName,
+          code: formCode,
+          allocated_ae: formAllocatedAE || 0,
+          allocated_cp: formAllocatedCP || 0,
+          status: formStatus,
+          description: formDescription,
         })
         .eq("id", currentPortfolio.id);
       toast({
         title: "Portefeuille modifié",
-        description: `Le portefeuille "${newPortfolioData.name}" a été modifié avec succès.`,
+        description: `Le portefeuille "${formName}" a été modifié avec succès.`,
       });
-      // fetchMinistries(); // Removed: Realtime handles updates
       setIsEditPortfolioOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -343,7 +435,6 @@ export default function PortfoliosPage() {
         title: "Succès",
         description: "Portefeuille supprimé",
       });
-      // fetchMinistries(); // Removed: Realtime handles updates
       setIsDeletePortfolioOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -428,8 +519,8 @@ export default function PortfoliosPage() {
           <TabsContent value="portfolios" className="animate-fade-in">
             {/* Removed the outer div and filter card that were here */}
             <DashboardGrid columns={2}>
-              {filteredPortfolios.map((portfolio) => (
-                <Card key={portfolio.id} className="budget-card transition-all duration-300 hover:shadow-elevation">
+              {paginatedPortfolios.map((portfolio) => (
+                <Card key={portfolio.id} className="budget-card transition-all duration-300 hover:shadow-elevation flex flex-col">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start gap-4">
                       {/* Added gap */}
@@ -523,7 +614,151 @@ export default function PortfoliosPage() {
                   </CardFooter>
                 </Card>
               ))}
+              {filteredPortfolios.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground py-10">
+                  Aucun portefeuille ne correspond aux filtres sélectionnés.
+                </div>
+              )}
             </DashboardGrid>
+
+            {/* Pagination Controls */}
+            {filteredPortfolios.length > 0 && (
+              <div className="flex items-center justify-between px-2 py-4 mt-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                  Affichage de {paginatedPortfolios.length > 0 ? currentPage * itemsPerPage + 1 : 0} à{" "}
+                  {Math.min((currentPage + 1) * itemsPerPage, filteredPortfolios.length)} sur {filteredPortfolios.length} portefeuilles
+                </div>
+                <div className="flex items-center space-x-6 lg:space-x-8">
+                  {/* Items per page */}
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium">Éléments par page</p>
+                    <Select
+                      value={String(itemsPerPage)}
+                      onValueChange={(value) => {
+                        setItemsPerPage(Number(value));
+                        setCurrentPage(0); // Reset to first page when changing items per page
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={itemsPerPage} />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[10, 20, 30, 50, 100].map((pageSize) => (
+                          <SelectItem key={pageSize} value={String(pageSize)}>
+                            {pageSize}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Page info */}
+                  <div className="flex items-center text-sm font-medium">
+                    Page {currentPage + 1} sur {Math.max(1, Math.ceil(filteredPortfolios.length / itemsPerPage))}
+                  </div>
+
+                  {/* Navigation buttons */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(0)}
+                      disabled={currentPage === 0}
+                      title="Première page"
+                    >
+                      <span className="sr-only">Aller à la première page</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m11 17-5-5 5-5"></path>
+                        <path d="m18 17-5-5 5-5"></path>
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(currentPage > 0 ? currentPage - 1 : 0)}
+                      disabled={currentPage === 0}
+                      title="Page précédente"
+                    >
+                      <span className="sr-only">Aller à la page précédente</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m15 18-6-6 6-6"></path>
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        const lastPage = Math.max(0, Math.ceil(filteredPortfolios.length / itemsPerPage) - 1);
+                        setCurrentPage(currentPage < lastPage ? currentPage + 1 : lastPage);
+                      }}
+                      disabled={currentPage >= Math.ceil(filteredPortfolios.length / itemsPerPage) - 1}
+                      title="Page suivante"
+                    >
+                      <span className="sr-only">Aller à la page suivante</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m9 18 6-6-6-6"></path>
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        const lastPage = Math.max(0, Math.ceil(filteredPortfolios.length / itemsPerPage) - 1);
+                        setCurrentPage(lastPage);
+                      }}
+                      disabled={currentPage >= Math.ceil(filteredPortfolios.length / itemsPerPage) - 1}
+                      title="Dernière page"
+                    >
+                      <span className="sr-only">Aller à la dernière page</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m13 17 5-5-5-5"></path>
+                        <path d="m6 17 5-5-5-5"></path>
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </DashboardSection>
@@ -540,32 +775,19 @@ export default function PortfoliosPage() {
               <Label htmlFor="portfolio-code" className="text-right">
                 Code
               </Label>
-              <Input
-                id="portfolio-code"
-                className="col-span-3"
-                value={newPortfolioData.code || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, code: e.target.value })}
-              />
+              <Input id="portfolio-code" className="col-span-3" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-name" className="text-right">
                 Nom
               </Label>
-              <Input
-                id="portfolio-name"
-                className="col-span-3"
-                value={newPortfolioData.name || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, name: e.target.value })}
-              />
+              <Input id="portfolio-name" className="col-span-3" value={formName} onChange={(e) => setFormName(e.target.value)} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-ministry" className="text-right">
                 Ministère
               </Label>
-              <Select
-                value={newPortfolioData.ministry_id}
-                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministry_id: value })}
-              >
+              <Select value={formMinistryId} onValueChange={(value) => setFormMinistryId(value)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un ministère" />
                 </SelectTrigger>
@@ -579,47 +801,34 @@ export default function PortfoliosPage() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portfolio-amount" className="text-right">
+              <Label htmlFor="portfolio-amount-ae" className="text-right">
                 Budget AE
               </Label>
               <Input
-                id="portfolio-amount"
+                id="portfolio-amount-ae"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData.allocated_ae || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_ae: parseFloat(e.target.value),
-                  })
-                }
+                value={formAllocatedAE || ""}
+                onChange={(e) => setFormAllocatedAE(parseFloat(e.target.value) || 0)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portfolio-amount" className="text-right">
+              <Label htmlFor="portfolio-amount-cp" className="text-right">
                 Budget CP
               </Label>
               <Input
-                id="portfolio-amount"
+                id="portfolio-amount-cp"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData.allocated_cp || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_cp: parseFloat(e.target.value),
-                  })
-                }
+                value={formAllocatedCP || ""}
+                onChange={(e) => setFormAllocatedCP(parseFloat(e.target.value) || 0)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-status" className="text-right">
                 Statut
               </Label>
-              <Select
-                value={newPortfolioData.status}
-                onValueChange={(value: "active" | "archived" | "draft") => setNewPortfolioData({ ...newPortfolioData, status: value })}
-              >
+              <Select value={formStatus} onValueChange={(value: "active" | "archived" | "draft") => setFormStatus(value)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
@@ -637,8 +846,8 @@ export default function PortfoliosPage() {
               <Textarea
                 id="portfolio-description"
                 className="col-span-3"
-                value={newPortfolioData.description || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
               />
             </div>
           </div>
@@ -662,32 +871,19 @@ export default function PortfoliosPage() {
               <Label htmlFor="edit-portfolio-code" className="text-right">
                 Code
               </Label>
-              <Input
-                id="edit-portfolio-code"
-                className="col-span-3"
-                value={newPortfolioData?.code || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, code: e.target.value })}
-              />
+              <Input id="edit-portfolio-code" className="col-span-3" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-name" className="text-right">
                 Nom
               </Label>
-              <Input
-                id="edit-portfolio-name"
-                className="col-span-3"
-                value={newPortfolioData?.name || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, name: e.target.value })}
-              />
+              <Input id="edit-portfolio-name" className="col-span-3" value={formName} onChange={(e) => setFormName(e.target.value)} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-ministry" className="text-right">
                 Ministère
               </Label>
-              <Select
-                value={newPortfolioData?.ministry_id}
-                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministry_id: value })}
-              >
+              <Select value={formMinistryId} onValueChange={(value) => setFormMinistryId(value)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un ministère" />
                 </SelectTrigger>
@@ -701,47 +897,34 @@ export default function PortfoliosPage() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-portfolio-amount" className="text-right">
+              <Label htmlFor="edit-portfolio-amount-ae" className="text-right">
                 Budget AE
               </Label>
               <Input
-                id="edit-portfolio-amount"
+                id="edit-portfolio-amount-ae"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData?.allocated_ae || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_ae: parseFloat(e.target.value),
-                  })
-                }
+                value={formAllocatedAE || ""}
+                onChange={(e) => setFormAllocatedAE(parseFloat(e.target.value) || 0)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-portfolio-amount" className="text-right">
+              <Label htmlFor="edit-portfolio-amount-cp" className="text-right">
                 Budget CP
               </Label>
               <Input
-                id="edit-portfolio-amount"
+                id="edit-portfolio-amount-cp"
                 type="number"
                 className="col-span-3"
-                value={newPortfolioData?.allocated_cp || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_cp: parseFloat(e.target.value),
-                  })
-                }
+                value={formAllocatedCP || ""}
+                onChange={(e) => setFormAllocatedCP(parseFloat(e.target.value) || 0)}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-status" className="text-right">
                 Statut
               </Label>
-              <Select
-                value={newPortfolioData?.status}
-                onValueChange={(value: "active" | "archived" | "draft") => setNewPortfolioData({ ...newPortfolioData, status: value })}
-              >
+              <Select value={formStatus} onValueChange={(value: "active" | "archived" | "draft") => setFormStatus(value)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
@@ -759,8 +942,8 @@ export default function PortfoliosPage() {
               <Textarea
                 id="edit-portfolio-description"
                 className="col-span-3"
-                value={newPortfolioData?.description || ""}
-                onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
               />
             </div>
           </div>
