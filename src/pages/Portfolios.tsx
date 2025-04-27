@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/DashboardComponents";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-
+import { supabase } from "@/integrations/supabase/client";
+import { id } from "date-fns/locale";
 // Mock data
 interface Program {
   id: string;
@@ -21,23 +23,34 @@ interface Program {
   name: string;
   description: string;
   allocatedAmount: number;
-  usedAmount: number;
   progress: number;
   actions: number;
   operations: number;
   status: "active" | "completed" | "planned";
 }
 
-interface FiscalYearData {
+interface Ministry {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  name_fr: string;
+  code: string;
+  description?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  phone2?: string;
+  fax?: string;
+  fax2?: string;
+  is_active: boolean;
+  parent_id?: string;
+}
+interface FiscalYear {
   id: string;
   year: number;
-  allocatedAE: number;
-  allocatedCP: number;
-  consumedAE: number;
-  consumedCP: number;
-  programs: string[];
+  description?: string;
+  status: "planning" | "active" | "closed" | "draft";
 }
-
 interface Portfolio {
   id: string;
   ministry_id: string;
@@ -45,217 +58,19 @@ interface Portfolio {
   code: string;
   allocated_ae: number;
   allocated_cp: number;
-  fiscal_year_id: string;
   status: "draft" | "active" | "archived";
   description: string;
-  // Calculated fields (not in database)
-  ministryName?: string;
-  usedAmount?: number;
-  programs?: number;
-  consumedAE?: number;
-  consumedCP?: number;
-  fiscalYears?: FiscalYearData[];
 }
-
-interface NewPortfolioData {
-  code?: string;
-  name?: string;
-  description?: string;
-  ministry_id?: string;
-  ministryName?: string;
-  status?: Portfolio["status"];
-  allocated_ae?: number;
-  allocated_cp?: number;
-  fiscal_year_id?: string;
+interface PortfolioData {
+  id: string;
+  ministry_id: string;
+  name: string;
+  code: string;
+  allocated_ae: number;
+  allocated_cp: number;
+  status: "draft" | "active" | "archived";
+  description: string;
 }
-
-const mockPrograms: Program[] = [
-  {
-    id: "prog1",
-    portfolioId: "port1",
-    name: "Programme d'Éducation Nationale",
-    description: "Amélioration de la qualité de l'éducation à tous les niveaux",
-    allocatedAmount: 750000000,
-    usedAmount: 480000000,
-    progress: 64,
-    actions: 8,
-    operations: 24,
-    status: "active",
-  },
-  {
-    id: "prog2",
-    portfolioId: "port2",
-    name: "Santé Publique",
-    description: "Renforcement du système de santé et lutte contre les maladies",
-    allocatedAmount: 580000000,
-    usedAmount: 390000000,
-    progress: 67,
-    actions: 6,
-    operations: 18,
-    status: "active",
-  },
-  {
-    id: "prog3",
-    portfolioId: "port3",
-    name: "Infrastructure Routière",
-    description: "Construction et entretien du réseau routier national",
-    allocatedAmount: 430000000,
-    usedAmount: 210000000,
-    progress: 49,
-    actions: 5,
-    operations: 12,
-    status: "active",
-  },
-  {
-    id: "prog4",
-    portfolioId: "port4",
-    name: "Développement Agricole",
-    description: "Soutien à l'agriculture et la sécurité alimentaire",
-    allocatedAmount: 380000000,
-    usedAmount: 145000000,
-    progress: 38,
-    actions: 7,
-    operations: 19,
-    status: "active",
-  },
-  {
-    id: "prog5",
-    portfolioId: "port5",
-    name: "Sécurité Nationale",
-    description: "Maintien de l'ordre et protection du territoire",
-    allocatedAmount: 410000000,
-    usedAmount: 290000000,
-    progress: 71,
-    actions: 4,
-    operations: 16,
-    status: "active",
-  },
-  {
-    id: "prog6",
-    portfolioId: "port1",
-    name: "Numérisation des Écoles",
-    description: "Équipement informatique des établissements scolaires",
-    allocatedAmount: 120000000,
-    usedAmount: 45000000,
-    progress: 38,
-    actions: 3,
-    operations: 8,
-    status: "active",
-  },
-  {
-    id: "prog7",
-    portfolioId: "port3",
-    name: "Pont Intercommunal",
-    description: "Construction d'un nouveau pont reliant deux provinces",
-    allocatedAmount: 280000000,
-    usedAmount: 0,
-    progress: 0,
-    actions: 4,
-    operations: 0,
-    status: "planned",
-  },
-  {
-    id: "prog8",
-    portfolioId: "port2",
-    name: "Campagne de Vaccination",
-    description: "Campagne nationale de vaccination contre les épidémies",
-    allocatedAmount: 150000000,
-    usedAmount: 150000000,
-    progress: 100,
-    actions: 2,
-    operations: 12,
-    status: "completed",
-  },
-];
-
-const mockPortfolios: Portfolio[] = [
-  {
-    id: "port1",
-    ministry_id: "m1",
-    code: "PE-001",
-    name: "Portfolio Éducation",
-    description: "Regroupe tous les programmes éducatifs",
-    allocated_ae: 870000000,
-    allocated_cp: 750000000,
-    fiscal_year_id: "fy1",
-    status: "active",
-    // Calculated fields
-    ministryName: "Ministère de l'Éducation",
-    usedAmount: 525000000,
-    programs: 2,
-    consumedAE: 525000000,
-    consumedCP: 480000000,
-  },
-  {
-    id: "port2",
-    ministry_id: "m2",
-    code: "PS-002",
-    name: "Portfolio Santé",
-    description: "Programmes de santé publique et prévention",
-    allocated_ae: 730000000,
-    allocated_cp: 650000000,
-    fiscal_year_id: "fy1",
-    status: "active",
-    // Calculated fields
-    ministryName: "Ministère de la Santé",
-    usedAmount: 540000000,
-    programs: 2,
-    consumedAE: 540000000,
-    consumedCP: 490000000,
-  },
-  {
-    id: "port3",
-    ministry_id: "m3",
-    code: "PI-003",
-    name: "Portfolio Infrastructure",
-    description: "Développement des infrastructures de transport",
-    allocated_ae: 710000000,
-    allocated_cp: 630000000,
-    fiscal_year_id: "fy1",
-    status: "active",
-    // Calculated fields
-    ministryName: "Ministère des Transports",
-    usedAmount: 210000000,
-    programs: 2,
-    consumedAE: 210000000,
-    consumedCP: 180000000,
-  },
-  {
-    id: "port4",
-    ministry_id: "m4",
-    code: "PA-004",
-    name: "Portfolio Agriculture",
-    description: "Soutien à l'agriculture et l'élevage",
-    allocated_ae: 380000000,
-    allocated_cp: 340000000,
-    fiscal_year_id: "fy1",
-    status: "active",
-    // Calculated fields
-    ministryName: "Ministère de l'Agriculture",
-    usedAmount: 145000000,
-    programs: 1,
-    consumedAE: 145000000,
-    consumedCP: 120000000,
-  },
-  {
-    id: "port5",
-    ministry_id: "m5",
-    code: "PD-005",
-    name: "Portfolio Défense",
-    description: "Sécurité nationale et protection civile",
-    allocated_ae: 410000000,
-    allocated_cp: 380000000,
-    fiscal_year_id: "fy1",
-    status: "archived",
-    // Calculated fields
-    ministryName: "Ministère de la Défense",
-    usedAmount: 290000000,
-    programs: 1,
-    consumedAE: 290000000,
-    consumedCP: 250000000,
-  },
-];
-
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-DZ", {
@@ -266,53 +81,108 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-export default function ProgramsPage() {
+export default function PortfoliosPage() {
+  const { t } = useTranslation();
   const [portfolioFilter, setPortfolioFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [loading, setLoading] = useState(true);
   const [portfolioNameFilter, setPortfolioNameFilter] = useState(""); // New state for portfolio name filter
   const [portfolioStatusFilter, setPortfolioStatusFilter] = useState("all"); // Changed default to 'all'
-  const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
   const [filteredPortfolios, setFilteredPortfolios] = useState<Portfolio[]>([]); // New state for filtered portfolios
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("fy1"); // For dialog view
-  const [portfolioFiscalYears, setPortfolioFiscalYears] = useState<{ [key: string]: string }>({}); // For individual cards
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
-  const [programs, setPrograms] = useState<Program[]>(mockPrograms);
+  const [selectedPortfolio, setSelectedPortfolio] = useState("fy1"); // For dialog view
+  const [portfolioPortfolios, setPortfolioPortfolios] = useState<{ [key: string]: string }>({}); // For individual cards
+  const [portfolios, setPortfolios] = useState([]);
+  const [ministries, setMinistries] = useState<Ministry[]>([]);
+  const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
+  const [programs, setPrograms] = useState([]);
 
   // Modal states
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
   const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
-  const [newProgramData, setNewProgramData] = useState<Partial<Program>>({
-    status: "planned",
-    allocatedAmount: 0,
-    usedAmount: 0,
-    progress: 0,
-    actions: 0,
-    operations: 0,
-  });
+  const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "delete">("add");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [isAddPortfolioOpen, setIsAddPortfolioOpen] = useState(false);
   const [isEditPortfolioOpen, setIsEditPortfolioOpen] = useState(false);
   const [isViewPortfolioOpen, setIsViewPortfolioOpen] = useState(false);
   const [isDeletePortfolioOpen, setIsDeletePortfolioOpen] = useState(false);
-  const [newPortfolioData, setNewPortfolioData] = useState<NewPortfolioData>({
+  const [newPortfolioData, setNewPortfolioData] = useState<Portfolio | null>({
+    id: "", // Added default value for 'id'
+    ministry_id: "",
+    name: "",
+    code: "",
     allocated_ae: 0,
     allocated_cp: 0,
     status: "draft",
+    description: "",
   });
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  // Fetch portfolios data
+  const fetchPortfolios = useCallback(async () => {
+    try {
+      const { data: portfoliosData, error: portfoliosError } = await supabase.from("portfolios").select("*").order("name");
+      if (portfoliosError) throw portfoliosError;
+
+      // Get ministries that might be associated with portfolios
+      // (this is a guess - we may need to find a different relationship)
+      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr");
+      if (ministriesError) throw ministriesError;
+      // Get FiscalYear that might be associated with portfolios
+      // (this is a guess - we may need to find a different relationship)
+      const { data: fiscalYearData, error: fiscalYearError } = await supabase.from("fiscal_years").select("*").order("year");
+      if (fiscalYearError) throw fiscalYearError;
+
+      setPortfolios(portfoliosData || []);
+      setMinistries(ministriesData || []);
+      setFiscalYears(fiscalYearData || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching portfolios:", error);
+      toast({
+        title: t("common.error"),
+        description: t("budgetaryExercises.fetchError"),
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  }, [t]);
+
+  // Initial data fetch and subscription setup
+  useEffect(() => {
+    fetchPortfolios();
+
+    // Set up real-time subscription for portfolios
+    const portfoliosSubscription = supabase
+      .channel("portfolios_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "portfolios",
+        },
+        () => {
+          fetchPortfolios();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      portfoliosSubscription.unsubscribe();
+    };
+  }, [fetchPortfolios]);
+
   // Set default fiscal year for each portfolio on component mount
   useEffect(() => {
-    const defaultFiscalYears: { [key: string]: string } = {};
+    const now = new Date().getFullYear();
+    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
+    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || "";
+    const defaultPortfolios: { [key: string]: string } = {};
     portfolios.forEach((portfolio) => {
-      // Set fy1 (2024) as default for each portfolio
-      defaultFiscalYears[portfolio.id] = "fy1";
+      defaultPortfolios[portfolio.id] = defaultFiscalYearId;
     });
-    setPortfolioFiscalYears(defaultFiscalYears);
-  }, [portfolios]); // Added portfolios to dependency array
+    setPortfolioPortfolios(defaultPortfolios);
+  }, [portfolios, fiscalYears]);
 
   // Initialize filteredPortfolios with all portfolios initially (or based on default filter)
   useEffect(() => {
@@ -328,8 +198,8 @@ export default function ProgramsPage() {
     if (portfolioNameFilter) {
       result = result.filter(
         (portfolio) =>
-          portfolio.name.toLowerCase().includes(portfolioNameFilter.toLowerCase()) ||
-          portfolio.code.toLowerCase().includes(portfolioNameFilter.toLowerCase())
+          portfolio.name?.toLowerCase().includes(portfolioNameFilter?.toLowerCase()) ||
+          portfolio.code?.toLowerCase().includes(portfolioNameFilter?.toLowerCase())
       );
     }
 
@@ -341,30 +211,20 @@ export default function ProgramsPage() {
   }, [portfolioNameFilter, portfolioStatusFilter, portfolios]);
 
   // Function to get or set fiscal year for a specific portfolio
-  const getPortfolioFiscalYear = (portfolioId: string) => {
-    return portfolioFiscalYears[portfolioId] || "fy1"; // Default to fy1 if not set
+  const getPortfolioPortfolio = (portfolioId: string) => {
+    // Find the fiscal year object for the current year
+    const now = new Date().getFullYear();
+    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
+    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || ""; // fallback to first or empty
+    return portfolioPortfolios[portfolioId] || defaultFiscalYearId;
   };
 
-  const setPortfolioFiscalYear = (portfolioId: string, fiscalYearId: string) => {
-    setPortfolioFiscalYears((prev) => ({
+  const setPortfolioPortfolio = (portfolioId: string, fiscalYearId: string) => {
+    setPortfolioPortfolios((prev) => ({
       ...prev,
       [portfolioId]: fiscalYearId,
     }));
   };
-
-  useEffect(() => {
-    let result = programs;
-
-    if (portfolioFilter && portfolioFilter !== "all") {
-      result = result.filter((program) => program.portfolioId === portfolioFilter);
-    }
-
-    if (statusFilter && statusFilter !== "all") {
-      result = result.filter((program) => program.status === statusFilter);
-    }
-
-    setFilteredPrograms(result);
-  }, [portfolioFilter, statusFilter, programs]);
 
   const getStatusBadge = (status: Program["status"]) => {
     switch (status) {
@@ -391,29 +251,24 @@ export default function ProgramsPage() {
     }
   };
 
-
   // Portfolio modal handlers
   const handleOpenAddPortfolio = () => {
     setNewPortfolioData({
+      id: "", // Added default value for 'id'
+      ministry_id: "",
+      name: "",
+      code: "",
       allocated_ae: 0,
       allocated_cp: 0,
       status: "draft",
+      description: "",
     });
     setIsAddPortfolioOpen(true);
   };
 
   const handleOpenEditPortfolio = (portfolio: Portfolio) => {
     setCurrentPortfolio(portfolio);
-    setNewPortfolioData({
-      code: portfolio.code,
-      name: portfolio.name,
-      description: portfolio.description,
-      ministry_id: portfolio.ministry_id,
-      ministryName: portfolio.ministryName,
-      status: portfolio.status,
-      allocated_ae: portfolio.allocated_ae,
-      allocated_cp: portfolio.allocated_cp,
-    });
+    setNewPortfolioData(portfolio);
     setIsEditPortfolioOpen(true);
   };
 
@@ -427,112 +282,90 @@ export default function ProgramsPage() {
     setIsDeletePortfolioOpen(true);
   };
 
-
   // CRUD operations for portfolios
-  const handleAddPortfolio = () => {
-    if (!newPortfolioData.name || !newPortfolioData.code || !newPortfolioData.ministryName) {
+  const handleAddPortfolio = async () => {
+    try {
+      await supabase.from("portfolios").insert([newPortfolioData]);
+      toast({
+        title: "Portefeuille ajouté",
+        description: `Le portefeuille "${currentPortfolio.name}" a été ajouté avec succès.`,
+      });
+      // fetchMinistries(); // Removed: Realtime handles updates
+      setIsAddPortfolioOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
-      return;
     }
-
-    const newPortfolio: Portfolio = {
-      id: `port${portfolios.length + 6}`,
-      ministry_id: newPortfolioData.ministry_id || `m${Math.floor(Math.random() * 100)}`,
-      code: newPortfolioData.code,
-      name: newPortfolioData.name,
-      description: newPortfolioData.description || "",
-      allocated_ae: 0,
-      allocated_cp: 0,
-      fiscal_year_id: "fy1",
-      status: newPortfolioData.status || "draft",
-      // Initialize calculated fields with zero/empty values
-      ministryName: newPortfolioData.ministryName,
-      usedAmount: 0,
-      programs: 0,
-      consumedAE: 0,
-      consumedCP: 0,
-    };
-
-    setPortfolios([...portfolios, newPortfolio]);
-    setIsAddPortfolioOpen(false);
-    toast({
-      title: "Portefeuille ajouté",
-      description: `Le portefeuille "${newPortfolio.name}" a été ajouté avec succès.`,
-    });
   };
 
-  const handleEditPortfolio = () => {
-    if (!currentPortfolio) return;
+  const handleEditPortfolio = async () => {
+    if (!newPortfolioData) return;
 
-    if (!newPortfolioData.name || !newPortfolioData.code) {
+    try {
+      await supabase
+        .from("portfolios")
+        .update({
+          ministry_id: newPortfolioData.ministry_id,
+          name: newPortfolioData.name,
+          code: newPortfolioData.code,
+          allocated_ae: newPortfolioData.allocated_ae,
+          allocated_cp: newPortfolioData.allocated_cp,
+          status: newPortfolioData.status,
+          description: newPortfolioData.description,
+        })
+        .eq("id", currentPortfolio.id);
+      toast({
+        title: "Portefeuille modifié",
+        description: `Le portefeuille "${newPortfolioData.name}" a été modifié avec succès.`,
+      });
+      // fetchMinistries(); // Removed: Realtime handles updates
+      setIsEditPortfolioOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
-      return;
     }
+  };
 
-    const updatedPortfolios = portfolios.map((portfolio) =>
-      portfolio.id === currentPortfolio.id
-        ? {
-            ...portfolio,
-            code: newPortfolioData.code!,
-            name: newPortfolioData.name!,
-            description: newPortfolioData.description || portfolio.description,
-            ministryName: newPortfolioData.ministryName || portfolio.ministryName,
-            allocated_ae: newPortfolioData.allocated_ae || portfolio.allocated_ae,
-            allocated_cp: newPortfolioData.allocated_cp || portfolio.allocated_cp,
-            status: (newPortfolioData.status as "active" | "archived" | "draft") || portfolio.status,
-            fiscalYears: portfolio.fiscalYears.map((fy) =>
-              fy.id === "fy1"
-                ? {
-                    ...fy,
-                    allocatedAE: newPortfolioData.allocated_ae || fy.allocatedAE,
-                    allocatedCP: Math.round((newPortfolioData.allocated_cp || fy.allocatedCP) * 0.9),
-                  }
-                : fy
-            ),
-          }
-        : portfolio
+  const handleDeletePortfolio = async () => {
+    if (!currentPortfolio) return;
+
+    try {
+      await supabase.from("portfolios").delete().eq("id", currentPortfolio.id);
+      toast({
+        title: "Succès",
+        description: "Portefeuille supprimé",
+      });
+      // fetchMinistries(); // Removed: Realtime handles updates
+      setIsDeletePortfolioOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span className="text-lg text-muted-foreground text-center">Chargement des exercices budgétaires...</span>
+      </div>
     );
-
-    setPortfolios(updatedPortfolios);
-    setIsEditPortfolioOpen(false);
-    toast({
-      title: "Portefeuille modifié",
-      description: `Le portefeuille "${currentPortfolio.name}" a été modifié avec succès.`,
-    });
-  };
-
-  const handleDeletePortfolio = () => {
-    if (!currentPortfolio) return;
-
-    const updatedPortfolios = portfolios.filter((portfolio) => portfolio.id !== currentPortfolio.id);
-    setPortfolios(updatedPortfolios);
-    setIsDeletePortfolioOpen(false);
-    toast({
-      title: "Portefeuille supprimé",
-      description: `Le portefeuille "${currentPortfolio.name}" a été supprimé avec succès.`,
-    });
-  };
-
-  // Mock ministries for select dropdown
-  const ministries = [
-    "Ministère de l'Éducation",
-    "Ministère de la Santé",
-    "Ministère des Transports",
-    "Ministère de l'Agriculture",
-    "Ministère de la Défense",
-    "Ministère de la Justice",
-    "Ministère des Affaires Étrangères",
-    "Ministère des Finances",
-    "Ministère de l'Intérieur",
-  ];
+  }
 
   return (
     <Dashboard>
@@ -592,7 +425,6 @@ export default function ProgramsPage() {
 
       <DashboardSection>
         <Tabs defaultValue="portfolios" className="w-full">
-
           <TabsContent value="portfolios" className="animate-fade-in">
             {/* Removed the outer div and filter card that were here */}
             <DashboardGrid columns={2}>
@@ -600,7 +432,6 @@ export default function ProgramsPage() {
                 <Card key={portfolio.id} className="budget-card transition-all duration-300 hover:shadow-elevation">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start gap-4">
-                      {" "}
                       {/* Added gap */}
                       <div className="flex-1">
                         {" "}
@@ -627,7 +458,7 @@ export default function ProgramsPage() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-2">
+                  <CardContent className="pb-4 flex-grow">
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between items-center mb-1">
@@ -656,16 +487,16 @@ export default function ProgramsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Ministère</p>
-                          <p className="font-medium">{portfolio.ministryName}</p>
+                          <p className="font-medium">{ministries.filter((ministry) => ministry.id === portfolio.ministry_id)[0]?.name_fr || "—"}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Programmes</p>
-                          <p className="font-medium">{portfolio.programs}</p>
+                          <p className="font-medium">{portfolio.programs || 0}</p>
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-between">
+                  <CardFooter className="flex justify-between items-center border-t pt-4">
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleOpenViewPortfolio(portfolio)}>
                         <Eye className="h-4 w-4" />
@@ -677,13 +508,16 @@ export default function ProgramsPage() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Select value={getPortfolioFiscalYear(portfolio.id)} onValueChange={(value) => setPortfolioFiscalYear(portfolio.id, value)}>
+                    <Select value={getPortfolioPortfolio(portfolio.id)} onValueChange={(value) => setPortfolioPortfolio(portfolio.id, value)}>
                       <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Année fiscale" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fy1">Année 2024</SelectItem>
-                        <SelectItem value="fy2">Année 2023</SelectItem>
+                        {fiscalYears?.map((fiscalYear) => (
+                          <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                            {"Année " + fiscalYear.year}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </CardFooter>
@@ -694,10 +528,9 @@ export default function ProgramsPage() {
         </Tabs>
       </DashboardSection>
 
-
-       {/* Add Portfolio Dialog */}
+      {/* Add Portfolio Dialog */}
       <Dialog open={isAddPortfolioOpen} onOpenChange={setIsAddPortfolioOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] md:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>Ajouter un nouveau portefeuille</DialogTitle>
             <DialogDescription>Complétez le formulaire pour créer un nouveau portefeuille.</DialogDescription>
@@ -730,20 +563,54 @@ export default function ProgramsPage() {
                 Ministère
               </Label>
               <Select
-                value={newPortfolioData.ministryName}
-                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministryName: value })}
+                value={newPortfolioData.ministry_id}
+                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministry_id: value })}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un ministère" />
                 </SelectTrigger>
                 <SelectContent>
                   {ministries.map((ministry) => (
-                    <SelectItem key={ministry} value={ministry}>
-                      {ministry}
+                    <SelectItem key={ministry.id} value={ministry.id}>
+                      {ministry.code + " - " + ministry.name_fr}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="portfolio-amount" className="text-right">
+                Budget AE
+              </Label>
+              <Input
+                id="portfolio-amount"
+                type="number"
+                className="col-span-3"
+                value={newPortfolioData.allocated_ae || ""}
+                onChange={(e) =>
+                  setNewPortfolioData({
+                    ...newPortfolioData,
+                    allocated_ae: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="portfolio-amount" className="text-right">
+                Budget CP
+              </Label>
+              <Input
+                id="portfolio-amount"
+                type="number"
+                className="col-span-3"
+                value={newPortfolioData.allocated_cp || ""}
+                onChange={(e) =>
+                  setNewPortfolioData({
+                    ...newPortfolioData,
+                    allocated_cp: parseFloat(e.target.value),
+                  })
+                }
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="portfolio-status" className="text-right">
@@ -774,23 +641,6 @@ export default function ProgramsPage() {
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portfolio-amount" className="text-right">
-                Budget AE
-              </Label>
-              <Input
-                id="portfolio-amount"
-                type="number"
-                className="col-span-3"
-                value={newPortfolioData.allocated_ae || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_ae: parseFloat(e.target.value),
-                  })
-                }
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddPortfolioOpen(false)}>
@@ -800,7 +650,7 @@ export default function ProgramsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
- {/* Edit portfolio Dialog */}
+      {/* Edit portfolio Dialog */}
       <Dialog open={isEditPortfolioOpen} onOpenChange={setIsEditPortfolioOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -815,7 +665,7 @@ export default function ProgramsPage() {
               <Input
                 id="edit-portfolio-code"
                 className="col-span-3"
-                value={newPortfolioData.code || ""}
+                value={newPortfolioData?.code || ""}
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, code: e.target.value })}
               />
             </div>
@@ -826,7 +676,7 @@ export default function ProgramsPage() {
               <Input
                 id="edit-portfolio-name"
                 className="col-span-3"
-                value={newPortfolioData.name || ""}
+                value={newPortfolioData?.name || ""}
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, name: e.target.value })}
               />
             </div>
@@ -835,27 +685,61 @@ export default function ProgramsPage() {
                 Ministère
               </Label>
               <Select
-                value={newPortfolioData.ministryName}
-                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministryName: value })}
+                value={newPortfolioData?.ministry_id}
+                onValueChange={(value) => setNewPortfolioData({ ...newPortfolioData, ministry_id: value })}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un ministère" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ministries.map((ministry) => (
-                    <SelectItem key={ministry} value={ministry}>
-                      {ministry}
+                  {ministries?.map((ministry) => (
+                    <SelectItem key={ministry.id} value={ministry.id}>
+                      {ministry.code + " - " + ministry.name_fr}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-portfolio-amount" className="text-right">
+                Budget AE
+              </Label>
+              <Input
+                id="edit-portfolio-amount"
+                type="number"
+                className="col-span-3"
+                value={newPortfolioData?.allocated_ae || ""}
+                onChange={(e) =>
+                  setNewPortfolioData({
+                    ...newPortfolioData,
+                    allocated_ae: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-portfolio-amount" className="text-right">
+                Budget CP
+              </Label>
+              <Input
+                id="edit-portfolio-amount"
+                type="number"
+                className="col-span-3"
+                value={newPortfolioData?.allocated_cp || ""}
+                onChange={(e) =>
+                  setNewPortfolioData({
+                    ...newPortfolioData,
+                    allocated_cp: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-portfolio-status" className="text-right">
                 Statut
               </Label>
               <Select
-                value={newPortfolioData.status}
+                value={newPortfolioData?.status}
                 onValueChange={(value: "active" | "archived" | "draft") => setNewPortfolioData({ ...newPortfolioData, status: value })}
               >
                 <SelectTrigger className="col-span-3">
@@ -875,25 +759,8 @@ export default function ProgramsPage() {
               <Textarea
                 id="edit-portfolio-description"
                 className="col-span-3"
-                value={newPortfolioData.description || ""}
+                value={newPortfolioData?.description || ""}
                 onChange={(e) => setNewPortfolioData({ ...newPortfolioData, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-portfolio-amount" className="text-right">
-                Budget AE
-              </Label>
-              <Input
-                id="edit-portfolio-amount"
-                type="number"
-                className="col-span-3"
-                value={newPortfolioData.allocated_ae || ""}
-                onChange={(e) =>
-                  setNewPortfolioData({
-                    ...newPortfolioData,
-                    allocated_ae: parseFloat(e.target.value),
-                  })
-                }
               />
             </div>
           </div>
@@ -905,8 +772,8 @@ export default function ProgramsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
- {/* Delete Portfolio Dialog */}
- <Dialog open={isDeletePortfolioOpen} onOpenChange={setIsDeletePortfolioOpen}>
+      {/* Delete Portfolio Dialog */}
+      <Dialog open={isDeletePortfolioOpen} onOpenChange={setIsDeletePortfolioOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
@@ -926,7 +793,7 @@ export default function ProgramsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeletePortfolioOpen(false)}>
               Annuler
             </Button>
             <Button variant="destructive" onClick={handleDeletePortfolio}>
@@ -967,7 +834,7 @@ export default function ProgramsPage() {
           {currentPortfolio && (
             <div className="py-6 space-y-8">
               <div className="flex justify-end">
-                <Select value={selectedFiscalYear} onValueChange={setSelectedFiscalYear}>
+                <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Année Fiscale" />
                   </SelectTrigger>
@@ -1206,7 +1073,7 @@ export default function ProgramsPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Rapport détaillé - {currentPortfolio?.name}</DialogTitle>
-            <DialogDescription>Aperçu du rapport détaillé pour l'année fiscale {selectedFiscalYear === "fy1" ? "2024" : "2023"}</DialogDescription>
+            <DialogDescription>Aperçu du rapport détaillé pour l'année fiscale {selectedPortfolio === "fy1" ? "2024" : "2023"}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
@@ -1217,7 +1084,7 @@ export default function ProgramsPage() {
                 <p className="text-lg">
                   {currentPortfolio?.name} ({currentPortfolio?.code})
                 </p>
-                <p className="text-muted-foreground">Année Fiscale {selectedFiscalYear === "fy1" ? "2024" : "2023"}</p>
+                <p className="text-muted-foreground">Année Fiscale {selectedPortfolio === "fy1" ? "2024" : "2023"}</p>
                 <p className="text-muted-foreground">Généré le {new Date().toLocaleDateString()}</p>
               </div>
 
@@ -1225,7 +1092,7 @@ export default function ProgramsPage() {
                 <div>
                   <h2 className="text-lg font-semibold mb-2">Informations générales</h2>
                   <p>
-                    <strong>Ministère:</strong> {currentPortfolio?.ministryName}
+                    <strong>Ministère:</strong> {currentPortfolio?.ministry_id}
                   </p>
                   <p>
                     <strong>Statut:</strong>{" "}
@@ -1239,19 +1106,19 @@ export default function ProgramsPage() {
                   <h2 className="text-lg font-semibold mb-2">Budget</h2>
                   <p>
                     <strong>AE Allouées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 0)}
+                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 0)}
                   </p>
                   <p>
                     <strong>CP Alloués:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 0)}
+                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 0)}
                   </p>
                   <p>
                     <strong>AE Consommées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0)}
+                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0)}
                   </p>
                   <p>
                     <strong>CP Consommés:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0)}
+                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0)}
                   </p>
                 </div>
               </div>
@@ -1263,8 +1130,8 @@ export default function ProgramsPage() {
                     <p className="mb-1">
                       AE:{" "}
                       {Math.round(
-                        ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                          (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                        ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0) /
+                          (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 1)) *
                           100
                       )}
                       %
@@ -1274,8 +1141,8 @@ export default function ProgramsPage() {
                         className="h-2 bg-blue-500 rounded-full"
                         style={{
                           width: `${Math.round(
-                            ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedAE || 0) /
-                              (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedAE || 1)) *
+                            ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0) /
+                              (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 1)) *
                               100
                           )}%`,
                         }}
@@ -1286,8 +1153,8 @@ export default function ProgramsPage() {
                     <p className="mb-1">
                       CP:{" "}
                       {Math.round(
-                        ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                          (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                        ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0) /
+                          (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 1)) *
                           100
                       )}
                       %
@@ -1297,8 +1164,8 @@ export default function ProgramsPage() {
                         className="h-2 bg-green-500 rounded-full"
                         style={{
                           width: `${Math.round(
-                            ((currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.consumedCP || 0) /
-                              (currentPortfolio?.fiscalYears?.find((fy) => fy.id === selectedFiscalYear)?.allocatedCP || 1)) *
+                            ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0) /
+                              (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 1)) *
                               100
                           )}%`,
                         }}
@@ -1338,7 +1205,7 @@ export default function ProgramsPage() {
                 <h2 className="text-lg font-semibold mb-2">Notes et observations</h2>
                 <p className="text-muted-foreground">
                   Ce rapport présente une synthèse des données budgétaires du portefeuille {currentPortfolio?.name} pour l'année fiscale{" "}
-                  {selectedFiscalYear === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégréde Gestion Budgétaire (SIB).
+                  {selectedPortfolio === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégréde Gestion Budgétaire (SIB).
                 </p>
               </div>
             </div>

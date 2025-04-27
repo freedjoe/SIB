@@ -49,10 +49,11 @@ CREATE TABLE IF NOT EXISTS portfolios (
 );
 
 -- 5. Program Structures
-CREATE TABLE IF NOT EXISTS program_structures (
+CREATE TABLE IF NOT EXISTS programs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     portfolio_id UUID REFERENCES portfolios(id),
     code VARCHAR(20),
+    name TEXT NOT NULL,
     type VARCHAR(20) CHECK (type IN ('program', 'subprogram', 'dotation')),
     parent_id UUID REFERENCES program_structures(id),
     allocated_ae NUMERIC,
@@ -352,14 +353,14 @@ BEGIN
             ('portfolios', 'status', 'TEXT CHECK (status IN (''draft'', ''active'', ''archived'')) DEFAULT ''draft'''),
             ('portfolios', 'description', 'TEXT'),
 
-            -- program_structures
-            ('program_structures', 'portfolio_id', 'UUID REFERENCES portfolios(id)'),
-            ('program_structures', 'code', 'VARCHAR(20)'),
-            ('program_structures', 'type', 'VARCHAR(20) CHECK (type IN (''program'', ''subprogram'', ''dotation''))'),
-            ('program_structures', 'parent_id', 'UUID REFERENCES program_structures(id)'),
-            ('program_structures', 'allocated_ae', 'NUMERIC'),
-            ('program_structures', 'allocated_cp', 'NUMERIC'),
-            ('program_structures', 'description', 'TEXT'),
+            -- programs
+            ('programs', 'portfolio_id', 'UUID REFERENCES portfolios(id)'),
+            ('programs', 'code', 'VARCHAR(20)'),
+            ('programs', 'type', 'VARCHAR(20) CHECK (type IN (''program'', ''subprogram'', ''dotation''))'),
+            ('programs', 'parent_id', 'UUID REFERENCES programs(id)'),
+            ('programs', 'allocated_ae', 'NUMERIC'),
+            ('programs', 'allocated_cp', 'NUMERIC'),
+            ('programs', 'description', 'TEXT'),
 
             -- actions
             ('actions', 'program_id', 'UUID REFERENCES program_structures(id)'),

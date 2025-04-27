@@ -338,6 +338,7 @@ export default function OperationsPage() {
   const [titreBudgetaireFilter, setTitreBudgetaireFilter] = useState("all");
   const [origineFinancementFilter, setOrigineFinancementFilter] = useState("all");
   const [operations, setOperations] = useState<Operation[]>(mockOperations);
+  const [loading, setLoading] = useState(false); // Add this if not already present
 
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -751,9 +752,7 @@ export default function OperationsPage() {
                       <CardTitle className="text-sm font-medium">Montant restant</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(currentOperation.allocatedAmount - currentOperation.montant_consomme)}
-                      </div>
+                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.allocatedAmount - currentOperation.montant_consomme)}</div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1081,6 +1080,18 @@ export default function OperationsPage() {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span className="ml-4 text-lg text-muted-foreground">Chargement des opérations...</span>
+      </div>
+    );
+  }
+
   return (
     <Dashboard>
       <DashboardHeader title="Gestion des Opérations" description="Suivez et gérez les opérations dans le cadre des actions budgétaires">
@@ -1381,7 +1392,9 @@ export default function OperationsPage() {
               <Label htmlFor="status">Statut</Label>
               <Select
                 value={newOperation.status}
-                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />
@@ -1607,7 +1620,9 @@ export default function OperationsPage() {
               <Label htmlFor="edit-status">Statut</Label>
               <Select
                 value={newOperation.status}
-                onValueChange={(value) => setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })}
+                onValueChange={(value) =>
+                  setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />

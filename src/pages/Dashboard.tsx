@@ -431,6 +431,7 @@ export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState(fiscalYears[0].id);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [loading, setLoading] = useState(false); // Add this if not already present
 
   const handleGenerateReport = () => {
     setGeneratingPdf(true);
@@ -458,6 +459,18 @@ export default function DashboardPage() {
 
   // Get the selected fiscal year details
   const currentFiscalYear = fiscalYears.find((year) => year.id === selectedYear) || fiscalYears[0];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span className="ml-4 text-lg text-muted-foreground">Chargement des exercices budgétaires...</span>
+      </div>
+    );
+  }
 
   return (
     <Dashboard>

@@ -209,7 +209,13 @@ export default function Users() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div>Chargement...</div>
+            <div className="flex flex-col items-center justify-center min-h-[40vh]">
+              <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+              <span className="text-lg text-muted-foreground text-center">Chargement des utilisateurs...</span>
+            </div>
           ) : (
             <UsersTable
               users={users.map((user) => ({
@@ -234,19 +240,19 @@ export default function Users() {
               {dialogMode === "add"
                 ? "Ajouter un utilisateur"
                 : dialogMode === "edit"
-                  ? "Modifier l'utilisateur"
-                  : dialogMode === "view"
-                    ? "Détails de l'utilisateur"
-                    : "Supprimer l'utilisateur"}
+                ? "Modifier l'utilisateur"
+                : dialogMode === "view"
+                ? "Détails de l'utilisateur"
+                : "Supprimer l'utilisateur"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "add"
                 ? "Créer un nouvel utilisateur"
                 : dialogMode === "edit"
-                  ? "Modifier les informations de l'utilisateur"
-                  : dialogMode === "view"
-                    ? "Voir les détails de l'utilisateur"
-                    : "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"}
+                ? "Modifier les informations de l'utilisateur"
+                : dialogMode === "view"
+                ? "Voir les détails de l'utilisateur"
+                : "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"}
             </DialogDescription>
           </DialogHeader>
 

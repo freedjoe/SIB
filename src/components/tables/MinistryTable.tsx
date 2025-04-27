@@ -11,8 +11,14 @@ interface Ministry {
   name_fr: string;
   code: string;
   description?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  phone2?: string;
+  fax?: string;
+  fax2?: string;
   is_active: boolean;
-  created_at: string;
+  parent_id?: string;
 }
 
 interface MinistryTableProps {

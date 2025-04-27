@@ -25,7 +25,7 @@ interface MinistryFormData {
   email?: string;
   phone?: string;
   phone2?: string;
-  fax1?: string;
+  fax?: string;
   fax2?: string;
   is_active: boolean;
   parent_id?: string;
@@ -42,12 +42,10 @@ interface Ministry {
   email?: string;
   phone?: string;
   phone2?: string;
-  fax1?: string;
+  fax?: string;
   fax2?: string;
   is_active: boolean;
   parent_id?: string;
-  created_at: string;
-  updated_at?: string;
 }
 
 export default function Ministries() {
@@ -68,7 +66,7 @@ export default function Ministries() {
       email: "",
       phone: "",
       phone2: "",
-      fax1: "",
+      fax: "",
       fax2: "",
       is_active: true,
       parent_id: "null", // Default to 'null' string for the 'Aucun' option
@@ -118,14 +116,6 @@ export default function Ministries() {
       // Get ministries
       const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr");
 
-      if (ministriesError) throw ministriesError;
-
-      // Get portfolios that might be associated with ministries
-      // (this is a guess - we may need to find a different relationship)
-      const { data: portfoliosData, error: portfoliosError } = await supabase.from("portfolios").select("id, name");
-
-      if (portfoliosError) throw portfoliosError;
-
       // Set the fetched ministries directly
       setMinistries(ministriesData);
     } catch (error) {
@@ -141,6 +131,7 @@ export default function Ministries() {
   }
 
   const handleAddMinistry = () => {
+    setCurrentMinistry(null);
     setDialogMode("add");
     form.reset();
     setDialogOpen(true);
@@ -231,7 +222,13 @@ export default function Ministries() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div>Chargement...</div>
+            <div className="flex flex-col items-center justify-center min-h-[40vh]">
+              <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+              <span className="text-lg text-muted-foreground text-center">Chargement des institutions...</span>
+            </div>
           ) : (
             <MinistryTable
               ministries={ministries}
@@ -382,7 +379,7 @@ export default function Ministries() {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="fax1"
+                      name="fax"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Fax 1</FormLabel>
@@ -563,7 +560,7 @@ export default function Ministries() {
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Fax 1</Label>
                         <p className="text-base text-foreground">
-                          {currentMinistry.fax1 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                          {currentMinistry.fax || <span className="italic text-muted-foreground">Non spécifié</span>}
                         </p>
                       </div>
                       <div>

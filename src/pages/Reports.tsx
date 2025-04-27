@@ -443,6 +443,18 @@ export default function ReportsPage() {
   // Filter reports based on search term
   const filteredRecentReports = recentReports.filter((report) => report.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span className="ml-4 text-lg text-muted-foreground">Chargement des rapports...</span>
+      </div>
+    );
+  }
+
   return (
     <Dashboard>
       <DashboardHeader title="Rapports" description="Générez et consultez les rapports sur l'exécution budgétaire et financière">
