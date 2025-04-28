@@ -1,51 +1,59 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo } from "react";
-import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import { Database } from "@/types/supabase";
 
+// Define the basic types
 type Schema = Database["public"];
 type Tables = Schema["Tables"];
 type TableName = keyof Tables;
 
-type TableRow<T extends TableName> = Tables[T]["Row"] & Record<string, unknown>;
-
-type SupabaseRealtimeOptions<T extends TableName> = {
+// Create a more flexible type that can handle any table name
+type SupabaseQueryOptions<T extends string> = {
   table: T;
   queryKey: string[];
   select?: string;
-  filter?: (
-    query: PostgrestFilterBuilder<Database["public"], TableRow<T>, TableRow<T>>
-  ) => PostgrestFilterBuilder<Database["public"], TableRow<T>, TableRow<T>>;
+  filter?: (query: any) => any;
+  realtime?: boolean;
 };
 
-export function useSupabaseRealtime<T extends TableName>(options: SupabaseRealtimeOptions<T>) {
+/**
+ * Hook for fetching data from Supabase without realtime subscriptions
+ */
+export function useSupabaseQuery<T extends string>(options: SupabaseQueryOptions<T>) {
   const { table, queryKey, select = "*", filter } = options;
-  const queryClient = useQueryClient();
-  const queryKeyString = useMemo(() => JSON.stringify(queryKey), [queryKey]);
 
-  const query = useQuery({
+  return useQuery({
     queryKey,
     queryFn: async () => {
-      let queryBuilder = supabase.from(table).select(select) as PostgrestFilterBuilder<Database["public"], TableRow<T>, TableRow<T>>;
+      let queryBuilder = supabase.from(table).select(select);
       if (filter) {
         queryBuilder = filter(queryBuilder);
       }
       const { data, error } = await queryBuilder;
       if (error) throw error;
-      return data as unknown as TableRow<T>[];
+      return data;
     },
   });
+}
+
+/**
+ * Hook for setting up Supabase realtime subscriptions
+ */
+export function useSupabaseRealtime(table: string, queryKey: string[]) {
+  const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (queryKey.length === 0) return;
+
     const channel = supabase
-      .channel(`${String(table)}_changes`)
+      .channel(`${table}_changes`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: String(table),
+          table,
         },
         () => {
           queryClient.invalidateQueries({ queryKey });
@@ -56,25 +64,181 @@ export function useSupabaseRealtime<T extends TableName>(options: SupabaseRealti
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, queryClient, queryKey, queryKeyString]);
+  }, [table, queryClient, queryKey]);
+}
+
+/**
+ * Combined hook for fetching data and optionally setting up realtime subscriptions
+ */
+export function useSupabaseData<T extends string>(options: SupabaseQueryOptions<T>) {
+  const { table, queryKey, realtime = true } = options;
+
+  const query = useSupabaseQuery(options);
+
+  useSupabaseRealtime(
+    table,
+    realtime ? queryKey : [] // If realtime is false, pass empty array to disable
+  );
 
   return query;
 }
 
-// Rest of the hooks remain the same
-export function useMinistriesRealtime() {
-  return useSupabaseRealtime({
+// Table-specific hooks with optional realtime subscriptions
+export function useMinistriesData(options?: { realtime?: boolean }) {
+  return useSupabaseData({
     table: "ministries",
     queryKey: ["ministries"],
-    select: `*`,
+    select: "*",
+    realtime: options?.realtime ?? true,
   });
 }
 
-export function useOperationsRealtime() {
-  return useSupabaseRealtime({
+export function useOperationsData(options?: { realtime?: boolean }) {
+  return useSupabaseData({
     table: "operations",
     queryKey: ["operations"],
-    select: `*`,
+    select: "*",
+    realtime: options?.realtime ?? true,
+  });
+}
+
+// Legacy method names for backwards compatibility
+export function useMinistriesRealtime() {
+  return useMinistriesData({ realtime: true });
+}
+
+export function useOperationsRealtime() {
+  return useOperationsData({ realtime: true });
+}
+
+// Add the missing useMinistries hook that matches the naming pattern in PrevisionsCP.tsx
+export interface MinistriesOptions {
+  sort?: {
+    column: string;
+    ascending: boolean;
+  };
+  filter?: (query: any) => any;
+  realtime?: boolean;
+}
+
+export function useMinistries(options?: MinistriesOptions, queryOptions?: any) {
+  return useSupabaseData({
+    table: "ministries",
+    queryKey: ["ministries"],
+    select: "*",
+    realtime: options?.realtime ?? true,
+    filter: (query) => {
+      let queryBuilder = query;
+
+      if (options?.filter) {
+        queryBuilder = options.filter(queryBuilder);
+      }
+
+      if (options?.sort) {
+        queryBuilder = queryBuilder.order(options.sort.column, { ascending: options.sort.ascending });
+      }
+
+      return queryBuilder;
+    },
+  });
+}
+
+// Add the missing useOperations hook that matches the naming pattern in PrevisionsCP.tsx
+export interface OperationsOptions {
+  sort?: {
+    column: string;
+    ascending: boolean;
+  };
+  filter?: (query: any) => any;
+  realtime?: boolean;
+}
+
+export function useOperations(options?: OperationsOptions, queryOptions?: any) {
+  return useSupabaseData({
+    table: "operations",
+    queryKey: ["operations"],
+    select: `*, 
+      action:action_id (
+        name,
+        program_id,
+        program:program_id (name)
+      ),
+      wilaya:wilaya_id (name)
+    `,
+    realtime: options?.realtime ?? true,
+    filter: (query) => {
+      let queryBuilder = query;
+
+      if (options?.filter) {
+        queryBuilder = options.filter(queryBuilder);
+      }
+
+      if (options?.sort) {
+        queryBuilder = queryBuilder.order(options.sort.column, { ascending: options.sort.ascending });
+      }
+
+      return queryBuilder;
+    },
+  });
+}
+
+// Add the missing usePrevisionsCP hook that's referenced in PrevisionsCP.tsx
+export interface PrevisionsCPOptions {
+  sort?: {
+    column: string;
+    ascending: boolean;
+  };
+  filter?: (query: any) => any;
+  realtime?: boolean;
+}
+
+export function usePrevisionsCP(options?: PrevisionsCPOptions, queryOptions?: any) {
+  return useSupabaseData({
+    table: "prevision_cp",
+    queryKey: ["prevision_cp"],
+    select: `*,
+      engagement:engagement_id (
+        id,
+        amount,
+        engagement_date,
+        status,
+        operation:operation_id (
+          id,
+          name,
+          ministry:ministry_id (
+            id,
+            name_fr,
+            code
+          )
+        )
+      ),
+      operation:operation_id (
+        id,
+        name,
+        ministry:ministry_id (
+          id,
+          name_fr,
+          code
+        )
+      )
+    `,
+    realtime: options?.realtime ?? true,
+    filter: (query) => {
+      let queryBuilder = query;
+
+      if (options?.filter) {
+        queryBuilder = options.filter(queryBuilder);
+      }
+
+      if (options?.sort) {
+        queryBuilder = queryBuilder.order(options.sort.column, { ascending: options.sort.ascending });
+      } else {
+        // Default sorting - newest first
+        queryBuilder = queryBuilder.order("created_at", { ascending: false });
+      }
+
+      return queryBuilder;
+    },
   });
 }
 
@@ -83,13 +247,15 @@ interface BudgetAllocationsOptions {
     column: string;
     ascending: boolean;
   };
+  realtime?: boolean;
 }
 
 export function useBudgetAllocations(options?: BudgetAllocationsOptions) {
-  return useSupabaseRealtime({
+  return useSupabaseData({
     table: "budget_allocations",
     queryKey: ["budget_allocations"],
-    select: `*`,
+    select: "*",
+    realtime: options?.realtime ?? true,
     filter: (query) => {
       if (options?.sort) {
         return query.order(options.sort.column, { ascending: options.sort.ascending });
@@ -100,13 +266,12 @@ export function useBudgetAllocations(options?: BudgetAllocationsOptions) {
 }
 
 export interface EngagementsOptions {
-  filter?: (
-    query: PostgrestFilterBuilder<Database["public"], TableRow<"engagements">, TableRow<"engagements">>
-  ) => PostgrestFilterBuilder<Database["public"], TableRow<"engagements">, TableRow<"engagements">>;
+  filter?: (query: any) => any;
+  realtime?: boolean;
 }
 
 export function useEngagements(options?: EngagementsOptions) {
-  return useSupabaseRealtime({
+  return useSupabaseData({
     table: "engagements",
     queryKey: ["engagements"],
     select: `*, operation:operation_id (
@@ -119,11 +284,44 @@ export function useEngagements(options?: EngagementsOptions) {
       )
     )`,
     filter: options?.filter,
+    realtime: options?.realtime ?? true,
+  });
+}
+
+// Add the missing Companies hook
+export interface CompaniesOptions {
+  sort?: {
+    column: string;
+    ascending: boolean;
+  };
+  filter?: (query: any) => any;
+  realtime?: boolean;
+}
+
+export function useCompanies(options?: CompaniesOptions, queryOptions?: any) {
+  return useSupabaseData({
+    table: "companies",
+    queryKey: ["companies"],
+    select: "*",
+    realtime: options?.realtime ?? true,
+    filter: (query) => {
+      let queryBuilder = query;
+
+      if (options?.filter) {
+        queryBuilder = options.filter(queryBuilder);
+      }
+
+      if (options?.sort) {
+        queryBuilder = queryBuilder.order(options.sort.column, { ascending: options.sort.ascending });
+      }
+
+      return queryBuilder;
+    },
   });
 }
 
 // Generic mutation hook for Supabase tables
-export function useSupabaseMutation<T extends TableName>(
+export function useSupabaseMutation<T extends string>(
   table: T,
   {
     onSuccess,
@@ -136,19 +334,19 @@ export function useSupabaseMutation<T extends TableName>(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ type, data, id }: { type: "INSERT" | "UPDATE" | "DELETE"; data?: Partial<TableRow<T>>; id?: string }) => {
+    mutationFn: async ({ type, data, id }: { type: "INSERT" | "UPDATE" | "DELETE"; data?: Record<string, unknown>; id?: string }) => {
       switch (type) {
         case "INSERT": {
           const { data: insertedData, error: insertError } = await supabase.from(table).insert(data).select().single();
           if (insertError) throw insertError;
-          return insertedData as TableRow<T>;
+          return insertedData;
         }
 
         case "UPDATE": {
           if (!id) throw new Error("ID is required for update");
           const { data: updatedData, error: updateError } = await supabase.from(table).update(data).eq("id", id).select().single();
           if (updateError) throw updateError;
-          return updatedData as TableRow<T>;
+          return updatedData;
         }
 
         case "DELETE": {
@@ -181,18 +379,33 @@ export function useOperationMutation(options?: { onSuccess?: () => void; onError
   return useSupabaseMutation("operations", options);
 }
 
-export function usePortfoliosRealtime() {
-  return useSupabaseRealtime({
+// Table-specific hooks for tables that might not be in the typed schema
+export function usePortfoliosData(options?: { realtime?: boolean }) {
+  return useSupabaseData({
     table: "portfolios",
     queryKey: ["portfolios"],
     select: "*",
+    realtime: options?.realtime ?? true,
   });
+}
+
+export function usePortfoliosRealtime() {
+  return usePortfoliosData({ realtime: true });
 }
 
 export function usePortfolioMutation(options?: { onSuccess?: () => void; onError?: (error: Error) => void }) {
   return useSupabaseMutation("portfolios", options);
 }
 
+export function useProgramsData(options?: { realtime?: boolean }) {
+  return useSupabaseData({
+    table: "programs",
+    queryKey: ["programs"],
+    select: "*",
+    realtime: options?.realtime ?? true,
+  });
+}
+
 export const useProgramMutation = () => {
-  return useSupabaseMutation<Database["public"]["Tables"]["programs"]["Insert"]>("programs");
+  return useSupabaseMutation("programs");
 };
