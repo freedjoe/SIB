@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import DashboardPage from "./pages/Dashboard";
@@ -41,8 +42,7 @@ import Chat from "./pages/Chat";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
-
-const queryClient = new QueryClient();
+import { queryClient, prefetchCollection } from "./lib/reactQuery";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -62,6 +62,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const { user, session, isLoading } = useAuth();
+
+  // Prefetch common data that's needed across multiple pages
+  useEffect(() => {
+    // Only prefetch data when user is authenticated
+    if (user || localStorage.getItem("adminLoggedIn") === "true") {
+      // Prefetch basic data for the app
+      prefetchCollection("ministries", "ministries");
+      prefetchCollection("companies", "companies");
+
+      // Add other global data prefetches here as needed
+    }
+  }, [user]);
 
   // Redirect to dashboard if already logged in - this works for normal Supabase auth
   useEffect(() => {
@@ -144,6 +156,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <AppRoutes />
+            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
           </AuthProvider>
         </SettingsProvider>
       </BrowserRouter>

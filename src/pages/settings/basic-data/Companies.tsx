@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { supabase } from "@/lib/supabase";
 import { Label } from "@/components/ui/label";
 import { CompanyTable } from "@/components/tables/CompanyTable";
+import { useCompanies, useSupabaseMutation } from "@/hooks/useSupabaseData";
 
 interface CompanyFormData {
   name: string;
@@ -51,11 +51,33 @@ const companyTypes = [
 ];
 
 export default function Companies() {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "delete">("add");
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
+
+  // Use React Query hooks instead of manual fetching
+  const {
+    data: companies = [],
+    isLoading: loading,
+    refetch: refreshCompanies,
+  } = useCompanies(
+    {
+      sort: { column: "name", ascending: true },
+    },
+    {
+      // React Query options
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+
+  // Use React Query mutation hooks for data modification
+  const companyMutation = useSupabaseMutation("companies", {
+    onSuccess: () => {
+      setDialogOpen(false);
+      refreshCompanies();
+    },
+  });
 
   const form = useForm<CompanyFormData>({
     defaultValues: {
@@ -70,10 +92,6 @@ export default function Companies() {
       is_active: true,
     },
   });
-
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
 
   useEffect(() => {
     if (currentCompany && dialogMode === "edit") {
@@ -94,47 +112,6 @@ export default function Companies() {
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy");
   };
-
-  async function fetchCompanies() {
-    try {
-      // Get companies
-      const { data: companiesData, error: companiesError } = await supabase.from("companies").select("*").order("name");
-
-      if (companiesError) throw companiesError;
-
-      // Get user counts by company
-      const { data: usersData, error: usersError } = await supabase
-        .from("users")
-        .select("company_id, count")
-        .select("company_id", { count: "exact" })
-        .group("company_id");
-
-      if (usersError) throw usersError;
-
-      // Create a mapping of company IDs to user counts
-      const userCountsByCompany: Record<string, number> = {};
-      usersData?.forEach((item) => {
-        userCountsByCompany[item.company_id] = item.count || 0;
-      });
-
-      // Add user counts to companies
-      const companiesWithCounts = companiesData.map((company) => ({
-        ...company,
-        user_count: userCountsByCompany[company.id] || 0,
-      }));
-
-      setCompanies(companiesWithCounts);
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les organisations",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const handleAddCompany = () => {
     setDialogMode("add");
@@ -163,21 +140,25 @@ export default function Companies() {
   const onSubmit = async (data: CompanyFormData) => {
     try {
       if (dialogMode === "add") {
-        await supabase.from("companies").insert([data]);
+        companyMutation.mutate({
+          type: "INSERT",
+          data,
+        });
         toast({
           title: "Succès",
           description: "Organisation ajoutée",
         });
       } else if (dialogMode === "edit" && currentCompany) {
-        await supabase.from("companies").update(data).eq("id", currentCompany.id);
+        companyMutation.mutate({
+          type: "UPDATE",
+          data,
+          id: currentCompany.id,
+        });
         toast({
           title: "Succès",
           description: "Organisation modifiée",
         });
       }
-
-      fetchCompanies();
-      setDialogOpen(false);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -192,13 +173,14 @@ export default function Companies() {
     if (!currentCompany) return;
 
     try {
-      await supabase.from("companies").delete().eq("id", currentCompany.id);
+      companyMutation.mutate({
+        type: "DELETE",
+        id: currentCompany.id,
+      });
       toast({
         title: "Succès",
         description: "Organisation supprimée",
       });
-      fetchCompanies();
-      setDialogOpen(false);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -240,7 +222,7 @@ export default function Companies() {
               onView={handleViewCompany}
               onEdit={handleEditCompany}
               onDelete={handleDeleteCompany}
-              onRefresh={fetchCompanies}
+              onRefresh={refreshCompanies}
             />
           )}
         </CardContent>
@@ -420,7 +402,9 @@ export default function Companies() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit">Sauvegarder</Button>
+                  <Button type="submit" disabled={companyMutation.isPending}>
+                    {companyMutation.isPending ? "Sauvegarde en cours..." : "Sauvegarder"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -505,8 +489,8 @@ export default function Companies() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Annuler
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm}>
-                  Supprimer
+                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={companyMutation.isPending}>
+                  {companyMutation.isPending ? "Suppression en cours..." : "Supprimer"}
                 </Button>
               </DialogFooter>
             </div>

@@ -44,14 +44,12 @@ export type Database = {
           {
             foreignKeyName: "actions_operation_id_fkey";
             columns: ["operation_id"];
-            isOneToOne: false;
             referencedRelation: "operations";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "actions_program_id_fkey";
             columns: ["program_id"];
-            isOneToOne: false;
             referencedRelation: "programs";
             referencedColumns: ["id"];
           }

@@ -6,7 +6,7 @@ interface DashboardProps {
   className?: string;
 }
 
-export function Dashboard({ children, className }: DashboardProps) {
+function Dashboard({ children, className }: DashboardProps) {
   return <div className={cn("page-container animate-fade-in", className)}>{children}</div>;
 }
 
@@ -17,7 +17,7 @@ interface DashboardHeaderProps {
   className?: string;
 }
 
-export function DashboardHeader({ title, description, children, className }: DashboardHeaderProps) {
+function DashboardHeader({ title, description, children, className }: DashboardHeaderProps) {
   return (
     <div className={cn("mb-8 flex flex-col gap-2", className)}>
       <div className="flex items-center justify-between">
@@ -37,7 +37,7 @@ interface DashboardGridProps {
   className?: string;
 }
 
-export function DashboardGrid({ children, columns = 3, className }: DashboardGridProps) {
+function DashboardGrid({ children, columns = 3, className }: DashboardGridProps) {
   const gridCols = {
     1: "grid-cols-1",
     2: "grid-cols-1 md:grid-cols-2",
@@ -55,7 +55,7 @@ interface DashboardSectionProps {
   className?: string;
 }
 
-export function DashboardSection({ title, description, children, className }: DashboardSectionProps) {
+function DashboardSection({ title, description, children, className }: DashboardSectionProps) {
   return (
     <div className={cn("mb-8", className)}>
       {(title || description) && (
@@ -68,3 +68,5 @@ export function DashboardSection({ title, description, children, className }: Da
     </div>
   );
 }
+
+export { Dashboard, DashboardHeader, DashboardSection, DashboardGrid };

@@ -7,13 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 
 import { PrevisionCPDialog } from "@/components/dialogs/PrevisionCPDialog";
 import { PrevisionCPMobilizationDialog } from "@/components/dialogs/PrevisionCPMobilizationDialog";
@@ -25,12 +23,15 @@ import { StatCard } from "@/components/ui-custom/StatCard";
 import { PlusCircle, FileText, BarChart, Download, CreditCard } from "lucide-react";
 import { PrevisionsCPTable } from "@/components/tables/PrevisionsCPTable";
 
+// Import our custom React Query hooks
+import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/useSupabaseData";
+
 type Engagement = {
   id: string;
   name: string;
   operation_id: string;
   operation_name?: string;
-  ministry_id?: string | null; // Made optional to avoid type errors
+  ministry_id?: string | null;
 };
 
 type Operation = {
@@ -60,116 +61,70 @@ const PrevisionsCP = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTrimester, setSelectedTrimester] = useState("all");
 
-  // Fetch previsions CP data
+  // Use our custom React Query hooks instead of direct React Query usage
   const {
-    data: previsionsCP,
+    data: previsionsCP = [],
     isLoading: isLoadingPrevisions,
     refetch: refetchPrevisions,
-  } = useQuery({
-    queryKey: ["previsionsCP", selectedMinistry, selectedEngagement, selectedOperation, selectedYear, selectedStatus],
-    queryFn: async () => {
-      let query = supabase
-        .from("prevision_cp")
-        .select(
-          `
-          *,
-          engagement:engagements(id, name, operation_id),
-          operation:operations(id, name, ministry_id)
-        `
-        )
-        .eq("exercice", selectedYear);
+  } = usePrevisionsCP(
+    {
+      filter: (query) => {
+        let filteredQuery = query.eq("exercice", selectedYear);
 
-      if (selectedEngagement && selectedEngagement !== "all") {
-        query = query.eq("engagement_id", selectedEngagement);
-      }
+        if (selectedEngagement && selectedEngagement !== "all") {
+          filteredQuery = filteredQuery.eq("engagement_id", selectedEngagement);
+        }
+
+        if (selectedOperation && selectedOperation !== "all") {
+          filteredQuery = filteredQuery.eq("operation_id", selectedOperation);
+        }
+
+        if (selectedStatus && selectedStatus !== "all") {
+          filteredQuery = filteredQuery.eq("statut", selectedStatus);
+        }
+
+        return filteredQuery;
+      },
+    },
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+
+  // Use our custom React Query hooks for related data
+  const { data: engagements = [], isLoading: isLoadingEngagements } = useEngagements({
+    filter: (query) => {
+      let filteredQuery = query;
 
       if (selectedOperation && selectedOperation !== "all") {
-        query = query.eq("operation_id", selectedOperation);
+        filteredQuery = filteredQuery.eq("operation_id", selectedOperation);
       }
 
-      if (selectedStatus && selectedStatus !== "all") {
-        query = query.eq("statut", selectedStatus);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching previsions CP:", error);
-        throw error;
-      }
-
-      // Map relationship data to make it easier to work with
-      return data.map((prevision: any) => ({
-        ...prevision,
-        engagement_name: prevision.engagement?.name,
-        operation_name: prevision.operation?.name,
-      }));
+      return filteredQuery;
     },
   });
 
-  // Fetch engagements data
-  const { data: engagements, isLoading: isLoadingEngagements } = useQuery({
-    queryKey: ["engagements", selectedMinistry, selectedOperation],
-    queryFn: async () => {
-      let query = supabase.from("engagements").select(`
-        id,
-        name,
-        operation_id,
-        operation:operation_id (id, name, ministry_id)
-      `);
-
-      if (selectedOperation && selectedOperation !== "all") {
-        query = query.eq("operation_id", selectedOperation);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching engagements:", error);
-        throw error;
-      }
-
-      return data.map((engagement: any) => ({
-        ...engagement,
-        operation_name: engagement.operation?.name,
-      }));
-    },
-  });
-
-  // Fetch operations data
-  const { data: operations, isLoading: isLoadingOperations } = useQuery({
-    queryKey: ["operations", selectedMinistry],
-    queryFn: async () => {
-      let query = supabase.from("operations").select("id, name, ministry_id");
+  const { data: operations = [], isLoading: isLoadingOperations } = useOperations({
+    filter: (query) => {
+      let filteredQuery = query;
 
       if (selectedMinistry && selectedMinistry !== "all") {
-        query = query.eq("ministry_id", selectedMinistry);
+        filteredQuery = filteredQuery.eq("ministry_id", selectedMinistry);
       }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching operations:", error);
-        throw error;
-      }
-
-      return data;
+      return filteredQuery;
     },
   });
 
-  // Fetch ministries data
-  const { data: ministries, isLoading: isLoadingMinistries } = useQuery({
-    queryKey: ["ministries"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("ministries").select("id, name, code");
+  const { data: ministries = [], isLoading: isLoadingMinistries } = useMinistries();
 
-      if (error) {
-        console.error("Error fetching ministries:", error);
-        throw error;
-      }
-
-      return data;
+  // Use our mutation hooks for data changes
+  const previsionCPMutation = useSupabaseMutation("previsions_cp", {
+    onSuccess: () => {
+      refetchPrevisions();
     },
+    invalidateQueries: ["previsions-cp"],
   });
 
   // Get available years (current year and next year)
@@ -178,18 +133,17 @@ const PrevisionsCP = () => {
   // Handle create prevision CP
   const handleCreatePrevision = async (prevision: Partial<PrevisionCP>) => {
     try {
-      const { data, error } = await supabase.from("prevision_cp").insert([prevision]).select();
-
-      if (error) {
-        throw error;
-      }
+      await previsionCPMutation.mutateAsync({
+        type: "insert",
+        data: prevision,
+      });
 
       toast({
         title: t("PrevisionsCP.toast.created.title"),
         description: t("PrevisionsCP.toast.created.description"),
       });
 
-      refetchPrevisions();
+      setIsPrevisionDialogOpen(false);
     } catch (error) {
       console.error("Error creating prevision CP:", error);
       toast({
@@ -202,19 +156,21 @@ const PrevisionsCP = () => {
 
   // Handle update prevision CP
   const handleUpdatePrevision = async (data: Partial<PrevisionCP>) => {
-    try {
-      const { error } = await supabase.from("prevision_cp").update(data).eq("id", data.id);
+    if (!data.id) return;
 
-      if (error) {
-        throw error;
-      }
+    try {
+      await previsionCPMutation.mutateAsync({
+        type: "update",
+        id: data.id,
+        data,
+      });
 
       toast({
         title: t("PrevisionsCP.toast.updated.title"),
         description: t("PrevisionsCP.toast.updated.description"),
       });
 
-      refetchPrevisions();
+      setIsPrevisionDialogOpen(false);
     } catch (error) {
       console.error("Error updating prevision CP:", error);
       toast({
@@ -230,18 +186,15 @@ const PrevisionsCP = () => {
     if (!id) return;
 
     try {
-      const { error } = await supabase.from("prevision_cp").delete().eq("id", id);
-
-      if (error) {
-        throw error;
-      }
+      await previsionCPMutation.mutateAsync({
+        type: "delete",
+        id,
+      });
 
       toast({
         title: t("PrevisionsCP.toast.deleted.title"),
         description: t("PrevisionsCP.toast.deleted.description"),
       });
-
-      refetchPrevisions();
     } catch (error) {
       console.error("Error deleting prevision CP:", error);
       toast({
@@ -257,26 +210,23 @@ const PrevisionsCP = () => {
     if (!data.id) return;
 
     try {
-      const { error } = await supabase
-        .from("prevision_cp")
-        .update({
+      await previsionCPMutation.mutateAsync({
+        type: "update",
+        id: data.id,
+        data: {
           montant_demande: data.montant_demande,
           date_demande: new Date().toISOString(),
           statut: "demandé",
           notes: data.notes,
-        })
-        .eq("id", data.id);
-
-      if (error) {
-        throw error;
-      }
+        },
+      });
 
       toast({
         title: t("PrevisionsCP.toast.mobilization.title"),
         description: t("PrevisionsCP.toast.mobilization.description"),
       });
 
-      refetchPrevisions();
+      setIsMobilizationDialogOpen(false);
     } catch (error) {
       console.error("Error requesting mobilization:", error);
       toast({
