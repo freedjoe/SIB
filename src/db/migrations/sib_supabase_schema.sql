@@ -55,21 +55,23 @@ CREATE TABLE IF NOT EXISTS programs (
     code VARCHAR(20),
     name TEXT NOT NULL,
     type VARCHAR(20) CHECK (type IN ('program', 'subprogram', 'dotation')),
-    parent_id UUID REFERENCES program_structures(id),
+    parent_id UUID REFERENCES programs(id),
     allocated_ae NUMERIC,
     allocated_cp NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'active', 'archived')) DEFAULT 'draft',
     description TEXT
 );
 
 -- 6. Actions
 CREATE TABLE IF NOT EXISTS actions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    program_id UUID REFERENCES program_structures(id),
+    program_id UUID REFERENCES programs(id),
     code VARCHAR(20),
     name TEXT,
     type VARCHAR(20) CHECK (type IN ('Centralized', 'Decentralized', 'Unique', 'Programmed', 'Complementary')),
     allocated_ae NUMERIC,
     allocated_cp NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'active', 'archived')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -97,6 +99,7 @@ CREATE TABLE IF NOT EXISTS operations (
     physical_rate NUMERIC,
     financial_rate NUMERIC,
     delay NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -110,6 +113,7 @@ CREATE TABLE IF NOT EXISTS engagements (
     year INTEGER,
     type VARCHAR(20),
     history TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -121,6 +125,7 @@ CREATE TABLE IF NOT EXISTS revaluations (
     revaluation_amount NUMERIC,
     reason TEXT,
     description TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     revaluation_date DATE DEFAULT CURRENT_DATE
 );
 
@@ -131,6 +136,7 @@ CREATE TABLE IF NOT EXISTS credit_payments (
     operation_id UUID REFERENCES operations(id),
     fiscal_year_id UUID REFERENCES fiscal_years(id),
     amount NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -140,6 +146,7 @@ CREATE TABLE IF NOT EXISTS cp_forecasts (
     operation_id UUID REFERENCES operations(id),
     fiscal_year_id UUID REFERENCES fiscal_years(id),
     forecast_cp NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -149,6 +156,7 @@ CREATE TABLE IF NOT EXISTS cp_mobilisations (
     operation_id UUID REFERENCES operations(id),
     mobilised_cp NUMERIC,
     mobilisation_date DATE,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -158,6 +166,7 @@ CREATE TABLE IF NOT EXISTS cp_consumptions (
     mobilisation_id UUID REFERENCES cp_mobilisations(id),
     consumed_cp NUMERIC,
     consumption_date DATE,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -167,6 +176,7 @@ CREATE TABLE IF NOT EXISTS payments (
     operation_id UUID REFERENCES operations(id),
     amount NUMERIC,
     payment_date DATE,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     description TEXT
 );
 
@@ -178,6 +188,7 @@ CREATE TABLE IF NOT EXISTS payment_requests (
     period VARCHAR(20),
     status VARCHAR(20),
     justification TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     document TEXT
 );
 
@@ -188,6 +199,7 @@ CREATE TABLE IF NOT EXISTS cp_alerts (
     threshold_exceeded BOOLEAN,
     alert_level VARCHAR(20),
     message TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     alert_date DATE DEFAULT CURRENT_DATE
 );
 
@@ -197,6 +209,7 @@ CREATE TABLE IF NOT EXISTS extra_engagements (
     operation_id UUID REFERENCES operations(id),
     requested_amount NUMERIC,
     justification TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     engagement_date DATE DEFAULT CURRENT_DATE
 );
 
@@ -356,19 +369,22 @@ BEGIN
             -- programs
             ('programs', 'portfolio_id', 'UUID REFERENCES portfolios(id)'),
             ('programs', 'code', 'VARCHAR(20)'),
+            ('programs', 'name', 'TEXT'),
             ('programs', 'type', 'VARCHAR(20) CHECK (type IN (''program'', ''subprogram'', ''dotation''))'),
             ('programs', 'parent_id', 'UUID REFERENCES programs(id)'),
             ('programs', 'allocated_ae', 'NUMERIC'),
             ('programs', 'allocated_cp', 'NUMERIC'),
+            ('programs', 'status', 'TEXT CHECK (status IN (''draft'', ''active'', ''archived'')) DEFAULT ''draft'''),
             ('programs', 'description', 'TEXT'),
 
             -- actions
-            ('actions', 'program_id', 'UUID REFERENCES program_structures(id)'),
+            ('actions', 'program_id', 'UUID REFERENCES programs(id)'),
             ('actions', 'code', 'VARCHAR(20)'),
             ('actions', 'name', 'TEXT'),
             ('actions', 'type', 'VARCHAR(20) CHECK (type IN (''Centralized'', ''Decentralized'', ''Unique'', ''Programmed'', ''Complementary''))'),
             ('actions', 'allocated_ae', 'NUMERIC'),
             ('actions', 'allocated_cp', 'NUMERIC'),
+            ('actions', 'status', 'TEXT CHECK (status IN (''draft'', ''active'', ''archived'')) DEFAULT ''draft'''),
             ('actions', 'description', 'TEXT'),
 
             -- wilayas
@@ -390,6 +406,7 @@ BEGIN
             ('operations', 'physical_rate', 'NUMERIC'),
             ('operations', 'financial_rate', 'NUMERIC'),
             ('operations', 'delay', 'NUMERIC'),
+            ('operations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('operations', 'description', 'TEXT'),
 
             -- engagements
@@ -400,6 +417,7 @@ BEGIN
             ('engagements', 'year', 'INTEGER'),
             ('engagements', 'type', 'VARCHAR(20)'),
             ('engagements', 'history', 'TEXT'),
+            ('engagements', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('engagements', 'description', 'TEXT'),
 
             -- revaluations
@@ -408,6 +426,7 @@ BEGIN
             ('revaluations', 'revaluation_amount', 'NUMERIC'),
             ('revaluations', 'reason', 'TEXT'),
             ('revaluations', 'description', 'TEXT'),
+            ('revaluations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('revaluations', 'revaluation_date', 'DATE DEFAULT CURRENT_DATE'),
 
             -- credit_payments
@@ -415,30 +434,35 @@ BEGIN
             ('credit_payments', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('credit_payments', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
             ('credit_payments', 'amount', 'NUMERIC'),
+            ('credit_payments', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('credit_payments', 'description', 'TEXT'),
 
             -- cp_forecasts
             ('cp_forecasts', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('cp_forecasts', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
             ('cp_forecasts', 'forecast_cp', 'NUMERIC'),
+            ('cp_forecasts', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('cp_forecasts', 'description', 'TEXT'),
 
             -- cp_mobilisations
             ('cp_mobilisations', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('cp_mobilisations', 'mobilised_cp', 'NUMERIC'),
             ('cp_mobilisations', 'mobilisation_date', 'DATE'),
+            ('cp_mobilisations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('cp_mobilisations', 'description', 'TEXT'),
 
             -- cp_consumptions
             ('cp_consumptions', 'mobilisation_id', 'UUID REFERENCES cp_mobilisations(id)'),
             ('cp_consumptions', 'consumed_cp', 'NUMERIC'),
             ('cp_consumptions', 'consumption_date', 'DATE'),
+            ('cp_consumptions', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('cp_consumptions', 'description', 'TEXT'),
 
             -- payments
             ('payments', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('payments', 'amount', 'NUMERIC'),
             ('payments', 'payment_date', 'DATE'),
+            ('payments', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('payments', 'description', 'TEXT'),
 
             -- payment_requests
@@ -447,6 +471,7 @@ BEGIN
             ('payment_requests', 'period', 'VARCHAR(20)'),
             ('payment_requests', 'status', 'VARCHAR(20)'),
             ('payment_requests', 'justification', 'TEXT'),
+            ('payment_requests', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('payment_requests', 'document', 'TEXT'),
 
             -- cp_alerts
@@ -454,12 +479,14 @@ BEGIN
             ('cp_alerts', 'threshold_exceeded', 'BOOLEAN'),
             ('cp_alerts', 'alert_level', 'VARCHAR(20)'),
             ('cp_alerts', 'message', 'TEXT'),
+            ('cp_alerts', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('cp_alerts', 'alert_date', 'DATE DEFAULT CURRENT_DATE'),
 
             -- extra_engagements
             ('extra_engagements', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('extra_engagements', 'requested_amount', 'NUMERIC'),
             ('extra_engagements', 'justification', 'TEXT'),
+            ('extra_engagements', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('extra_engagements', 'engagement_date', 'DATE DEFAULT CURRENT_DATE'),
 
             -- tax_revenues

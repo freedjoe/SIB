@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { PrevisionCP } from "@/types/supabase";
 
 export default function PrevisionsCP() {
@@ -14,39 +14,7 @@ export default function PrevisionsCP() {
   const fetchPrevisions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("prevision_cp")
-        .select(
-          `
-          *,
-          engagement:engagements!inner(
-            id,
-            amount,
-            engagement_date,
-            status,
-            operation:operations!inner(
-              id,
-              name,
-              ministry:ministries!inner(
-                id,
-                name,
-                code
-              )
-            )
-          ),
-          operation:operations!inner(
-            id,
-            name,
-            ministry:ministries!inner(
-              id,
-              name,
-              code
-            )
-          )
-        `
-        )
-        .eq("exercice", 2025)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("prevision_cp").select("*").eq("exercice", 2025).order("created_at", { ascending: false });
 
       if (error) {
         throw error;

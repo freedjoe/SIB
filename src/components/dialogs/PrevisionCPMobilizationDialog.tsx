@@ -28,24 +28,26 @@ const formSchema = z.object({
 export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, onSubmit }: PrevisionCPMobilizationDialogProps) {
   const { t } = useTranslation();
 
-  // Initialize form with safe default values
+  // Initialize form with better defaults and set mode to onSubmit for better performance
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit", // Only validate on submit to reduce lag
     defaultValues: {
-      montant_demande: 0,
-      notes: "",
+      montant_demande: prevision?.montant_prevu || 0,
+      notes: prevision?.notes || "",
     },
   });
 
-  // Reset form when prevision changes
+  // Reset form when prevision changes or dialog opens
   useEffect(() => {
-    if (prevision) {
+    if (open && prevision) {
+      const montantRestant = prevision.montant_prevu - (prevision.montant_mobilise || 0);
       form.reset({
-        montant_demande: prevision.montant_prevu || 0,
+        montant_demande: montantRestant > 0 ? montantRestant : 0,
         notes: prevision.notes || "",
       });
     }
-  }, [prevision, form]);
+  }, [prevision, open, form]);
 
   // Handle form submission
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
@@ -53,17 +55,22 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
 
     onSubmit({
       id: prevision.id,
-      ...values,
+      montant_demande: values.montant_demande,
+      notes: values.notes,
+      // Keep other fields from original prevision
       statut: "demandé",
     });
-    form.reset();
+
     onOpenChange(false);
   };
 
-  // If no prevision is provided, don't render the dialog
+  // Early return if no prevision is provided
   if (!prevision) {
     return null;
   }
+
+  // Calculate remaining amount
+  const montantRestant = prevision.montant_prevu - (prevision.montant_mobilise || 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -74,16 +81,17 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/40 rounded-lg">
               <div>
                 <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantPrevu")}</FormLabel>
                 <div className="text-lg font-semibold">{prevision.montant_prevu.toLocaleString()} DZD</div>
               </div>
               <div>
                 <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantRestant")}</FormLabel>
-                <div className="text-lg font-semibold">{(prevision.montant_prevu - (prevision.montant_mobilise || 0)).toLocaleString()} DZD</div>
+                <div className="text-lg font-semibold">{montantRestant.toLocaleString()} DZD</div>
               </div>
             </div>
+
             <FormField
               control={form.control}
               name="montant_demande"
@@ -91,12 +99,25 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
                 <FormItem>
                   <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantDemande")}</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    {montantRestant > 0
+                      ? t("PrevisionsCP.dialog.mobilization.amountAvailable", { amount: montantRestant })
+                      : t("PrevisionsCP.dialog.mobilization.noAmountAvailable")}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="notes"
@@ -110,8 +131,14 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">{t("PrevisionsCP.dialog.mobilization.submit")}</Button>
+
+            <DialogFooter className="mt-4 pt-2 border-t">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={form.watch("montant_demande") <= 0}>
+                {t("PrevisionsCP.dialog.mobilization.submit")}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

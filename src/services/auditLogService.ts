@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Tables } from "@/integrations/supabase/types";
 
 export type AuditLog = Tables<"audit_logs">;
@@ -55,10 +55,13 @@ export async function createAuditLog(entry: AuditLogEntry): Promise<AuditLog> {
 
 function parseJsonValue(value: unknown): Record<string, ChangeValue> {
   if (typeof value === "object" && value !== null) {
-    return Object.entries(value).reduce((acc, [key, val]) => {
-      acc[key] = val as ChangeValue;
-      return acc;
-    }, {} as Record<string, ChangeValue>);
+    return Object.entries(value).reduce(
+      (acc, [key, val]) => {
+        acc[key] = val as ChangeValue;
+        return acc;
+      },
+      {} as Record<string, ChangeValue>
+    );
   }
   return {};
 }

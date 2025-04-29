@@ -94,7 +94,7 @@ INSERT INTO portfolios (id, name, description, created_at) VALUES
     ('00000000-9999-4999-d999-99999999999a', 'Santé', 'Portefeuille de la Santé', CURRENT_TIMESTAMP);
 
 -- Insert programs (based on actual finance law data)
-INSERT INTO programs (id, portfolio_id, name, description, code_programme, created_at) VALUES
+INSERT INTO programs (id, portfolio_id, name, description, code, created_at) VALUES
     -- Présidence
     ('11111111-aaaa-4aaa-aaaa-aaaaaaaaaaaa', '11111111-0000-4000-a000-000000000001', 'Activité de la Présidence', 'Programme des activités présidentielles', 'PRG-001', CURRENT_TIMESTAMP),
     ('22222222-bbbb-4bbb-bbbb-bbbbbbbbbbbb', '11111111-0000-4000-a000-000000000001', 'Coordination juridique', 'Programme de coordination juridique', 'PRG-002', CURRENT_TIMESTAMP),

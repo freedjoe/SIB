@@ -511,7 +511,7 @@ graph TD
 Nouveaux champs suggérés par les fichiers
 wilaya : utile pour la répartition géographique
 
-code_programme, code_action, code_operation
+code, code_action, code_operation
 
 titre_budgetaire (titre 1, 2, 3, 4)
 
@@ -563,7 +563,7 @@ L’analyse des fichiers budgétaires réels a permis d’identifier plusieurs *
 #### 🧾 Champs à ajouter :
 
 - `wilaya` : localisation géographique du projet ou de l’opération.
-- `code_programme`, `code_action`, `code_operation` : identification uniforme des entités budgétaires.
+- `code`, `code_action`, `code_operation` : identification uniforme des entités budgétaires.
 - `titre_budgetaire` : classification par titre (1 : fonctionnement, 2 : équipement, etc.).
 - `statut_demande` : état d'avancement d’une demande (En attente / Validée / Rejetée).
 - `origine_financement` : source (Budget national / Financement extérieur).

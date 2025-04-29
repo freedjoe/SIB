@@ -1,5 +1,4 @@
-
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Tables } from "@/integrations/supabase/types";
 import { Program } from "@/types/programs";
 
@@ -19,8 +18,9 @@ export interface ActionWithRelations extends Action {
 
 export async function getAllActions(): Promise<ActionWithRelations[]> {
   const { data, error } = await supabase
-    .from('actions')
-    .select(`
+    .from("actions")
+    .select(
+      `
       *,
       program:program_id (
         name, 
@@ -29,28 +29,34 @@ export async function getAllActions(): Promise<ActionWithRelations[]> {
         portfolio:portfolio_id (name)
       ),
       operation:operation_id (name)
-    `)
-    .order('name');
-  
+    `
+    )
+    .order("name");
+
   if (error) {
     console.error("Error fetching actions:", error);
     throw error;
   }
-  
-  return data.map(action => ({
-    ...action,
-    code_action: action.code_action || '',
-    program: action.program ? {
-      ...action.program,
-      fiscal_year: action.program.fiscal_year || 2024
-    } : undefined
-  })) || [];
+
+  return (
+    data.map((action) => ({
+      ...action,
+      code_action: action.code_action || "",
+      program: action.program
+        ? {
+            ...action.program,
+            fiscal_year: action.program.fiscal_year || 2024,
+          }
+        : undefined,
+    })) || []
+  );
 }
 
 export async function getActionsByProgram(programId: string): Promise<ActionWithRelations[]> {
   const { data, error } = await supabase
-    .from('actions')
-    .select(`
+    .from("actions")
+    .select(
+      `
       *,
       program:program_id (
         name, 
@@ -59,29 +65,35 @@ export async function getActionsByProgram(programId: string): Promise<ActionWith
         portfolio:portfolio_id (name)
       ),
       operation:operation_id (name)
-    `)
-    .eq('program_id', programId)
-    .order('name');
-  
+    `
+    )
+    .eq("program_id", programId)
+    .order("name");
+
   if (error) {
     console.error(`Error fetching actions for program ${programId}:`, error);
     throw error;
   }
-  
-  return data.map(action => ({
-    ...action,
-    code_action: action.code_action || '',
-    program: action.program ? {
-      ...action.program,
-      fiscal_year: action.program.fiscal_year || 2024
-    } : undefined
-  })) || [];
+
+  return (
+    data.map((action) => ({
+      ...action,
+      code_action: action.code_action || "",
+      program: action.program
+        ? {
+            ...action.program,
+            fiscal_year: action.program.fiscal_year || 2024,
+          }
+        : undefined,
+    })) || []
+  );
 }
 
 export async function getActionById(id: string): Promise<ActionWithRelations | null> {
   const { data, error } = await supabase
-    .from('actions')
-    .select(`
+    .from("actions")
+    .select(
+      `
       *,
       program:program_id (
         name, 
@@ -90,23 +102,26 @@ export async function getActionById(id: string): Promise<ActionWithRelations | n
         portfolio:portfolio_id (name)
       ),
       operation:operation_id (name)
-    `)
-    .eq('id', id)
+    `
+    )
+    .eq("id", id)
     .single();
-  
+
   if (error) {
     console.error(`Error fetching action with id ${id}:`, error);
     throw error;
   }
-  
+
   if (!data) return null;
 
   return {
     ...data,
-    code_action: data.code_action || '',
-    program: data.program ? {
-      ...data.program,
-      fiscal_year: data.program.fiscal_year || 2024
-    } : undefined
+    code_action: data.code_action || "",
+    program: data.program
+      ? {
+          ...data.program,
+          fiscal_year: data.program.fiscal_year || 2024,
+        }
+      : undefined,
   };
 }

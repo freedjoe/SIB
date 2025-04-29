@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -53,59 +53,61 @@ const formSchema = z.object({
 
 export function PrevisionCPDialog({ open, onOpenChange, prevision, engagements, operations, ministries, onSubmit }: PrevisionCPDialogProps) {
   const { t } = useTranslation();
+  const isEditMode = Boolean(prevision);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       engagement_id: prevision?.engagement_id || "",
       operation_id: prevision?.operation_id || "",
       exercice: prevision?.exercice || new Date().getFullYear(),
-      periode: prevision?.periode || "",
+      periode: prevision?.periode || `${new Date().getFullYear()}-Q1`,
       montant_prevu: prevision?.montant_prevu || 0,
       notes: prevision?.notes || "",
     },
   });
 
   useEffect(() => {
-    if (prevision) {
+    if (open) {
       form.reset({
-        engagement_id: prevision.engagement_id,
-        operation_id: prevision.operation_id,
-        exercice: prevision.exercice,
-        periode: prevision.periode,
-        montant_prevu: prevision.montant_prevu,
-        notes: prevision.notes || "",
-      });
-    } else {
-      form.reset({
-        engagement_id: "",
-        operation_id: "",
-        exercice: new Date().getFullYear(),
-        periode: "",
-        montant_prevu: 0,
-        notes: "",
+        engagement_id: prevision?.engagement_id || "",
+        operation_id: prevision?.operation_id || "",
+        exercice: prevision?.exercice || new Date().getFullYear(),
+        periode: prevision?.periode || `${new Date().getFullYear()}-Q1`,
+        montant_prevu: prevision?.montant_prevu || 0,
+        notes: prevision?.notes || "",
       });
     }
-  }, [prevision, form]);
+  }, [prevision, open, form]);
+
+  const filteredOperations = React.useMemo(() => {
+    return operations;
+  }, [operations]);
+
+  const filteredEngagements = React.useMemo(() => {
+    const operationId = form.watch("operation_id");
+    if (!operationId) return engagements;
+    return engagements.filter((engagement) => engagement.operation_id === operationId);
+  }, [engagements, form.watch("operation_id")]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const data: Partial<PrevisionCP> = {
+      ...(prevision?.id ? { id: prevision.id } : {}),
       engagement_id: values.engagement_id,
       operation_id: values.operation_id,
       exercice: values.exercice,
       periode: values.periode,
       montant_prevu: values.montant_prevu,
       notes: values.notes,
-      statut: "prévu",
+      statut: prevision?.statut || "prévu",
     };
 
     onSubmit(data);
-    form.reset();
     onOpenChange(false);
   };
 
-  // Generate period options (Q1, Q2, Q3, Q4 for current and next year)
-  const generatePeriodOptions = () => {
+  const periodOptions = React.useMemo(() => {
     const currentYear = new Date().getFullYear();
     const periods = [];
 
@@ -116,57 +118,39 @@ export function PrevisionCPDialog({ open, onOpenChange, prevision, engagements, 
     }
 
     return periods;
-  };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{prevision ? t("PrevisionsCP.dialog.edit.title") : t("PrevisionsCP.dialog.create.title")}</DialogTitle>
-          <DialogDescription>{prevision ? t("PrevisionsCP.dialog.edit.description") : t("PrevisionsCP.dialog.create.description")}</DialogDescription>
+          <DialogTitle>{isEditMode ? t("PrevisionsCP.dialog.edit.title") : t("PrevisionsCP.dialog.create.title")}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? t("PrevisionsCP.dialog.edit.description") : t("PrevisionsCP.dialog.create.description")}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="engagement_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("PrevisionsCP.dialog.engagement")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("PrevisionsCP.dialog.selectEngagement")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {engagements
-                        .filter((engagement) => engagement.operation_id === form.getValues("operation_id"))
-                        .map((engagement) => (
-                          <SelectItem key={engagement.id} value={engagement.id}>
-                            {engagement.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="operation_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("PrevisionsCP.dialog.operation")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue("engagement_id", "");
+                    }}
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t("PrevisionsCP.dialog.selectOperation")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {operations.map((operation) => (
+                      {filteredOperations.map((operation) => (
                         <SelectItem key={operation.id} value={operation.id}>
                           {operation.name}
                         </SelectItem>
@@ -177,32 +161,84 @@ export function PrevisionCPDialog({ open, onOpenChange, prevision, engagements, 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="exercice"
+              name="engagement_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("PrevisionsCP.dialog.exercice")}</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
-                  </FormControl>
+                  <FormLabel>{t("PrevisionsCP.dialog.engagement")}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!form.watch("operation_id")}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("PrevisionsCP.dialog.selectEngagement")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredEngagements.map((engagement) => (
+                        <SelectItem key={engagement.id} value={engagement.id}>
+                          {engagement.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="periode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("PrevisionsCP.dialog.periode")}</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="2024-Q1" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="exercice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("PrevisionsCP.dialog.exercice")}</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Année" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[new Date().getFullYear(), new Date().getFullYear() + 1].map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="periode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("PrevisionsCP.dialog.periode")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Période" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {periodOptions.map((period) => (
+                          <SelectItem key={period} value={period}>
+                            {period}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="montant_prevu"
@@ -210,12 +246,20 @@ export function PrevisionCPDialog({ open, onOpenChange, prevision, engagements, 
                 <FormItem>
                   <FormLabel>{t("PrevisionsCP.dialog.montantPrevu")}</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="notes"
@@ -229,8 +273,12 @@ export function PrevisionCPDialog({ open, onOpenChange, prevision, engagements, 
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">{prevision ? t("PrevisionsCP.dialog.update") : t("PrevisionsCP.dialog.create")}</Button>
+
+            <DialogFooter className="mt-4 pt-2 border-t">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit">{isEditMode ? t("PrevisionsCP.dialog.update") : t("PrevisionsCP.dialog.create")}</Button>
             </DialogFooter>
           </form>
         </Form>

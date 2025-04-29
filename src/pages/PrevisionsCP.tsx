@@ -26,26 +26,6 @@ import { PrevisionsCPTable } from "@/components/tables/PrevisionsCPTable";
 // Import our custom React Query hooks
 import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/useSupabaseData";
 
-type Engagement = {
-  id: string;
-  name: string;
-  operation_id: string;
-  operation_name?: string;
-  ministry_id?: string | null;
-};
-
-type Operation = {
-  id: string;
-  name: string;
-  ministry_id: string | null;
-};
-
-type Ministry = {
-  id: string;
-  name: string;
-  code: string;
-};
-
 const PrevisionsCP = () => {
   const { t } = useTranslation();
   const [selectedMinistry, setSelectedMinistry] = useState<string>("all");

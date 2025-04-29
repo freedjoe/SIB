@@ -5,7 +5,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          code_programme: string | null;
+          code: string | null;
           description: string | null;
           budget: number | null;
           allocated: number | null;

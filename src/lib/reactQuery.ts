@@ -1,17 +1,29 @@
 import { QueryClient } from "@tanstack/react-query";
+import type { Database } from "@/types/supabase";
 import { supabase } from "./supabase";
 
+// Create a client
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
-      cacheTime: 1000 * 60 * 30, // Cache is kept for 30 minutes
-      refetchOnWindowFocus: false, // Don't refetch on window focus since we have realtime
-      refetchOnReconnect: false, // Don't refetch on reconnect since we have realtime
-      retry: 3, // Retry failed requests 3 times
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
     },
   },
 });
+
+// Type helpers for React Query keys
+export type TableNames = keyof Database["public"]["Tables"];
+
+export type TableRow<T extends TableNames> = Database["public"]["Tables"][T]["Row"];
+export type TableInsert<T extends TableNames> = Database["public"]["Tables"][T]["Insert"];
+export type TableUpdate<T extends TableNames> = Database["public"]["Tables"][T]["Update"];
+
+// Type helpers for React Query key factories
+export const createQueryKey = <T extends TableNames>(table: T, ...parts: (string | number | null | undefined)[]) =>
+  [table, ...parts.filter(Boolean)] as const;
 
 // Helper function to prefetch collection data
 export async function prefetchCollection(collection: string, queryKey: string | string[], select: string = "*") {

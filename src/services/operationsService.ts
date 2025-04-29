@@ -1,25 +1,25 @@
-
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Tables } from "@/integrations/supabase/types";
 
 export type Operation = Tables<"operations">;
 
 export interface OperationWithRelations extends Operation {
-  action?: { 
+  action?: {
     name: string;
     action_type: string;
     program_id: string;
     program?: {
       name: string;
       fiscal_year: number;
-    }
+    };
   };
 }
 
 export async function getAllOperations(): Promise<OperationWithRelations[]> {
   const { data, error } = await supabase
-    .from('operations')
-    .select(`
+    .from("operations")
+    .select(
+      `
       *,
       action:action_id (
         name, 
@@ -27,21 +27,23 @@ export async function getAllOperations(): Promise<OperationWithRelations[]> {
         program_id,
         program:program_id (name, fiscal_year)
       )
-    `)
-    .order('name');
-  
+    `
+    )
+    .order("name");
+
   if (error) {
     console.error("Error fetching operations:", error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getOperationsByActionId(actionId: string): Promise<OperationWithRelations[]> {
   const { data, error } = await supabase
-    .from('operations')
-    .select(`
+    .from("operations")
+    .select(
+      `
       *,
       action:action_id (
         name, 
@@ -49,22 +51,24 @@ export async function getOperationsByActionId(actionId: string): Promise<Operati
         program_id,
         program:program_id (name, fiscal_year)
       )
-    `)
-    .eq('action_id', actionId)
-    .order('name');
-  
+    `
+    )
+    .eq("action_id", actionId)
+    .order("name");
+
   if (error) {
     console.error(`Error fetching operations for action ${actionId}:`, error);
     throw error;
   }
-  
+
   return data || [];
 }
 
 export async function getOperationById(id: string): Promise<OperationWithRelations | null> {
   const { data, error } = await supabase
-    .from('operations')
-    .select(`
+    .from("operations")
+    .select(
+      `
       *,
       action:action_id (
         name, 
@@ -72,14 +76,15 @@ export async function getOperationById(id: string): Promise<OperationWithRelatio
         program_id,
         program:program_id (name, fiscal_year)
       )
-    `)
-    .eq('id', id)
+    `
+    )
+    .eq("id", id)
     .single();
-  
+
   if (error) {
     console.error(`Error fetching operation with id ${id}:`, error);
     throw error;
   }
-  
+
   return data;
 }

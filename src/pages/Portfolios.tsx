@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { id } from "date-fns/locale";
 // Mock data
 interface Program {
@@ -86,7 +86,7 @@ export default function PortfoliosPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedPortfolios, setPaginatedPortfolios] = useState<Portfolio[]>([]);
 
   const [selectedPortfolio, setSelectedPortfolio] = useState(""); // For dialog view

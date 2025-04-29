@@ -1,5 +1,4 @@
-
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Tables } from "@/integrations/supabase/types";
 import { Program } from "@/types/programs";
 
@@ -38,17 +37,17 @@ export async function getAllForecastedExpenses(): Promise<ForecastedExpenseWithR
   }
 
   return (
-    data?.map(item => ({
+    data?.map((item) => ({
       ...item,
       program: {
         name: item.program?.name || "",
-        fiscal_year: 2024 // Default fiscal year
+        fiscal_year: 2024, // Default fiscal year
       },
       ministry: {
         ...item.ministry,
         name: item.ministry?.name || "",
-        code: item.ministry?.code || ""
-      }
+        code: item.ministry?.code || "",
+      },
     })) || []
   );
 }
@@ -72,17 +71,17 @@ export async function getForecastedExpensesByProgramId(programId: string): Promi
   }
 
   return (
-    data?.map(item => ({
+    data?.map((item) => ({
       ...item,
       program: {
         name: item.program?.name || "",
-        fiscal_year: 2024 // Default fiscal year
+        fiscal_year: 2024, // Default fiscal year
       },
       ministry: {
         ...item.ministry,
         name: item.ministry?.name || "",
-        code: item.ministry?.code || ""
-      }
+        code: item.ministry?.code || "",
+      },
     })) || []
   );
 }
@@ -111,12 +110,12 @@ export async function getForecastedExpenseById(id: string): Promise<ForecastedEx
     ...data,
     program: {
       name: data.program?.name || "",
-      fiscal_year: 2024 // Default fiscal year
+      fiscal_year: 2024, // Default fiscal year
     },
     ministry: {
       ...data.ministry,
       name: data.ministry?.name || "",
-      code: data.ministry?.code || ""
-    }
+      code: data.ministry?.code || "",
+    },
   };
 }
