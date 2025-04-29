@@ -36,10 +36,10 @@ export default function CreditPayments() {
   });
 
   // Use our custom React Query hooks
-  const { 
-    data: creditPaymentsData = [], 
+  const {
+    data: creditPaymentsData = [],
     isLoading: isLoadingCreditPayments,
-    refetch: refetchCreditPayments 
+    refetch: refetchCreditPayments,
   } = useCreditPayments({
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
@@ -363,18 +363,21 @@ export default function CreditPayments() {
               <Label htmlFor="code" className="text-right">
                 Code
               </Label>
-              <Input 
-                id="code" 
-                value={newCreditPayment.code || ""} 
+              <Input
+                id="code"
+                value={newCreditPayment.code || ""}
                 onChange={(e) => setNewCreditPayment({ ...newCreditPayment, code: e.target.value })}
-                className="col-span-3" 
+                className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="operation" className="text-right">
                 Opération
               </Label>
-              <Select value={newCreditPayment.operation_id} onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}>
+              <Select
+                value={newCreditPayment.operation_id}
+                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner une opération" />
                 </SelectTrigger>
@@ -391,7 +394,10 @@ export default function CreditPayments() {
               <Label htmlFor="fiscal_year" className="text-right">
                 Année Fiscale
               </Label>
-              <Select value={newCreditPayment.fiscal_year_id} onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}>
+              <Select
+                value={newCreditPayment.fiscal_year_id}
+                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner une année fiscale" />
                 </SelectTrigger>
@@ -449,18 +455,21 @@ export default function CreditPayments() {
               <Label htmlFor="edit-code" className="text-right">
                 Code
               </Label>
-              <Input 
-                id="edit-code" 
-                value={newCreditPayment.code || ""} 
+              <Input
+                id="edit-code"
+                value={newCreditPayment.code || ""}
                 onChange={(e) => setNewCreditPayment({ ...newCreditPayment, code: e.target.value })}
-                className="col-span-3" 
+                className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-operation" className="text-right">
                 Opération
               </Label>
-              <Select value={newCreditPayment.operation_id} onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}>
+              <Select
+                value={newCreditPayment.operation_id}
+                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner une opération" />
                 </SelectTrigger>
@@ -477,7 +486,10 @@ export default function CreditPayments() {
               <Label htmlFor="edit-fiscal_year" className="text-right">
                 Année Fiscale
               </Label>
-              <Select value={newCreditPayment.fiscal_year_id} onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}>
+              <Select
+                value={newCreditPayment.fiscal_year_id}
+                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner une année fiscale" />
                 </SelectTrigger>

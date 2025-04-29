@@ -61,7 +61,7 @@ export function CreditPaymentsTable({
       header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
-        
+
         switch (status) {
           case "approved":
             return <Badge className="bg-green-500">Approuvé</Badge>;
@@ -91,7 +91,7 @@ export function CreditPaymentsTable({
       cell: ({ row }) => {
         const creditPayment = row.original;
         const isPending = creditPayment.status === "submitted";
-        
+
         return (
           <div className="flex items-center justify-end space-x-2">
             <Button variant="ghost" size="icon" onClick={() => onView(creditPayment)}>
@@ -103,7 +103,7 @@ export function CreditPaymentsTable({
             <Button variant="ghost" size="icon" onClick={() => onDelete(creditPayment)}>
               <Trash2 className="h-4 w-4" />
             </Button>
-            
+
             {isPending && onApprove && onReject && (
               <>
                 <Button variant="ghost" size="icon" className="text-green-600" onClick={() => onApprove(creditPayment)}>
