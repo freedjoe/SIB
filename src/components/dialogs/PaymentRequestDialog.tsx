@@ -1,23 +1,9 @@
-
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -44,15 +30,7 @@ interface PaymentRequestDialogProps {
   formatCurrency: (amount: number) => string;
 }
 
-export function PaymentRequestDialog({
-  open,
-  onOpenChange,
-  onSave,
-  type,
-  request,
-  engagements,
-  formatCurrency,
-}: PaymentRequestDialogProps) {
+export function PaymentRequestDialog({ open, onOpenChange, onSave, type, request, engagements, formatCurrency }: PaymentRequestDialogProps) {
   const [formData, setFormData] = useState<Partial<PaymentRequest>>({
     engagementId: "",
     amount: 0,
@@ -60,10 +38,10 @@ export function PaymentRequestDialog({
     startDate: new Date().toISOString().split("T")[0],
     description: "",
     requestDate: new Date().toISOString().split("T")[0],
-    status: "pending_officer"
+    status: "pending_officer",
   });
 
-  const [selectedEngagement, setSelectedEngagement] = useState<typeof engagements[0] | null>(null);
+  const [selectedEngagement, setSelectedEngagement] = useState<(typeof engagements)[0] | null>(null);
   const [availableBudget, setAvailableBudget] = useState<number>(0);
 
   useEffect(() => {
@@ -76,7 +54,7 @@ export function PaymentRequestDialog({
         description: request.description,
       });
 
-      const engagement = engagements.find(e => e.id === request.engagementId);
+      const engagement = engagements.find((e) => e.id === request.engagementId);
       if (engagement) {
         setSelectedEngagement(engagement);
         setAvailableBudget(engagement.budget - engagement.allocated);
@@ -89,7 +67,7 @@ export function PaymentRequestDialog({
         startDate: new Date().toISOString().split("T")[0],
         description: "",
         requestDate: new Date().toISOString().split("T")[0],
-        status: "pending_officer"
+        status: "pending_officer",
       });
       setSelectedEngagement(null);
       setAvailableBudget(0);
@@ -101,9 +79,9 @@ export function PaymentRequestDialog({
   };
 
   const handleEngagementChange = (value: string) => {
-    const engagement = engagements.find(e => e.id === value);
+    const engagement = engagements.find((e) => e.id === value);
     setFormData({ ...formData, engagementId: value });
-    
+
     if (engagement) {
       setSelectedEngagement(engagement);
       setAvailableBudget(engagement.budget - engagement.allocated);
@@ -121,34 +99,28 @@ export function PaymentRequestDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {type === "add" 
-              ? "Soumettre une demande de paiement" 
-              : type === "edit" 
-                ? "Modifier la demande de paiement"
-                : "Détails de la demande de paiement"
-            }
+            {type === "add"
+              ? "Soumettre une demande de paiement"
+              : type === "edit"
+              ? "Modifier la demande de paiement"
+              : "Détails de la demande de paiement"}
           </DialogTitle>
           <DialogDescription>
-            {type === "add" 
+            {type === "add"
               ? "Complétez le formulaire pour soumettre une nouvelle demande de paiement."
               : type === "edit"
-                ? "Modifiez les détails de la demande de paiement."
-                : ""
-            }
+              ? "Modifiez les détails de la demande de paiement."
+              : ""}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="engagement" className="text-right">
               Engagement
             </Label>
             <div className="col-span-3">
-              <Select
-                disabled={isReadOnly}
-                value={formData.engagementId}
-                onValueChange={handleEngagementChange}
-              >
+              <Select disabled={isReadOnly} value={formData.engagementId} onValueChange={handleEngagementChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un engagement" />
                 </SelectTrigger>
@@ -162,15 +134,20 @@ export function PaymentRequestDialog({
               </Select>
               {selectedEngagement && (
                 <div className="mt-2 text-sm">
-                  <p>Bénéficiaire: <span className="font-medium">{selectedEngagement.beneficiary}</span></p>
-                  <p>Budget disponible: <span className={`font-medium ${availableBudget > 0 ? "text-green-600" : "text-red-600"}`}>
-                    {formatCurrency(availableBudget)}
-                  </span></p>
+                  <p>
+                    Bénéficiaire: <span className="font-medium">{selectedEngagement.beneficiary}</span>
+                  </p>
+                  <p>
+                    Budget disponible:{" "}
+                    <span className={`font-medium ${availableBudget > 0 ? "text-green-600" : "text-red-600"}`}>
+                      {formatCurrency(availableBudget)}
+                    </span>
+                  </p>
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="amount" className="text-right">
               Montant
@@ -180,23 +157,21 @@ export function PaymentRequestDialog({
                 id="amount"
                 type="number"
                 disabled={isReadOnly}
-                value={formData.amount || ""}
-                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
+                value={formData.amount ?? ""}
+                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
               />
               {isBudgetExceeded && selectedEngagement && (
-                <p className="mt-1 text-sm text-red-500">
-                  Le montant demandé dépasse le budget disponible.
-                </p>
+                <p className="mt-1 text-sm text-red-500">Le montant demandé dépasse le budget disponible.</p>
               )}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Fréquence</Label>
             <div className="col-span-3">
               <RadioGroup
                 disabled={isReadOnly}
-                value={formData.frequency}
+                value={formData.frequency ?? "monthly"}
                 onValueChange={(value) => setFormData({ ...formData, frequency: value as "monthly" | "quarterly" | "annual" })}
                 className="flex space-x-4"
               >
@@ -215,7 +190,7 @@ export function PaymentRequestDialog({
               </RadioGroup>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="startDate" className="text-right">
               Date de début
@@ -225,11 +200,11 @@ export function PaymentRequestDialog({
               type="date"
               className="col-span-3"
               disabled={isReadOnly}
-              value={formData.startDate || ""}
+              value={formData.startDate ?? ""}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
             />
           </div>
-          
+
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="description" className="text-right pt-2">
               Description
@@ -238,30 +213,25 @@ export function PaymentRequestDialog({
               id="description"
               className="col-span-3 min-h-[100px]"
               disabled={isReadOnly}
-              value={formData.description || ""}
+              value={formData.description ?? ""}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Décrivez le but de cette demande de paiement..."
             />
           </div>
         </div>
-        
+
         <DialogFooter>
           {type !== "view" ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Annuler
               </Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={isBudgetExceeded || !formData.engagementId || !(formData.amount! > 0)}
-              >
+              <Button onClick={handleSave} disabled={isBudgetExceeded || !formData.engagementId || !(formData.amount! > 0)}>
                 {type === "add" ? "Soumettre la demande" : "Enregistrer"}
               </Button>
             </>
           ) : (
-            <Button onClick={() => onOpenChange(false)}>
-              Fermer
-            </Button>
+            <Button onClick={() => onOpenChange(false)}>Fermer</Button>
           )}
         </DialogFooter>
       </DialogContent>

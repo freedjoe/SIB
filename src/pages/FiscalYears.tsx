@@ -24,24 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/lib/supabase";
-
-// Define the interface for fiscal year data
-interface FiscalYear {
-  id: string;
-  year: number;
-  description?: string;
-  status: "planning" | "active" | "closed" | "draft";
-  // Calculated fields (not in database)
-  totalAllocatedAE: number;
-  totalAllocatedCP: number;
-  consumedAE: number;
-  consumedCP: number;
-  engagementCount: number;
-  ministryCount: number;
-  portfolioCount: number;
-  programCount: number;
-}
+import { useFiscalYears, useFiscalYear, useFiscalYearMutation } from "@/hooks/useSupabaseData";
+import { FiscalYear } from "@/types/database.types";
 
 // Sample chart data
 const monthlyConsumptionData = {
@@ -200,9 +184,8 @@ const getBadge = (label: string, value: number) => {
   );
 };
 
-export default function BudgetaryExercisesPage() {
+export default function FiscalYearsPage() {
   const { t } = useTranslation();
-  const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [filteredYears, setFilteredYears] = useState<FiscalYear[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<FiscalYear | null>(null);
@@ -212,7 +195,6 @@ export default function BudgetaryExercisesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [newFiscalYearData, setNewFiscalYearData] = useState({
     year: new Date().getFullYear() + 1,
     status: "draft" as FiscalYear["status"],
@@ -220,66 +202,24 @@ export default function BudgetaryExercisesPage() {
   });
 
   // Fetch fiscal years data
-  const fetchFiscalYears = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.from("fiscal_years").select("*").order("year", { ascending: false });
+  const {
+    data: fiscalYears = [],
+    isLoading: isLoadingFiscalYears,
+    refetch: refetchFiscalYears,
+  } = useFiscalYears({
+    staleTime: 1000 * 60 * 15, // 15 minutes - fiscal years don't change often
+  });
 
-      if (error) throw error;
-
-      const formattedData: FiscalYear[] = data.map((year) => ({
-        id: year.id,
-        year: year.year,
-        description: year.description || "",
-        status: year.status,
-        // Initialize calculated fields with zero values
-        totalAllocatedAE: 0,
-        totalAllocatedCP: 0,
-        consumedAE: 0,
-        consumedCP: 0,
-        engagementCount: 0,
-        ministryCount: 0,
-        portfolioCount: 0,
-        programCount: 0,
-      }));
-
-      setFiscalYears(formattedData);
-      setFilteredYears(formattedData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching fiscal years:", error);
+  // Use mutation hook for fiscal year operations
+  const fiscalYearMutation = useFiscalYearMutation({
+    onSuccess: () => {
+      refetchFiscalYears();
       toast({
-        title: t("common.error"),
-        description: t("budgetaryExercises.fetchError"),
-        variant: "destructive",
+        title: t("common.success"),
+        description: t("fiscalYears.operationSuccessful"),
       });
-      setLoading(false);
-    }
-  }, [t]);
-
-  // Initial data fetch and subscription setup
-  useEffect(() => {
-    fetchFiscalYears();
-
-    // Set up real-time subscription for fiscal years
-    const fiscalYearsSubscription = supabase
-      .channel("fiscal_years_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "fiscal_years",
-        },
-        () => {
-          fetchFiscalYears();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      fiscalYearsSubscription.unsubscribe();
-    };
-  }, [fetchFiscalYears]);
+    },
+  });
 
   useEffect(() => {
     let result = fiscalYears;
@@ -317,30 +257,25 @@ export default function BudgetaryExercisesPage() {
 
   const handleSaveFiscalYear = async () => {
     try {
-      const { data, error } = await supabase
-        .from("fiscal_years")
-        .insert({
+      await fiscalYearMutation.mutateAsync({
+        type: "INSERT",
+        data: {
           year: newFiscalYearData.year,
           status: newFiscalYearData.status,
           description: newFiscalYearData.description || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+        },
+      });
 
       setIsAddDialogOpen(false);
       toast({
-        title: t("budgetaryExercises.addedSuccess"),
-        description: t("budgetaryExercises.addedSuccessDescription"),
+        title: t("fiscalYears.addedSuccess"),
+        description: t("fiscalYears.addedSuccessDescription"),
       });
-
-      // Data will be updated via real-time subscription
     } catch (error) {
       console.error("Error creating fiscal year:", error);
       toast({
         title: t("common.error"),
-        description: t("budgetaryExercises.createError"),
+        description: t("fiscalYears.createError"),
         variant: "destructive",
       });
     }
@@ -350,29 +285,26 @@ export default function BudgetaryExercisesPage() {
     if (!selectedYear) return;
 
     try {
-      const { error } = await supabase
-        .from("fiscal_years")
-        .update({
+      await fiscalYearMutation.mutateAsync({
+        type: "UPDATE",
+        id: selectedYear.id,
+        data: {
           year: newFiscalYearData.year,
           status: newFiscalYearData.status,
           description: newFiscalYearData.description || null,
-        })
-        .eq("id", selectedYear.id);
-
-      if (error) throw error;
+        },
+      });
 
       setIsEditDialogOpen(false);
       toast({
-        title: t("budgetaryExercises.updatedSuccess"),
-        description: t("budgetaryExercises.updatedSuccessDescription"),
+        title: t("fiscalYears.updatedSuccess"),
+        description: t("fiscalYears.updatedSuccessDescription"),
       });
-
-      // Data will be updated via real-time subscription
     } catch (error) {
       console.error("Error updating fiscal year:", error);
       toast({
         title: t("common.error"),
-        description: t("budgetaryExercises.updateError"),
+        description: t("fiscalYears.updateError"),
         variant: "destructive",
       });
     }
@@ -382,22 +314,21 @@ export default function BudgetaryExercisesPage() {
     if (!selectedYear) return;
 
     try {
-      const { error } = await supabase.from("fiscal_years").delete().eq("id", selectedYear.id);
-
-      if (error) throw error;
+      await fiscalYearMutation.mutateAsync({
+        type: "DELETE",
+        id: selectedYear.id,
+      });
 
       setIsDeleteDialogOpen(false);
       toast({
-        title: t("budgetaryExercises.deletedSuccess"),
-        description: t("budgetaryExercises.deletedSuccessDescription"),
+        title: t("fiscalYears.deletedSuccess"),
+        description: t("fiscalYears.deletedSuccessDescription"),
       });
-
-      // Data will be updated via real-time subscription
     } catch (error) {
       console.error("Error deleting fiscal year:", error);
       toast({
         title: t("common.error"),
-        description: t("budgetaryExercises.deleteError"),
+        description: t("fiscalYears.deleteError"),
         variant: "destructive",
       });
     }
@@ -413,8 +344,8 @@ export default function BudgetaryExercisesPage() {
       setIsPdfPreviewOpen(true);
 
       toast({
-        title: t("budgetaryExercises.pdfGenerated"),
-        description: t("budgetaryExercises.pdfGeneratedDescription"),
+        title: t("fiscalYears.pdfGenerated"),
+        description: t("fiscalYears.pdfGeneratedDescription"),
       });
     }, 1500);
   };
@@ -422,8 +353,8 @@ export default function BudgetaryExercisesPage() {
   const handleDownloadPdf = () => {
     // Simulate PDF download
     toast({
-      title: t("budgetaryExercises.pdfDownloaded"),
-      description: t("budgetaryExercises.pdfDownloadedDescription"),
+      title: t("fiscalYears.pdfDownloaded"),
+      description: t("fiscalYears.pdfDownloadedDescription"),
     });
     setIsPdfPreviewOpen(false);
   };
@@ -433,32 +364,32 @@ export default function BudgetaryExercisesPage() {
       case "active":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-            {t("budgetaryExercises.status.active")}
+            {t("fiscalYears.status.active")}
           </Badge>
         );
       case "planning":
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
-            {t("budgetaryExercises.status.planning")}
+            {t("fiscalYears.status.planning")}
           </Badge>
         );
       case "closed":
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
-            {t("budgetaryExercises.status.closed")}
+            {t("fiscalYears.status.closed")}
           </Badge>
         );
       case "draft":
       default:
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
-            {t("budgetaryExercises.status.draft")}
+            {t("fiscalYears.status.draft")}
           </Badge>
         );
     }
   };
 
-  if (loading) {
+  if (isLoadingFiscalYears) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -472,27 +403,27 @@ export default function BudgetaryExercisesPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader title={t("budgetaryExercises.title")} description={t("budgetaryExercises.subtitle")}>
+      <DashboardHeader title={t("fiscalYears.title")} description={t("fiscalYears.subtitle")}>
         <Button onClick={() => setIsAddDialogOpen(true)} className="ml-auto">
           <FilePlus className="mr-2 h-4 w-4" />
-          {t("budgetaryExercises.addNew")}
+          {t("fiscalYears.addNew")}
         </Button>
       </DashboardHeader>
 
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>{t("budgetaryExercises.filters.title")}</CardTitle>
+          <CardTitle>{t("fiscalYears.filters.title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <Label htmlFor="searchInput">{t("budgetaryExercises.filters.search")}</Label>
+            <Label htmlFor="searchInput">{t("fiscalYears.filters.search")}</Label>
             <div className="relative">
               <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 id="searchInput"
                 type="search"
-                placeholder={t("budgetaryExercises.filters.searchPlaceholder")}
+                placeholder={t("fiscalYears.filters.searchPlaceholder")}
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -500,16 +431,16 @@ export default function BudgetaryExercisesPage() {
             </div>
           </div>
           <div className="w-full md:w-64">
-            <Label htmlFor="statusFilter">{t("budgetaryExercises.filters.status")}</Label>
+            <Label htmlFor="statusFilter">{t("fiscalYears.filters.status")}</Label>
             <Select value="all">
               <SelectTrigger id="statusFilter">
-                <SelectValue placeholder={t("budgetaryExercises.filters.allStatuses")} />
+                <SelectValue placeholder={t("fiscalYears.filters.allStatuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("budgetaryExercises.filters.allStatuses")}</SelectItem>
-                <SelectItem value="planning">{t("budgetaryExercises.status.planning")}</SelectItem>
-                <SelectItem value="active">{t("budgetaryExercises.status.active")}</SelectItem>
-                <SelectItem value="closed">{t("budgetaryExercises.status.closed")}</SelectItem>
+                <SelectItem value="all">{t("fiscalYears.filters.allStatuses")}</SelectItem>
+                <SelectItem value="planning">{t("fiscalYears.status.planning")}</SelectItem>
+                <SelectItem value="active">{t("fiscalYears.status.active")}</SelectItem>
+                <SelectItem value="closed">{t("fiscalYears.status.closed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -528,7 +459,7 @@ export default function BudgetaryExercisesPage() {
                       <Calendar className="mr-2 h-5 w-5 text-primary" />
                       {fiscalYear.year}
                     </CardTitle>
-                    <CardDescription>{t("budgetaryExercises.fiscalYear")}</CardDescription>
+                    <CardDescription>{t("fiscalYears.fiscalYear")}</CardDescription>
                   </div>
                   {getStatusBadge(fiscalYear.status)}
                 </div>
@@ -536,11 +467,11 @@ export default function BudgetaryExercisesPage() {
               <CardContent className="pb-2">
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedAE")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedAE")}</p>
                     <p className="font-semibold">{formatCurrency(fiscalYear.totalAllocatedAE)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedCP")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedCP")}</p>
                     <p className="font-semibold">{formatCurrency(fiscalYear.totalAllocatedCP)}</p>
                   </div>
                 </div>
@@ -555,7 +486,7 @@ export default function BudgetaryExercisesPage() {
                   {/* AE Consumption Progress */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{t("budgetaryExercises.aeConsumption")}</span>
+                      <span className="text-muted-foreground">{t("fiscalYears.aeConsumption")}</span>
                       <span className="font-medium">{Math.round((fiscalYear.consumedAE / fiscalYear.totalAllocatedAE) * 100)}%</span>
                     </div>
                     <Progress value={(fiscalYear.consumedAE / fiscalYear.totalAllocatedAE) * 100} className="h-2" />
@@ -564,7 +495,7 @@ export default function BudgetaryExercisesPage() {
                   {/* CP Consumption Progress */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{t("budgetaryExercises.cpConsumption")}</span>
+                      <span className="text-muted-foreground">{t("fiscalYears.cpConsumption")}</span>
                       <span className="font-medium">{Math.round((fiscalYear.consumedCP / fiscalYear.totalAllocatedCP) * 100)}%</span>
                     </div>
                     <Progress value={(fiscalYear.consumedCP / fiscalYear.totalAllocatedCP) * 100} className="h-2" />
@@ -573,15 +504,15 @@ export default function BudgetaryExercisesPage() {
 
                 <div className="grid grid-cols-3 gap-2 text-center mt-4">
                   <div className="bg-primary/10 rounded-md p-2">
-                    <p className="text-xs text-muted-foreground">{t("budgetaryExercises.ministries")}</p>
+                    <p className="text-xs text-muted-foreground">{t("fiscalYears.ministries")}</p>
                     <p className="font-semibold">{fiscalYear.ministryCount}</p>
                   </div>
                   <div className="bg-primary/10 rounded-md p-2">
-                    <p className="text-xs text-muted-foreground">{t("budgetaryExercises.portfolios")}</p>
+                    <p className="text-xs text-muted-foreground">{t("fiscalYears.portfolios")}</p>
                     <p className="font-semibold">{fiscalYear.portfolioCount}</p>
                   </div>
                   <div className="bg-primary/10 rounded-md p-2">
-                    <p className="text-xs text-muted-foreground">{t("budgetaryExercises.programs")}</p>
+                    <p className="text-xs text-muted-foreground">{t("fiscalYears.programs")}</p>
                     <p className="font-semibold">{fiscalYear.programCount}</p>
                   </div>
                 </div>
@@ -608,11 +539,7 @@ export default function BudgetaryExercisesPage() {
                     size="icon"
                     onClick={() => handleGeneratePdf(fiscalYear)}
                     disabled={generatingPdf && selectedYear?.id === fiscalYear.id}
-                    title={
-                      generatingPdf && selectedYear?.id === fiscalYear.id
-                        ? t("budgetaryExercises.generatingPdf")
-                        : t("budgetaryExercises.generatePdfReport")
-                    }
+                    title={generatingPdf && selectedYear?.id === fiscalYear.id ? t("fiscalYears.generatingPdf") : t("fiscalYears.generatePdfReport")}
                   >
                     <FileDown className="h-4 w-4" />
                   </Button>
@@ -635,11 +562,11 @@ export default function BudgetaryExercisesPage() {
               <div className="flex items-center justify-between">
                 <DialogTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
-                  {t("budgetaryExercises.detailsTitle", { year: selectedYear.year })}
+                  {t("fiscalYears.detailsTitle", { year: selectedYear.year })}
                 </DialogTitle>
                 {getStatusBadge(selectedYear.status)}
               </div>
-              <DialogDescription>{t("budgetaryExercises.detailsSubtitle")}</DialogDescription>
+              <DialogDescription>{t("fiscalYears.detailsSubtitle")}</DialogDescription>
             </DialogHeader>
 
             {selectedYear.description && (
@@ -652,32 +579,32 @@ export default function BudgetaryExercisesPage() {
               {/* Summary Card */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle>{t("budgetaryExercises.summary")}</CardTitle>
+                  <CardTitle>{t("fiscalYears.summary")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedAE")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedAE")}</p>
                       <p className="font-semibold">{formatCurrency(selectedYear.totalAllocatedAE)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedCP")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedCP")}</p>
                       <p className="font-semibold">{formatCurrency(selectedYear.totalAllocatedCP)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.consumedAE")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.consumedAE")}</p>
                       <p className="font-semibold">{formatCurrency(selectedYear.consumedAE)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.consumedCP")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.consumedCP")}</p>
                       <p className="font-semibold">{formatCurrency(selectedYear.consumedCP)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.engagements")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.engagements")}</p>
                       <p className="font-semibold">{selectedYear.engagementCount}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("budgetaryExercises.programs")}</p>
+                      <p className="text-sm text-muted-foreground">{t("fiscalYears.programs")}</p>
                       <p className="font-semibold">{selectedYear.programCount}</p>
                     </div>
                   </div>
@@ -687,7 +614,7 @@ export default function BudgetaryExercisesPage() {
               {/* Progress Card */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle>{t("budgetaryExercises.progress")}</CardTitle>
+                  <CardTitle>{t("fiscalYears.progress")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-4">
                   <div className="grid grid-cols-2 gap-8 w-full">
@@ -698,7 +625,7 @@ export default function BudgetaryExercisesPage() {
                         strokeWidth={10}
                         color="primary"
                       />
-                      <p className="mt-2 font-medium">{t("budgetaryExercises.aeConsumption")}</p>
+                      <p className="mt-2 font-medium">{t("fiscalYears.aeConsumption")}</p>
                     </div>
                     <div className="flex flex-col items-center">
                       <CircularProgressIndicator
@@ -707,7 +634,7 @@ export default function BudgetaryExercisesPage() {
                         strokeWidth={10}
                         color="secondary"
                       />
-                      <p className="mt-2 font-medium">{t("budgetaryExercises.cpConsumption")}</p>
+                      <p className="mt-2 font-medium">{t("fiscalYears.cpConsumption")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -716,7 +643,7 @@ export default function BudgetaryExercisesPage() {
               {/* Consumption Over Time Chart */}
               <Card className="md:col-span-2">
                 <CardHeader className="pb-2">
-                  <CardTitle>{t("budgetaryExercises.consumptionOverTime")}</CardTitle>
+                  <CardTitle>{t("fiscalYears.consumptionOverTime")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
@@ -728,7 +655,7 @@ export default function BudgetaryExercisesPage() {
               {/* Budget Distribution Chart */}
               <Card className="md:col-span-2">
                 <CardHeader className="pb-2">
-                  <CardTitle>{t("budgetaryExercises.budgetDistribution")}</CardTitle>
+                  <CardTitle>{t("fiscalYears.budgetDistribution")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -747,7 +674,7 @@ export default function BudgetaryExercisesPage() {
               <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
                 {t("common.close")}
               </Button>
-              <Button>{t("budgetaryExercises.viewFullReport")}</Button>
+              <Button>{t("fiscalYears.viewFullReport")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -761,12 +688,12 @@ export default function BudgetaryExercisesPage() {
             <span className="sr-only">Close</span>
           </DialogClose>
           <DialogHeader>
-            <DialogTitle>{t("budgetaryExercises.addNewTitle")}</DialogTitle>
-            <DialogDescription>{t("budgetaryExercises.addNewDescription")}</DialogDescription>
+            <DialogTitle>{t("fiscalYears.addNewTitle")}</DialogTitle>
+            <DialogDescription>{t("fiscalYears.addNewDescription")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="year">{t("budgetaryExercises.yearField")}</Label>
+              <Label htmlFor="year">{t("fiscalYears.yearField")}</Label>
               <Input
                 id="year"
                 type="number"
@@ -777,27 +704,27 @@ export default function BudgetaryExercisesPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="status">{t("budgetaryExercises.statusField")}</Label>
+              <Label htmlFor="status">{t("fiscalYears.statusField")}</Label>
               <Select
                 value={newFiscalYearData.status}
                 onValueChange={(value: FiscalYear["status"]) => setNewFiscalYearData({ ...newFiscalYearData, status: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("budgetaryExercises.selectStatus")} />
+                  <SelectValue placeholder={t("fiscalYears.selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="draft">{t("budgetaryExercises.status.draft")}</SelectItem>
-                  <SelectItem value="planning">{t("budgetaryExercises.status.planning")}</SelectItem>
-                  <SelectItem value="active">{t("budgetaryExercises.status.active")}</SelectItem>
-                  <SelectItem value="closed">{t("budgetaryExercises.status.closed")}</SelectItem>
+                  <SelectItem value="draft">{t("fiscalYears.status.draft")}</SelectItem>
+                  <SelectItem value="planning">{t("fiscalYears.status.planning")}</SelectItem>
+                  <SelectItem value="active">{t("fiscalYears.status.active")}</SelectItem>
+                  <SelectItem value="closed">{t("fiscalYears.status.closed")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">{t("budgetaryExercises.descriptionField")}</Label>
+              <Label htmlFor="description">{t("fiscalYears.descriptionField")}</Label>
               <Textarea
                 id="description"
-                placeholder={t("budgetaryExercises.descriptionPlaceholder")}
+                placeholder={t("fiscalYears.descriptionPlaceholder")}
                 value={newFiscalYearData.description}
                 onChange={(e) => setNewFiscalYearData({ ...newFiscalYearData, description: e.target.value })}
                 rows={4}
@@ -822,12 +749,12 @@ export default function BudgetaryExercisesPage() {
               <span className="sr-only">Close</span>
             </DialogClose>
             <DialogHeader>
-              <DialogTitle>{t("budgetaryExercises.editTitle")}</DialogTitle>
-              <DialogDescription>{t("budgetaryExercises.editDescription")}</DialogDescription>
+              <DialogTitle>{t("fiscalYears.editTitle")}</DialogTitle>
+              <DialogDescription>{t("fiscalYears.editDescription")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-year">{t("budgetaryExercises.yearField")}</Label>
+                <Label htmlFor="edit-year">{t("fiscalYears.yearField")}</Label>
                 <Input
                   id="edit-year"
                   type="number"
@@ -838,27 +765,27 @@ export default function BudgetaryExercisesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-status">{t("budgetaryExercises.statusField")}</Label>
+                <Label htmlFor="edit-status">{t("fiscalYears.statusField")}</Label>
                 <Select
                   value={newFiscalYearData.status}
                   onValueChange={(value: FiscalYear["status"]) => setNewFiscalYearData({ ...newFiscalYearData, status: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("budgetaryExercises.selectStatus")} />
+                    <SelectValue placeholder={t("fiscalYears.selectStatus")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">{t("budgetaryExercises.status.draft")}</SelectItem>
-                    <SelectItem value="planning">{t("budgetaryExercises.status.planning")}</SelectItem>
-                    <SelectItem value="active">{t("budgetaryExercises.status.active")}</SelectItem>
-                    <SelectItem value="closed">{t("budgetaryExercises.status.closed")}</SelectItem>
+                    <SelectItem value="draft">{t("fiscalYears.status.draft")}</SelectItem>
+                    <SelectItem value="planning">{t("fiscalYears.status.planning")}</SelectItem>
+                    <SelectItem value="active">{t("fiscalYears.status.active")}</SelectItem>
+                    <SelectItem value="closed">{t("fiscalYears.status.closed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">{t("budgetaryExercises.descriptionField")}</Label>
+                <Label htmlFor="edit-description">{t("fiscalYears.descriptionField")}</Label>
                 <Textarea
                   id="edit-description"
-                  placeholder={t("budgetaryExercises.descriptionPlaceholder")}
+                  placeholder={t("fiscalYears.descriptionPlaceholder")}
                   value={newFiscalYearData.description}
                   onChange={(e) => setNewFiscalYearData({ ...newFiscalYearData, description: e.target.value })}
                   rows={4}
@@ -879,8 +806,8 @@ export default function BudgetaryExercisesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("budgetaryExercises.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("budgetaryExercises.deleteDescription")}</AlertDialogDescription>
+            <AlertDialogTitle>{t("fiscalYears.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("fiscalYears.deleteDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
@@ -902,39 +829,39 @@ export default function BudgetaryExercisesPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileDown className="h-5 w-5 text-primary" />
-                {t("budgetaryExercises.pdfReportTitle", { year: selectedYear.year })}
+                {t("fiscalYears.pdfReportTitle", { year: selectedYear.year })}
               </DialogTitle>
-              <DialogDescription>{t("budgetaryExercises.pdfReportDescription")}</DialogDescription>
+              <DialogDescription>{t("fiscalYears.pdfReportDescription")}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
               {/* Report Header */}
               <div className="text-center space-y-2 border-b pb-4">
-                <h1 className="text-2xl font-bold">{t("budgetaryExercises.reportTitle")}</h1>
+                <h1 className="text-2xl font-bold">{t("fiscalYears.reportTitle")}</h1>
                 <h2 className="text-xl">
-                  {t("budgetaryExercises.fiscalYear")} {selectedYear.year}
+                  {t("fiscalYears.fiscalYear")} {selectedYear.year}
                 </h2>
                 <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
               </div>
 
               {/* Summary Section */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.summary")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.summary")}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedAE")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedAE")}</p>
                     <p className="font-semibold">{formatCurrency(selectedYear.totalAllocatedAE)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.allocatedCP")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.allocatedCP")}</p>
                     <p className="font-semibold">{formatCurrency(selectedYear.totalAllocatedCP)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.consumedAE")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.consumedAE")}</p>
                     <p className="font-semibold">{formatCurrency(selectedYear.consumedAE)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">{t("budgetaryExercises.consumedCP")}</p>
+                    <p className="text-sm text-muted-foreground">{t("fiscalYears.consumedCP")}</p>
                     <p className="font-semibold">{formatCurrency(selectedYear.consumedCP)}</p>
                   </div>
                 </div>
@@ -942,7 +869,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Consumption Progress Section */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.progress")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.progress")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="flex flex-col items-center">
                     <CircularProgressIndicator
@@ -951,7 +878,7 @@ export default function BudgetaryExercisesPage() {
                       strokeWidth={12}
                       color="primary"
                       showValue={true}
-                      label={t("budgetaryExercises.aeConsumption")}
+                      label={t("fiscalYears.aeConsumption")}
                     />
                   </div>
                   <div className="flex flex-col items-center">
@@ -961,7 +888,7 @@ export default function BudgetaryExercisesPage() {
                       strokeWidth={12}
                       color="secondary"
                       showValue={true}
-                      label={t("budgetaryExercises.cpConsumption")}
+                      label={t("fiscalYears.cpConsumption")}
                     />
                   </div>
                 </div>
@@ -969,7 +896,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Monthly Consumption Chart */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.consumptionOverTime")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.consumptionOverTime")}</h3>
                 <div className="h-[300px]">
                   <LineChart data={monthlyConsumptionData} />
                 </div>
@@ -977,7 +904,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Ministry Distribution */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.ministryDistribution")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.ministryDistribution")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <PieChart data={ministryDistributionData} />
@@ -990,7 +917,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Programs Distribution */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.programDistribution")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.programDistribution")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <PieChart data={programDistributionData} />
@@ -1003,7 +930,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Subprograms Distribution */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.subprogramDistribution")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.subprogramDistribution")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <PieChart data={subprogramDistributionData} />
@@ -1016,7 +943,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Dotations Distribution */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.dotationDistribution")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.dotationDistribution")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <PieChart data={dotationDistributionData} />
@@ -1029,7 +956,7 @@ export default function BudgetaryExercisesPage() {
 
               {/* Actions Distribution */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{t("budgetaryExercises.actionDistribution")}</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">{t("fiscalYears.actionDistribution")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="h-[300px]">
                     <PieChart data={actionsDistributionData} />
@@ -1047,7 +974,7 @@ export default function BudgetaryExercisesPage() {
               </Button>
               <Button onClick={handleDownloadPdf} className="gap-2">
                 <Download className="h-4 w-4" />
-                {t("budgetaryExercises.downloadPdf")}
+                {t("fiscalYears.downloadPdf")}
               </Button>
             </DialogFooter>
           </DialogContent>

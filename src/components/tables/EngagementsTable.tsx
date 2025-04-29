@@ -103,21 +103,39 @@ export function EngagementsTable({
     {
       accessorKey: "operation",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Opération" />,
-      cell: ({ row }) => (
-        <div className="max-w-[250px] truncate" title={row.getValue("operation")}>
-          {row.getValue("operation")}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const operation = row.getValue("operation");
+        const displayValue =
+          typeof operation === "object"
+            ? operation && "name" in operation
+              ? (operation as any).name
+              : JSON.stringify(operation)
+            : String(operation);
+        return (
+          <div className="max-w-[250px] truncate" title={displayValue}>
+            {displayValue}
+          </div>
+        );
+      },
       filterFn: "includesString",
     },
     {
       accessorKey: "beneficiaire",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Bénéficiaire" />,
-      cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.getValue("beneficiaire")}>
-          {row.getValue("beneficiaire")}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const beneficiaire = row.getValue("beneficiaire");
+        const displayValue =
+          typeof beneficiaire === "object"
+            ? beneficiaire && "name" in beneficiaire
+              ? (beneficiaire as any).name
+              : JSON.stringify(beneficiaire)
+            : String(beneficiaire);
+        return (
+          <div className="max-w-[200px] truncate" title={displayValue}>
+            {displayValue}
+          </div>
+        );
+      },
       filterFn: "includesString",
     },
     {
@@ -135,19 +153,32 @@ export function EngagementsTable({
     {
       accessorKey: "statut",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
-      cell: ({ row }) => getStatusBadge(row.getValue("statut")),
+      cell: ({ row }) => {
+        const status = row.getValue("statut");
+        const statusStr = typeof status === "object" ? (status ? JSON.stringify(status) : "Inconnu") : String(status);
+        return getStatusBadge(statusStr);
+      },
       filterFn: "includesString",
     },
     {
       accessorKey: "priorite",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Priorité" />,
-      cell: ({ row }) => getPriorityBadge(row.getValue("priorite")),
+      cell: ({ row }) => {
+        const priority = row.getValue("priorite");
+        const priorityStr = typeof priority === "object" ? (priority ? JSON.stringify(priority) : "Inconnue") : String(priority);
+        return getPriorityBadge(priorityStr);
+      },
       filterFn: "includesString",
     },
     {
       accessorKey: "date",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
-      cell: ({ row }) => formatDate(row.getValue("date")),
+      cell: ({ row }) => {
+        const date = row.getValue("date");
+        const dateStr =
+          typeof date === "object" ? (date && "toISOString" in date ? (date as Date).toISOString() : JSON.stringify(date)) : String(date);
+        return formatDate(dateStr);
+      },
       filterFn: "includesString",
     },
   ];

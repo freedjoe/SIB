@@ -1,22 +1,8 @@
-
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 
 interface Payment {
@@ -42,8 +28,8 @@ interface PaymentDialogProps {
   onDelete?: () => void;
   formatCurrency: (amount: number) => string;
   formatDate: (date: string | null) => string;
-  engagements: Array<{ id: string, ref: string, operation: string, beneficiary: string }>;
-  getStatusBadge: (status: Payment['status']) => React.ReactNode;
+  engagements: Array<{ id: string; ref: string; operation: string; beneficiary: string }>;
+  getStatusBadge: (status: Payment["status"]) => React.ReactNode;
 }
 
 export function PaymentDialog({
@@ -56,14 +42,14 @@ export function PaymentDialog({
   formatCurrency,
   formatDate,
   engagements,
-  getStatusBadge
+  getStatusBadge,
 }: PaymentDialogProps) {
   const [formData, setFormData] = useState<Partial<Payment>>({
     engagementId: "",
     amount: 0,
     requestDate: new Date().toISOString().split("T")[0],
     status: "pending",
-    description: ""
+    description: "",
   });
 
   useEffect(() => {
@@ -73,7 +59,7 @@ export function PaymentDialog({
         amount: payment.amount,
         requestDate: payment.requestDate,
         status: payment.status,
-        description: payment.description
+        description: payment.description,
       });
     } else {
       setFormData({
@@ -81,7 +67,7 @@ export function PaymentDialog({
         amount: 0,
         requestDate: new Date().toISOString().split("T")[0],
         status: "pending",
-        description: ""
+        description: "",
       });
     }
   }, [payment, type, open]);
@@ -94,21 +80,31 @@ export function PaymentDialog({
 
   const getTitleByType = () => {
     switch (type) {
-      case "add": return "Ajouter un nouveau paiement";
-      case "edit": return "Modifier le paiement";
-      case "view": return "Détails du paiement";
-      case "delete": return "Confirmer la suppression";
-      default: return "";
+      case "add":
+        return "Ajouter un nouveau paiement";
+      case "edit":
+        return "Modifier le paiement";
+      case "view":
+        return "Détails du paiement";
+      case "delete":
+        return "Confirmer la suppression";
+      default:
+        return "";
     }
   };
 
   const getDescriptionByType = () => {
     switch (type) {
-      case "add": return "Complétez le formulaire pour ajouter un nouveau paiement.";
-      case "edit": return "Modifiez les détails du paiement.";
-      case "view": return "";
-      case "delete": return "Êtes-vous sûr de vouloir supprimer ce paiement? Cette action est irréversible.";
-      default: return "";
+      case "add":
+        return "Complétez le formulaire pour ajouter un nouveau paiement.";
+      case "edit":
+        return "Modifiez les détails du paiement.";
+      case "view":
+        return "";
+      case "delete":
+        return "Êtes-vous sûr de vouloir supprimer ce paiement? Cette action est irréversible.";
+      default:
+        return "";
     }
   };
 
@@ -167,9 +163,7 @@ export function PaymentDialog({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce paiement? Cette action est irréversible.
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce paiement? Cette action est irréversible.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p>
@@ -186,10 +180,7 @@ export function PaymentDialog({
             </p>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
             <Button variant="destructive" onClick={onDelete}>
@@ -206,9 +197,7 @@ export function PaymentDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{getTitleByType()}</DialogTitle>
-          <DialogDescription>
-            {getDescriptionByType()}
-          </DialogDescription>
+          <DialogDescription>{getDescriptionByType()}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -218,12 +207,12 @@ export function PaymentDialog({
             <Select
               value={formData.engagementId}
               onValueChange={(value) => {
-                const selectedEngagement = engagements.find(e => e.id === value);
-                setFormData({ 
-                  ...formData, 
+                const selectedEngagement = engagements.find((e) => e.id === value);
+                setFormData({
+                  ...formData,
                   engagementId: value,
                   operationName: selectedEngagement?.operation || "",
-                  beneficiary: selectedEngagement?.beneficiary || ""
+                  beneficiary: selectedEngagement?.beneficiary || "",
                 });
               }}
               disabled={isReadOnly}
@@ -248,8 +237,8 @@ export function PaymentDialog({
               id="amount"
               type="number"
               className="col-span-3"
-              value={formData.amount || ""}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
+              value={formData.amount ?? ""}
+              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
               disabled={isReadOnly}
             />
           </div>
@@ -261,7 +250,7 @@ export function PaymentDialog({
               id="requestDate"
               type="date"
               className="col-span-3"
-              value={formData.requestDate || ""}
+              value={formData.requestDate ?? ""}
               onChange={(e) => setFormData({ ...formData, requestDate: e.target.value })}
               disabled={isReadOnly}
             />
@@ -273,11 +262,11 @@ export function PaymentDialog({
               </Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => 
-                  setFormData({ 
-                    ...formData, 
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
                     status: value as "pending" | "approved" | "rejected" | "paid",
-                    paymentDate: value === "paid" ? new Date().toISOString().split("T")[0] : null
+                    paymentDate: value === "paid" ? new Date().toISOString().split("T")[0] : null,
                   })
                 }
                 disabled={isReadOnly}
@@ -301,7 +290,7 @@ export function PaymentDialog({
             <Input
               id="description"
               className="col-span-3"
-              value={formData.description || ""}
+              value={formData.description ?? ""}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               disabled={isReadOnly}
             />
@@ -313,9 +302,7 @@ export function PaymentDialog({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Annuler
               </Button>
-              <Button onClick={handleSave}>
-                {type === "add" ? "Ajouter" : "Enregistrer"}
-              </Button>
+              <Button onClick={handleSave}>{type === "add" ? "Ajouter" : "Enregistrer"}</Button>
             </>
           )}
         </DialogFooter>

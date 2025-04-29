@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
-import { TableRow, TableTypes, TableRowWithRelations, TableTypesWithRelations } from "@/types/database.types";
+import { TableRow, TableTypes } from "@/types/database.types";
+import { localStorageCache } from "@/lib/utils";
 
 // Type definitions for query and mutation options
 type BaseQueryOptions = {
@@ -46,18 +47,32 @@ export function useSupabaseQuery<T extends keyof TableTypes>(table: T, queryKey:
     select = "*",
     filter,
     enabled = true,
-    staleTime = 1000 * 60 * 5, // 5 minutes
+    staleTime = 1000 * 60 * 5, // 5 minutes by default
     onError,
   } = options;
 
   return useQuery({
     queryKey: [table, ...queryKey],
     queryFn: async () => {
+      // Generate cache key for this specific query
+      const cacheKey = localStorageCache.getCacheKey(String(table), queryKey);
+
+      // Try to get data from cache first
+      const cachedData = localStorageCache.getFromCache<TableTypes[T][]>(cacheKey);
+
+      // If we have fresh cached data, use it
+      if (cachedData && !localStorageCache.isStale(cachedData.timestamp, staleTime)) {
+        console.log(`Using cached data for ${String(table)}:`, queryKey);
+        return cachedData.data;
+      }
+
+      // If no cached data or it's stale, fetch from API
       try {
-        let query = supabase.from(table).select(select);
+        let query = supabase.from(String(table)).select(select);
 
         if (filter) {
-          query = filter(query);
+          // Apply filter function using type casting to avoid TS errors
+          query = (filter as any)(query);
         }
 
         if (options.sort) {
@@ -67,15 +82,21 @@ export function useSupabaseQuery<T extends keyof TableTypes>(table: T, queryKey:
         const { data, error } = await query;
 
         if (error) throw error;
-        return data as TableTypes[T][];
+
+        // Cache the fresh data
+        if (data) {
+          localStorageCache.saveToCache(cacheKey, data);
+        }
+
+        return data;
       } catch (error) {
-        console.error(`Error fetching data from ${table}:`, error);
+        console.error(`Error fetching data from ${String(table)}:`, error);
         if (onError && error instanceof Error) {
           onError(error);
         } else {
           toast({
             title: "Error",
-            description: `Failed to load data from ${table}`,
+            description: `Failed to load data from ${String(table)}`,
             variant: "destructive",
           });
         }
@@ -133,11 +154,7 @@ export function useSupabaseRealtime(table: string, queryKey: string[] = []) {
 /**
  * Combined hook for fetching data and optionally setting up realtime subscriptions
  */
-export function useSupabaseData<T extends keyof TableTypesWithRelations>(
-  table: T,
-  queryKey: string[] = [],
-  options: QueryOptions<TableTypesWithRelations[T]> = {}
-) {
+export function useSupabaseData<T extends keyof TableTypes>(table: T, queryKey: string[] = [], options: QueryOptions<TableTypes[T]> = {}) {
   const { realtime = true, ...queryOptions } = options;
   const query = useSupabaseQuery<T>(table, queryKey, queryOptions);
 
@@ -851,7 +868,101 @@ export function useCreditPaymentsByOperation(operationId: string | null, options
 export function useCreditPaymentMutation(options: MutationOptions = {}) {
   return useSupabaseMutation("credit_payments", {
     ...options,
-    invalidateTables: ["operations", ...(options.invalidateTables || [])],
+  });
+}
+
+// --- Payments ---
+export function usePayments(options: QueryOptions = {}) {
+  return useSupabaseData("payments", ["all"], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    sort: options.sort || { column: "date", ascending: false },
+  });
+}
+
+export function usePayment(id: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payments", [id], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("id", id),
+    enabled: !!id && options.enabled !== false,
+  });
+}
+
+export function usePaymentsByEngagement(engagementId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payments", ["by_engagement", engagementId], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("engagement_id", engagementId),
+    enabled: !!engagementId && options.enabled !== false,
+  });
+}
+
+export function usePaymentsByOperation(operationId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payments", ["by_operation", operationId], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("operation_id", operationId),
+    enabled: !!operationId && options.enabled !== false,
+  });
+}
+
+export function usePaymentMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("payments", {
+    ...options,
+    invalidateTables: ["engagements", "operations", ...(options.invalidateTables || [])],
+  });
+}
+
+// --- Payment Requests ---
+export function usePaymentRequests(options: QueryOptions = {}) {
+  return useSupabaseData("payment_requests", ["all"], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    sort: options.sort || { column: "request_date", ascending: false },
+  });
+}
+
+export function usePaymentRequest(id: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payment_requests", [id], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("id", id),
+    enabled: !!id && options.enabled !== false,
+  });
+}
+
+export function usePaymentRequestsByEngagement(engagementId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payment_requests", ["by_engagement", engagementId], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("engagement_id", engagementId),
+    enabled: !!engagementId && options.enabled !== false,
+  });
+}
+
+export function usePaymentRequestsByOperation(operationId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("payment_requests", ["by_operation", operationId], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("operation_id", operationId),
+    enabled: !!operationId && options.enabled !== false,
+  });
+}
+
+export function usePaymentRequestsByStatus(status: string, options: QueryOptions = {}) {
+  return useSupabaseData("payment_requests", ["by_status", status], {
+    ...options,
+    select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
+    filter: (query) => query.eq("status", status),
+    enabled: !!status && options.enabled !== false,
+  });
+}
+
+export function usePaymentRequestMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("payment_requests", {
+    ...options,
+    invalidateTables: ["payments", "engagements", "operations", ...(options.invalidateTables || [])],
   });
 }
 
@@ -952,165 +1063,6 @@ export function useCPConsumptionMutation(options: MutationOptions = {}) {
     ...options,
     invalidateTables: ["cp_mobilisations", ...(options.invalidateTables || [])],
   });
-}
-
-// --- Payments ---
-export function usePayments(options: QueryOptions = {}) {
-  return useSupabaseData("payments", ["all"], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-  });
-}
-
-export function usePayment(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("payments", [id], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("id", id),
-    enabled: !!id && options.enabled !== false,
-  });
-}
-
-export function usePaymentsByOperation(operationId: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("payments", ["by_operation", operationId], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("operation_id", operationId),
-    enabled: !!operationId && options.enabled !== false,
-  });
-}
-
-export function usePaymentMutation(options: MutationOptions = {}) {
-  return useSupabaseMutation("payments", {
-    ...options,
-    invalidateTables: ["operations", ...(options.invalidateTables || [])],
-  });
-}
-
-// --- Payment Requests ---
-export function usePaymentRequests(options: QueryOptions = {}) {
-  return useSupabaseData("payment_requests", ["all"], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-  });
-}
-
-export function usePaymentRequest(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("payment_requests", [id], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("id", id),
-    enabled: !!id && options.enabled !== false,
-  });
-}
-
-export function usePaymentRequestsByOperation(operationId: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("payment_requests", ["by_operation", operationId], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("operation_id", operationId),
-    enabled: !!operationId && options.enabled !== false,
-  });
-}
-
-export function usePaymentRequestMutation(options: MutationOptions = {}) {
-  return useSupabaseMutation("payment_requests", {
-    ...options,
-    invalidateTables: ["operations", ...(options.invalidateTables || [])],
-  });
-}
-
-// --- CP Alerts ---
-export function useCPAlerts(options: QueryOptions = {}) {
-  return useSupabaseData("cp_alerts", ["all"], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-  });
-}
-
-export function useCPAlert(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("cp_alerts", [id], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("id", id),
-    enabled: !!id && options.enabled !== false,
-  });
-}
-
-export function useCPAlertsByOperation(operationId: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("cp_alerts", ["by_operation", operationId], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("operation_id", operationId),
-    enabled: !!operationId && options.enabled !== false,
-  });
-}
-
-export function useCPAlertMutation(options: MutationOptions = {}) {
-  return useSupabaseMutation("cp_alerts", options);
-}
-
-// --- Extra Engagements ---
-export function useExtraEngagements(options: QueryOptions = {}) {
-  return useSupabaseData("extra_engagements", ["all"], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-  });
-}
-
-export function useExtraEngagement(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("extra_engagements", [id], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("id", id),
-    enabled: !!id && options.enabled !== false,
-  });
-}
-
-export function useExtraEngagementsByOperation(operationId: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("extra_engagements", ["by_operation", operationId], {
-    ...options,
-    select: options.select || "*, operation:operation_id(*)",
-    filter: (query) => query.eq("operation_id", operationId),
-    enabled: !!operationId && options.enabled !== false,
-  });
-}
-
-export function useExtraEngagementMutation(options: MutationOptions = {}) {
-  return useSupabaseMutation("extra_engagements", {
-    ...options,
-    invalidateTables: ["operations", ...(options.invalidateTables || [])],
-  });
-}
-
-// --- Tax Revenues ---
-export function useTaxRevenues(options: QueryOptions = {}) {
-  return useSupabaseData("tax_revenues", ["all"], {
-    ...options,
-    select: options.select || "*, fiscal_year:fiscal_year_id(*)",
-  });
-}
-
-export function useTaxRevenue(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("tax_revenues", [id], {
-    ...options,
-    select: options.select || "*, fiscal_year:fiscal_year_id(*)",
-    filter: (query) => query.eq("id", id),
-    enabled: !!id && options.enabled !== false,
-  });
-}
-
-export function useTaxRevenuesByFiscalYear(fiscalYearId: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("tax_revenues", ["by_fiscal_year", fiscalYearId], {
-    ...options,
-    select: options.select || "*, fiscal_year:fiscal_year_id(*)",
-    filter: (query) => query.eq("fiscal_year_id", fiscalYearId),
-    enabled: !!fiscalYearId && options.enabled !== false,
-  });
-}
-
-export function useTaxRevenueMutation(options: MutationOptions = {}) {
-  return useSupabaseMutation("tax_revenues", options);
 }
 
 // --- Special Funds ---

@@ -16,107 +16,12 @@ import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
 import { useEffect } from "react";
 import { ReevaluationsTable } from "@/components/tables/ReevaluationsTable";
 import { getAllEngagementReevaluations, EngagementReevaluationWithRelations } from "@/services/engagementReevaluationsService";
-import { EngagementsTable, Engagement } from "@/components/tables/EngagementsTable";
-
-const mockEngagements: Engagement[] = [
-  {
-    id: "ENG001",
-    operation: "Rénovation des routes nationales",
-    beneficiaire: "Entreprise de construction ABC",
-    montant_demande: 2500000,
-    montant_approuve: 2200000,
-    statut: "Approuvé",
-    date: "2023-08-15",
-    priorite: "Haute",
-    demande_par: "Département des travaux publics",
-  },
-  {
-    id: "ENG002",
-    operation: "Équipement des laboratoires universitaires",
-    beneficiaire: "Université des Sciences",
-    montant_demande: 1200000,
-    montant_approuve: null,
-    statut: "En attente",
-    date: "2023-09-02",
-    priorite: "Moyenne",
-    demande_par: "Ministère de l'Enseignement Supérieur",
-  },
-  {
-    id: "ENG003",
-    operation: "Construction d'un hôpital",
-    beneficiaire: "Entreprise de BTP XYZ",
-    montant_demande: 5000000,
-    montant_approuve: null,
-    statut: "En attente",
-    date: "2023-09-05",
-    priorite: "Haute",
-    demande_par: "Ministère de la Santé",
-  },
-  {
-    id: "ENG004",
-    operation: "Achat de matériel informatique",
-    beneficiaire: "Fournisseur Informatique DEF",
-    montant_demande: 800000,
-    montant_approuve: 750000,
-    statut: "Approuvé",
-    date: "2023-08-25",
-    priorite: "Moyenne",
-    demande_par: "Direction des Systèmes d'Information",
-  },
-  {
-    id: "ENG005",
-    operation: "Programme de formation continue",
-    beneficiaire: "Centre de Formation Professionnelle",
-    montant_demande: 350000,
-    montant_approuve: 0,
-    statut: "Rejeté",
-    date: "2023-08-10",
-    priorite: "Basse",
-    demande_par: "Direction des Ressources Humaines",
-  },
-  {
-    id: "ENG006",
-    operation: "Équipement médical",
-    beneficiaire: "Fournisseur Médical MediPlus",
-    montant_demande: 1800000,
-    montant_approuve: null,
-    statut: "En attente",
-    date: "2023-09-08",
-    priorite: "Haute",
-    demande_par: "Direction Centrale des Hôpitaux",
-  },
-];
-
-const beneficiaires = [
-  "Entreprise de construction ABC",
-  "Université des Sciences",
-  "Entreprise de BTP XYZ",
-  "Fournisseur Informatique DEF",
-  "Centre de Formation Professionnelle",
-  "Fournisseur Médical MediPlus",
-];
-
-const operations = [
-  "Rénovation des routes nationales",
-  "Équipement des laboratoires universitaires",
-  "Construction d'un hôpital",
-  "Achat de matériel informatique",
-  "Programme de formation continue",
-  "Équipement médical",
-];
-
-const departments = [
-  "Département des travaux publics",
-  "Ministère de l'Enseignement Supérieur",
-  "Ministère de la Santé",
-  "Direction des Systèmes d'Information",
-  "Direction des Ressources Humaines",
-  "Direction Centrale des Hôpitaux",
-];
+import { EngagementsTable } from "@/components/tables/EngagementsTable";
+import { useEngagements, useOperations, useMinistries, useEngagementMutation } from "@/hooks/useSupabaseData";
+import { Engagement, Operation, Ministry } from "@/types/database.types";
 
 export default function Engagements() {
   const { t } = useTranslation();
-  const [engagements, setEngagements] = useState<Engagement[]>(mockEngagements);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("liste");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -140,22 +45,33 @@ export default function Engagements() {
   const [reevaluations, setReevaluations] = useState<EngagementReevaluationWithRelations[]>([]);
   const [reevaluationSearchTerm, setReevaluationSearchTerm] = useState("");
 
-  const [loading, setLoading] = useState(false); // Add this if not already present
+  // Use our custom React Query hooks with staleTime configurations for local storage persistence
+  const {
+    data: engagementsData = [],
+    isLoading: isLoadingEngagements,
+    refetch: refetchEngagements,
+  } = useEngagements({
+    staleTime: 1000 * 60 * 10, // 10 minutes - engagements change moderately often
+  });
 
-  useEffect(() => {
-    async function fetchReevaluations() {
-      try {
-        setLoading(true); // Add this line to set loading to true when fetching reevaluations
-        const res = await getAllEngagementReevaluations();
-        setReevaluations(res);
-      } catch (error) {
-        // Optionally toast error
-      } finally {
-        setLoading(false); // Add this line to set loading to false after fetching reevaluations
-      }
-    }
-    fetchReevaluations();
-  }, []);
+  const { data: operationsData = [], isLoading: isLoadingOperations } = useOperations({
+    staleTime: 1000 * 60 * 30, // 30 minutes - operations change less frequently
+  });
+
+  const { data: ministriesData = [], isLoading: isLoadingMinistries } = useMinistries({
+    staleTime: 1000 * 60 * 60, // 60 minutes - ministries rarely change
+  });
+
+  // Use mutation hook for engagement operations
+  const engagementMutation = useEngagementMutation({
+    onSuccess: () => {
+      refetchEngagements();
+      toast({
+        title: "Succès",
+        description: "L'opération a été effectuée avec succès",
+      });
+    },
+  });
 
   const filteredReevaluations = reevaluations.filter(
     (reevaluation) =>
@@ -163,14 +79,23 @@ export default function Engagements() {
       reevaluation.engagement?.operation?.name?.toLowerCase().includes(reevaluationSearchTerm.toLowerCase())
   );
 
-  const filteredEngagements = engagements.filter(
-    (engagement) =>
-      engagement.operation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      engagement.beneficiaire.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      engagement.statut.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter engagements based on search term
+  const filteredEngagements = engagementsData.filter((engagement) => {
+    const operationText = typeof engagement.operation === "string" ? engagement.operation.toLowerCase() : String(engagement.operation).toLowerCase();
 
-  const pendingApprovals = engagements.filter((engagement) => engagement.statut === "En attente");
+    const beneficiaireText =
+      typeof engagement.beneficiaire === "string" ? engagement.beneficiaire.toLowerCase() : String(engagement.beneficiaire).toLowerCase();
+
+    const statutText = typeof engagement.statut === "string" ? engagement.statut.toLowerCase() : String(engagement.statut).toLowerCase();
+
+    return (
+      operationText.includes(searchTerm.toLowerCase()) ||
+      beneficiaireText.includes(searchTerm.toLowerCase()) ||
+      statutText.includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const pendingApprovals = engagementsData.filter((engagement) => engagement.statut === "En attente");
 
   const handleOpenAddDialog = () => {
     setNewEngagement({
@@ -230,8 +155,8 @@ export default function Engagements() {
       return;
     }
 
-    const engagement: Engagement = {
-      id: `ENG${String(engagements.length + 1).padStart(3, "0")}`,
+    // Create new engagement with data from state
+    const engagement: Partial<Engagement> = {
       operation: newEngagement.operation!,
       beneficiaire: newEngagement.beneficiaire!,
       montant_demande: Number(newEngagement.montant_demande) || 0,
@@ -242,12 +167,13 @@ export default function Engagements() {
       demande_par: newEngagement.demande_par!,
     };
 
-    setEngagements([...engagements, engagement]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Engagement ajouté",
-      description: `L'engagement pour "${engagement.operation}" a été ajouté avec succès.`,
+    // Use our mutation hook to add the engagement
+    engagementMutation.mutateAsync({
+      type: "INSERT",
+      data: engagement,
     });
+
+    setIsAddDialogOpen(false);
   };
 
   const handleEditEngagement = () => {
@@ -262,38 +188,33 @@ export default function Engagements() {
       return;
     }
 
-    const updatedEngagements = engagements.map((engagement) =>
-      engagement.id === currentEngagement.id
-        ? {
-            ...engagement,
-            operation: newEngagement.operation!,
-            beneficiaire: newEngagement.beneficiaire!,
-            montant_demande: Number(newEngagement.montant_demande) || 0,
-            priorite: newEngagement.priorite as "Haute" | "Moyenne" | "Basse",
-            demande_par: newEngagement.demande_par!,
-            date: newEngagement.date!,
-          }
-        : engagement
-    );
-
-    setEngagements(updatedEngagements);
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Engagement modifié",
-      description: `L'engagement pour "${currentEngagement.operation}" a été modifié avec succès.`,
+    // Use our mutation hook to update the engagement
+    engagementMutation.mutateAsync({
+      type: "UPDATE",
+      id: currentEngagement.id,
+      data: {
+        operation: newEngagement.operation!,
+        beneficiaire: newEngagement.beneficiaire!,
+        montant_demande: Number(newEngagement.montant_demande) || 0,
+        priorite: newEngagement.priorite as "Haute" | "Moyenne" | "Basse",
+        demande_par: newEngagement.demande_par!,
+        date: newEngagement.date!,
+      },
     });
+
+    setIsEditDialogOpen(false);
   };
 
   const handleDeleteEngagement = () => {
     if (!currentEngagement) return;
 
-    const updatedEngagements = engagements.filter((engagement) => engagement.id !== currentEngagement.id);
-    setEngagements(updatedEngagements);
-    setIsDeleteDialogOpen(false);
-    toast({
-      title: "Engagement supprimé",
-      description: `L'engagement pour "${currentEngagement.operation}" a été supprimé avec succès.`,
+    // Use our mutation hook to delete the engagement
+    engagementMutation.mutateAsync({
+      type: "DELETE",
+      id: currentEngagement.id,
     });
+
+    setIsDeleteDialogOpen(false);
   };
 
   const handleApproveEngagement = () => {
@@ -310,36 +231,30 @@ export default function Engagements() {
       return;
     }
 
-    const updatedEngagements = engagements.map((engagement) =>
-      engagement.id === currentEngagement.id
-        ? {
-            ...engagement,
-            montant_approuve: Number(amount),
-            statut: "Approuvé" as const,
-          }
-        : engagement
-    );
-
-    setEngagements(updatedEngagements);
-    setIsApproveDialogOpen(false);
-    toast({
-      title: "Engagement approuvé",
-      description: `L'engagement pour "${currentEngagement.operation}" a été approuvé avec succès.`,
+    // Use our mutation hook to update the engagement
+    engagementMutation.mutateAsync({
+      type: "UPDATE",
+      id: currentEngagement.id,
+      data: {
+        montant_approuve: Number(amount),
+        statut: "Approuvé" as const,
+      },
     });
+
+    setIsApproveDialogOpen(false);
   };
 
   const handleRejectEngagement = (engagement: Engagement) => {
-    const updatedEngagements = engagements.map((e) =>
-      e.id === engagement.id
-        ? {
-            ...e,
-            montant_approuve: 0,
-            statut: "Rejeté" as const,
-          }
-        : e
-    );
+    // Use our mutation hook to reject the engagement
+    engagementMutation.mutateAsync({
+      type: "UPDATE",
+      id: engagement.id,
+      data: {
+        montant_approuve: 0,
+        statut: "Rejeté" as const,
+      },
+    });
 
-    setEngagements(updatedEngagements);
     toast({
       title: "Engagement rejeté",
       description: `L'engagement pour "${engagement.operation}" a été rejeté.`,
@@ -408,7 +323,7 @@ export default function Engagements() {
       });
   };
 
-  if (loading) {
+  if (isLoadingEngagements || isLoadingOperations || isLoadingMinistries) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -419,6 +334,22 @@ export default function Engagements() {
       </div>
     );
   }
+
+  // Extract operation names from operationsData
+  const operations = operationsData.map((operation) => operation.name);
+
+  // Extract ministry names to use as departments
+  const departments = ministriesData.map((ministry) => ministry.name_fr);
+
+  // Mock beneficiaries until we have a proper API endpoint
+  const beneficiaires = [
+    "Entreprise Nationale de Travaux Publics",
+    "SONATRACH",
+    "SONELGAZ",
+    "Ministère de la Défense Nationale",
+    "Office National des Statistiques",
+    "Direction Générale des Impôts",
+  ];
 
   return (
     <Dashboard className="p-6">
@@ -467,12 +398,11 @@ export default function Engagements() {
                 onApprove={handleOpenApproveDialog}
                 onReject={handleRejectEngagement}
                 onRefresh={() => {
-                  // Simulate refresh
+                  refetchEngagements();
                   toast({
                     title: "Données actualisées",
                     description: "La liste des engagements a été actualisée",
                   });
-                  setEngagements([...mockEngagements]);
                 }}
                 onAddNew={handleOpenAddDialog}
               />

@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ActionsTable, Action } from "@/components/tables/ActionsTable";
+import { ActionsTable } from "@/components/tables/ActionsTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/useSupabaseData";
+import { Program, Portfolio, FiscalYear, Action } from "@/types/database.types";
 
 // Simple inline Spinner component
 const Spinner = ({ className }: { className?: string }) => (
@@ -21,103 +23,6 @@ const Spinner = ({ className }: { className?: string }) => (
     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
 );
-
-// Extended Action interface
-interface EnhancedAction extends Action {
-  code: string;
-  description?: string;
-  type_action: "Centralized" | "Decentralized" | "Unique" | "Programmed" | "Complementary";
-  status: "active" | "archived" | "planned" | "draft";
-  consumption_rate: number;
-  fiscal_year_id?: string;
-}
-
-// Mock data for actions
-const mockActions: EnhancedAction[] = [
-  {
-    id: "ACT001",
-    code: "A1.2.3",
-    programme_id: "PRG001",
-    programme_name: "Infrastructure Urbaine",
-    nom: "Rénovation des routes",
-    type_action: "Centralized",
-    description: "Rénovation et maintenance des routes urbaines principales",
-    montant_alloue: 1500000,
-    status: "active",
-    consumption_rate: 65,
-  },
-  {
-    id: "ACT002",
-    code: "A2.1.1",
-    programme_id: "PRG002",
-    programme_name: "Éducation Supérieure",
-    nom: "Équipement des laboratoires",
-    type_action: "Decentralized",
-    description: "Fourniture d'équipements de laboratoire aux universités",
-    montant_alloue: 750000,
-    status: "active",
-    consumption_rate: 45,
-  },
-  {
-    id: "ACT003",
-    code: "A1.3.1",
-    programme_id: "PRG001",
-    programme_name: "Infrastructure Urbaine",
-    nom: "Construction des ponts",
-    type_action: "Unique",
-    description: "Construction de nouveaux ponts urbains",
-    montant_alloue: 3000000,
-    status: "planned",
-    consumption_rate: 0,
-  },
-  {
-    id: "ACT004",
-    code: "A3.1.2",
-    programme_id: "PRG003",
-    programme_name: "Santé Publique",
-    nom: "Équipement hospitalier",
-    type_action: "Programmed",
-    description: "Modernisation des équipements hospitaliers",
-    montant_alloue: 1200000,
-    status: "active",
-    consumption_rate: 78,
-  },
-  {
-    id: "ACT005",
-    code: "A4.2.1",
-    programme_id: "PRG004",
-    programme_name: "Environnement",
-    nom: "Reboisement urbain",
-    type_action: "Complementary",
-    description: "Programme de reboisement dans les zones urbaines",
-    montant_alloue: 500000,
-    status: "draft",
-    consumption_rate: 12,
-  },
-];
-
-// Mock data for programme selection
-const programmes = [
-  { id: "PRG001", name: "Infrastructure Urbaine" },
-  { id: "PRG002", name: "Éducation Supérieure" },
-  { id: "PRG003", name: "Santé Publique" },
-  { id: "PRG004", name: "Environnement" },
-];
-
-// Mock data for portfolios
-const portfolios = [
-  { id: "PORT001", name: "Infrastructure" },
-  { id: "PORT002", name: "Éducation" },
-  { id: "PORT003", name: "Santé" },
-  { id: "PORT004", name: "Environnement" },
-];
-
-// Mock data for fiscal years
-const fiscalYears = [
-  { id: "FY2022", name: "Année Fiscale 2022" },
-  { id: "FY2023", name: "Année Fiscale 2023" },
-  { id: "FY2024", name: "Année Fiscale 2024" },
-];
 
 // Action types (the only types now)
 const actionTypes = ["Centralized", "Decentralized", "Unique", "Programmed", "Complementary"] as const;
@@ -144,7 +49,6 @@ const actionTypeTranslations = {
 
 export default function Actions() {
   const { t } = useTranslation();
-  const [actions, setActions] = useState<EnhancedAction[]>(mockActions);
   const [searchTerm, setSearchTerm] = useState("");
   const [portfolioFilter, setPortfolioFilter] = useState("all");
   const [programmeFilter, setProgrammeFilter] = useState("all");
@@ -154,8 +58,8 @@ export default function Actions() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [currentAction, setCurrentAction] = useState<EnhancedAction | null>(null);
-  const [newAction, setNewAction] = useState<Partial<EnhancedAction>>({
+  const [currentAction, setCurrentAction] = useState<Action | null>(null);
+  const [newAction, setNewAction] = useState<Partial<Action>>({
     code: "",
     programme_id: "",
     nom: "",
@@ -167,15 +71,47 @@ export default function Actions() {
   });
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [viewAction, setViewAction] = useState<EnhancedAction | null>(null);
+  const [viewAction, setViewAction] = useState<Action | null>(null);
+
+  // Use our custom React Query hooks with staleTime configurations for local storage persistence
+  const {
+    data: actionsData = [],
+    isLoading: isLoadingActions,
+    refetch: refetchActions,
+  } = useActions({
+    staleTime: 1000 * 60 * 10, // 10 minutes - actions change moderately often
+  });
+
+  const { data: programsData = [], isLoading: isLoadingPrograms } = usePrograms({
+    staleTime: 1000 * 60 * 30, // 30 minutes - programs change less frequently
+  });
+
+  const { data: portfoliosData = [], isLoading: isLoadingPortfolios } = usePortfolios({
+    staleTime: 1000 * 60 * 30, // 30 minutes - portfolios change less frequently
+  });
+
+  const { data: fiscalYearsData = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
+    staleTime: 1000 * 60 * 60, // 60 minutes - fiscal years rarely change
+  });
+
+  // Use mutation hook for action operations
+  const actionMutation = useActionMutation({
+    onSuccess: () => {
+      refetchActions();
+      toast({
+        title: "Succès",
+        description: "L'opération a été effectuée avec succès",
+      });
+    },
+  });
 
   // Filter actions based on all filters
-  const filteredActions = actions.filter((action) => {
+  const filteredActions = actionsData.filter((action) => {
     const matchesSearch =
-      action.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      action.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      action.type_action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      action.programme_name.toLowerCase().includes(searchTerm.toLowerCase());
+      (action.nom?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (action.code?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (action.type_action?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (action.programme_name?.toLowerCase() || "").includes(searchTerm.toLowerCase());
 
     const matchesProgram = programmeFilter === "all" || action.programme_id === programmeFilter;
 
@@ -209,7 +145,7 @@ export default function Actions() {
   };
 
   // Open edit dialog
-  const handleOpenEditDialog = (action: EnhancedAction) => {
+  const handleOpenEditDialog = (action: Action) => {
     setCurrentAction(action);
     setNewAction({
       code: action.code,
@@ -225,13 +161,13 @@ export default function Actions() {
   };
 
   // Open delete dialog
-  const handleOpenDeleteDialog = (action: EnhancedAction) => {
+  const handleOpenDeleteDialog = (action: Action) => {
     setCurrentAction(action);
     setIsDeleteDialogOpen(true);
   };
 
   // Open view dialog
-  const handleOpenViewDialog = (action: EnhancedAction) => {
+  const handleOpenViewDialog = (action: Action) => {
     setCurrentAction(action);
     setIsViewDialogOpen(true);
   };
@@ -288,10 +224,10 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programmes.find((p) => p.id === newAction.programme_id);
+    const selectedProgramme = programsData.find((p) => p.id === newAction.programme_id);
 
-    const action: EnhancedAction = {
-      id: `ACT${String(actions.length + 1).padStart(3, "0")}`,
+    const action: Action = {
+      id: `ACT${String(actionsData.length + 1).padStart(3, "0")}`,
       code: newAction.code!,
       programme_id: newAction.programme_id!,
       programme_name: selectedProgramme?.name || "",
@@ -303,7 +239,7 @@ export default function Actions() {
       consumption_rate: 0, // New actions start at 0% consumption
     };
 
-    setActions([...actions, action]);
+    actionMutation.mutate(action);
     setIsAddDialogOpen(false);
     toast({
       title: "Action ajoutée",
@@ -322,26 +258,22 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programmes.find((p) => p.id === newAction.programme_id);
+    const selectedProgramme = programsData.find((p) => p.id === newAction.programme_id);
 
-    const updatedActions = actions.map((action) =>
-      action.id === currentAction.id
-        ? {
-            ...action,
-            code: newAction.code!,
-            programme_id: newAction.programme_id!,
-            programme_name: selectedProgramme?.name || action.programme_name,
-            nom: newAction.nom!,
-            description: newAction.description,
-            type_action: newAction.type_action!,
-            status: newAction.status!,
-            montant_alloue: Number(newAction.montant_alloue) || 0,
-            consumption_rate: Number(newAction.consumption_rate) || 0,
-          }
-        : action
-    );
+    const updatedAction: Action = {
+      ...currentAction,
+      code: newAction.code!,
+      programme_id: newAction.programme_id!,
+      programme_name: selectedProgramme?.name || currentAction.programme_name,
+      nom: newAction.nom!,
+      description: newAction.description,
+      type_action: newAction.type_action!,
+      status: newAction.status!,
+      montant_alloue: Number(newAction.montant_alloue) || 0,
+      consumption_rate: Number(newAction.consumption_rate) || 0,
+    };
 
-    setActions(updatedActions);
+    actionMutation.mutate(updatedAction);
     setIsEditDialogOpen(false);
     toast({
       title: "Action modifiée",
@@ -353,8 +285,7 @@ export default function Actions() {
   const handleDeleteAction = () => {
     if (!currentAction) return;
 
-    const updatedActions = actions.filter((action) => action.id !== currentAction.id);
-    setActions(updatedActions);
+    actionMutation.mutate({ ...currentAction, deleted: true });
     setIsDeleteDialogOpen(false);
     toast({
       title: "Action supprimée",
@@ -368,7 +299,7 @@ export default function Actions() {
 
   // View Dialog Component
   const ViewActionDialog = () => {
-    const [viewAction, setViewAction] = useState<EnhancedAction | null>(null);
+    const [viewAction, setViewAction] = useState<Action | null>(null);
     const [selectedYear, setSelectedYear] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -378,8 +309,8 @@ export default function Actions() {
         // If fiscal_year_id exists in the model, use it, otherwise default to first year
         if (currentAction.fiscal_year_id) {
           setSelectedYear(currentAction.fiscal_year_id);
-        } else if (fiscalYears.length > 0) {
-          setSelectedYear(fiscalYears[0].id);
+        } else if (fiscalYearsData.length > 0) {
+          setSelectedYear(fiscalYearsData[0].id);
         }
       }
     }, [currentAction, isViewDialogOpen]);
@@ -410,7 +341,7 @@ export default function Actions() {
                 <SelectValue placeholder="Sélectionner une année" />
               </SelectTrigger>
               <SelectContent>
-                {fiscalYears.map((year) => (
+                {fiscalYearsData.map((year) => (
                   <SelectItem key={year.id} value={year.id}>
                     {year.name}
                   </SelectItem>
@@ -782,7 +713,7 @@ export default function Actions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les portefeuilles</SelectItem>
-                  {portfolios.map((portfolio) => (
+                  {portfoliosData.map((portfolio) => (
                     <SelectItem key={portfolio.id} value={portfolio.id}>
                       {portfolio.name}
                     </SelectItem>
@@ -802,7 +733,7 @@ export default function Actions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les programmes</SelectItem>
-                  {programmes.map((programme) => (
+                  {programsData.map((programme) => (
                     <SelectItem key={programme.id} value={programme.id}>
                       {programme.name}
                     </SelectItem>
@@ -944,7 +875,7 @@ export default function Actions() {
                   <SelectValue placeholder="Sélectionner un programme" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programmes.map((programme) => (
+                  {programsData.map((programme) => (
                     <SelectItem key={programme.id} value={programme.id}>
                       {programme.name}
                     </SelectItem>
@@ -1084,7 +1015,7 @@ export default function Actions() {
                   <SelectValue placeholder="Sélectionner un programme" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programmes.map((programme) => (
+                  {programsData.map((programme) => (
                     <SelectItem key={programme.id} value={programme.id}>
                       {programme.name}
                     </SelectItem>
@@ -1241,7 +1172,7 @@ export default function Actions() {
                   </div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Programme: {currentAction.programme_name} • Portefeuille:{" "}
-                    {portfolios.find((p) => p.id === `PORT00${currentAction.programme_id.slice(-1)}`)?.name || "Non spécifié"}
+                    {portfoliosData.find((p) => p.id === `PORT00${currentAction.programme_id.slice(-1)}`)?.name || "Non spécifié"}
                   </div>
                 </div>
               )}

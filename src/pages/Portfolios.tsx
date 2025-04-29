@@ -14,56 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
-import { id } from "date-fns/locale";
-// Mock data
-interface Program {
-  id: string;
-  portfolioId: string;
-  name: string;
-  description: string;
-  allocatedAmount: number;
-  progress: number;
-  actions: number;
-  operations: number;
-  status: "active" | "completed" | "planned";
-}
+import { usePortfolios, useMinistries, useFiscalYears, usePrograms, usePortfolioMutation } from "@/hooks/useSupabaseData";
+import { Portfolio, Ministry, FiscalYear, Program } from "@/types/database.types";
 
-interface Ministry {
-  id: string;
-  name_ar: string;
-  name_en: string;
-  name_fr: string;
-  code: string;
-  description?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  phone2?: string;
-  fax?: string;
-  fax2?: string;
-  is_active: boolean;
-  parent_id?: string;
-}
-interface FiscalYear {
-  id: string;
-  year: number;
-  description?: string;
-  status: "planning" | "active" | "closed" | "draft";
-}
-interface Portfolio {
-  id: string;
-  ministry_id: string;
-  name: string;
-  code: string;
-  allocated_ae: number;
-  allocated_cp: number;
-  status: "draft" | "active" | "archived";
-  description: string;
-  consumedAE?: number;
-  consumedCP?: number;
-  programs?: number;
-}
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-DZ", {
@@ -118,15 +71,42 @@ export default function PortfoliosPage() {
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  // Use our custom React Query hooks with staleTime for improved caching
+  const {
+    data: portfoliosData = [],
+    isLoading: isLoadingPortfolios,
+    refetch: refetchPortfolios,
+  } = usePortfolios({
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+
+  const { data: ministriesData = [], isLoading: isLoadingMinistries } = useMinistries({
+    staleTime: 1000 * 60 * 30, // 30 minutes - ministries change less frequently
+  });
+
+  const { data: fiscalYearsData = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
+    staleTime: 1000 * 60 * 60, // 60 minutes - fiscal years rarely change
+  });
+
+  const { data: programsData = [], isLoading: isLoadingPrograms } = usePrograms({
+    staleTime: 1000 * 60 * 15, // 15 minutes
+  });
+
+  // Use mutation hook for portfolio operations
+  const portfolioMutation = usePortfolioMutation({
+    onSuccess: () => {
+      refetchPortfolios();
+      toast({
+        title: "Succès",
+        description: "L'opération a été effectuée avec succès",
+      });
+    },
+  });
+
   // Fetch portfolios data
   const fetchPortfolios = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Fetch fiscal years
-      const { data: fiscalYearsData, error: fiscalYearsError } = await supabase.from("fiscal_years").select("*").order("year", { ascending: false });
-
-      if (fiscalYearsError) throw fiscalYearsError;
 
       // Transform fiscal years data and find current year
       const currentYear = new Date().getFullYear();
@@ -149,16 +129,7 @@ export default function PortfoliosPage() {
       }
 
       // Fetch ministries data
-      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr", { ascending: true });
-
-      if (ministriesError) throw ministriesError;
-
       setMinistries(ministriesData || []);
-
-      // Fetch portfolios
-      const { data: portfoliosData, error: portfoliosError } = await supabase.from("portfolios").select("*").order("name");
-
-      if (portfoliosError) throw portfoliosError;
 
       // Map portfolios data
       const mappedPortfolios: Portfolio[] = (portfoliosData || []).map((portfolio) => ({
@@ -179,56 +150,32 @@ export default function PortfoliosPage() {
       setPortfolios(mappedPortfolios);
 
       // Now fetch programs to calculate counts
-      const { data: programsData, error: programsError } = await supabase.from("programs").select("*");
+      // Count programs per portfolio and update portfolio objects
+      const updatedPortfolios = mappedPortfolios.map((portfolio) => {
+        const portfolioPrograms = programsData.filter((p) => p.portfolio_id === portfolio.id);
+        return {
+          ...portfolio,
+          programs: portfolioPrograms.length,
+        };
+      });
 
-      if (!programsError && programsData) {
-        // Count programs per portfolio and update portfolio objects
-        const updatedPortfolios = mappedPortfolios.map((portfolio) => {
-          const portfolioPrograms = programsData.filter((p) => p.portfolio_id === portfolio.id);
-          return {
-            ...portfolio,
-            programs: portfolioPrograms.length,
-          };
-        });
-
-        setPortfolios(updatedPortfolios);
-      }
+      setPortfolios(updatedPortfolios);
 
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
         title: t("common.error"),
-        description: t("budgetaryExercises.fetchError"),
+        description: t("fiscalYears.fetchError"),
         variant: "destructive",
       });
       setLoading(false);
     }
-  }, [t]);
+  }, [t, fiscalYearsData, ministriesData, portfoliosData, programsData]);
 
   // Initial data fetch and subscription setup
   useEffect(() => {
     fetchPortfolios();
-
-    // Set up real-time subscription for portfolios
-    const portfoliosSubscription = supabase
-      .channel("portfolios_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "portfolios",
-        },
-        () => {
-          fetchPortfolios();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      portfoliosSubscription.unsubscribe();
-    };
   }, [fetchPortfolios]);
 
   // Set default fiscal year for each portfolio on component mount
@@ -367,8 +314,9 @@ export default function PortfoliosPage() {
         return;
       }
 
-      await supabase.from("portfolios").insert([
-        {
+      await portfolioMutation.mutateAsync({
+        type: "INSERT",
+        data: {
           name: formName,
           code: formCode,
           ministry_id: formMinistryId,
@@ -377,11 +325,11 @@ export default function PortfoliosPage() {
           status: formStatus,
           description: formDescription,
         },
-      ]);
+      });
 
       toast({
-        title: "Portefeuille ajouté",
-        description: `Le portefeuille "${formName}" a été ajouté avec succès.`,
+        title: "Succès",
+        description: `Le portefeuille "${formName}" a été créé avec succès.`,
       });
 
       setIsAddPortfolioOpen(false);
@@ -389,7 +337,7 @@ export default function PortfoliosPage() {
       console.error("Error:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue",
+        description: "Une erreur est survenue lors de la création du portefeuille",
         variant: "destructive",
       });
     }
@@ -399,9 +347,10 @@ export default function PortfoliosPage() {
     if (!currentPortfolio) return;
 
     try {
-      await supabase
-        .from("portfolios")
-        .update({
+      await portfolioMutation.mutateAsync({
+        type: "UPDATE",
+        id: currentPortfolio.id,
+        data: {
           ministry_id: formMinistryId,
           name: formName,
           code: formCode,
@@ -409,18 +358,20 @@ export default function PortfoliosPage() {
           allocated_cp: formAllocatedCP || 0,
           status: formStatus,
           description: formDescription,
-        })
-        .eq("id", currentPortfolio.id);
+        },
+      });
+
       toast({
         title: "Portefeuille modifié",
         description: `Le portefeuille "${formName}" a été modifié avec succès.`,
       });
+
       setIsEditPortfolioOpen(false);
     } catch (error) {
       console.error("Error:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue",
+        description: "Une erreur est survenue lors de la modification",
         variant: "destructive",
       });
     }
@@ -430,11 +381,16 @@ export default function PortfoliosPage() {
     if (!currentPortfolio) return;
 
     try {
-      await supabase.from("portfolios").delete().eq("id", currentPortfolio.id);
+      await portfolioMutation.mutateAsync({
+        type: "DELETE",
+        id: currentPortfolio.id,
+      });
+
       toast({
         title: "Succès",
         description: "Portefeuille supprimé",
       });
+
       setIsDeletePortfolioOpen(false);
     } catch (error) {
       console.error("Error:", error);
@@ -491,14 +447,12 @@ export default function PortfoliosPage() {
               </div>
             </div>
             <div className="w-full sm:w-[200px]">
-              {" "}
               {/* Adjusted width */}
               <Label htmlFor="portfolio-status-filter" className="mb-2 block">
                 Statut
               </Label>
               <Select value={portfolioStatusFilter} onValueChange={setPortfolioStatusFilter}>
                 <SelectTrigger id="portfolio-status-filter" className="w-full">
-                  {" "}
                   {/* Made trigger full width */}
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
@@ -525,7 +479,6 @@ export default function PortfoliosPage() {
                     <div className="flex justify-between items-start gap-4">
                       {/* Added gap */}
                       <div className="flex-1">
-                        {" "}
                         {/* Allow title/desc to take space */}
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">{portfolio.name}</CardTitle>
@@ -541,8 +494,8 @@ export default function PortfoliosPage() {
                           portfolio.status === "active"
                             ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                             : portfolio.status === "archived"
-                              ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
                         )}
                       >
                         {portfolio.status === "active" ? "Actif" : portfolio.status === "archived" ? "Archivé" : "Brouillon"}
@@ -582,7 +535,7 @@ export default function PortfoliosPage() {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Programmes</p>
-                          <p className="font-medium">{portfolio.programs || 0}</p>
+                          <p className="font-medium">{portfolio?.programs || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -1005,8 +958,8 @@ export default function PortfoliosPage() {
                   currentPortfolio?.status === "active"
                     ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                     : currentPortfolio?.status === "archived"
-                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                    ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
                 )}
               >
                 {currentPortfolio?.status === "active" ? "Actif" : currentPortfolio?.status === "archived" ? "Archivé" : "Brouillon"}

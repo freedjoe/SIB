@@ -101,11 +101,14 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
                   <FormControl>
                     <Input
                       type="number"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value === "" ? 0 : parseFloat(e.target.value);
                         field.onChange(value);
                       }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                     />
                   </FormControl>
                   <FormDescription>
@@ -125,7 +128,7 @@ export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, o
                 <FormItem>
                   <FormLabel>{t("PrevisionsCP.dialog.mobilization.notes")}</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea value={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

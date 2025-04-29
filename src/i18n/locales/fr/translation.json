@@ -356,7 +356,7 @@
       "modules": "Modules",
       "users": "Utilisateurs",
       "roles": "Rôles",
-      "budgetaryExercises": "Exercices Budgétaires"
+      "fiscalYears": "Exercices Budgétaires"
     }
   },
   "PrevisionsCP": {
@@ -522,7 +522,7 @@
     "errorOccurred": "Une erreur s'est produite",
     "retry": "Réessayer"
   },
-  "budgetaryExercises": {
+  "fiscalYears": {
     "title": "Exercices Budgétaires",
     "subtitle": "Gérer les exercices budgétaires annuels et suivre leur exécution",
     "addNew": "Ajouter un Exercice",

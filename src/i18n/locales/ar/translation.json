@@ -309,7 +309,7 @@
     },
     "navigation": {
       "dashboard": "لوحة التحكم",
-      "budgetaryExercises": "السنوات المالية",
+      "fiscalYears": "السنوات المالية",
       "portfolios": "الحافظات",
       "programs": "البرامج",
       "actions": "الإجراءات",
@@ -333,7 +333,7 @@
       "roles": "الأدوار"
     }
   },
-  "budgetaryExercises": {
+  "fiscalYears": {
     "title": "السنوات المالية",
     "subtitle": "إدارة ميزانيات السنوات المالية ومراقبة تنفيذها",
     "addNew": "إضافة سنة مالية جديدة",

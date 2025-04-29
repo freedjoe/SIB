@@ -7,7 +7,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import DashboardPage from "./pages/Dashboard";
-import BudgetaryExercises from "./pages/BudgetaryExercises";
+import FiscalYears from "./pages/FiscalYears";
 import Programs from "./pages/Programs";
 import Portfolios from "./pages/Portfolios";
 import Actions from "./pages/Actions";
@@ -37,7 +37,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ForecastedExpenses from "./pages/ForecastedExpenses";
 import PrevisionsCP from "./pages/PrevisionsCP";
-import MinistryRequests from "./pages/MinistryRequests";
+import Requests from "./pages/Requests";
 import Chat from "./pages/Chat";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -107,7 +107,7 @@ const AppRoutes = () => {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/chat" element={<Chat />} />
-        <Route path="/budgetary-exercises" element={<BudgetaryExercises />} />
+        <Route path="/fiscal-years" element={<FiscalYears />} />
         <Route path="/programs" element={<Programs />} />
         <Route path="/portfolios" element={<Portfolios />} />
         <Route path="/actions" element={<Actions />} />
@@ -116,7 +116,7 @@ const AppRoutes = () => {
         <Route path="/payments" element={<Payments />} />
         <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
         <Route path="/previsions-cp" element={<PrevisionsCP />} />
-        <Route path="/ministry-requests" element={<MinistryRequests />} />
+        <Route path="/requests" element={<Requests />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/settings/profile" element={<Profile />} />

@@ -332,7 +332,7 @@
       "modules": "Modules",
       "users": "Users",
       "roles": "Roles",
-      "budgetaryExercises": "Budgetary Exercises"
+      "fiscalYears": "Fiscal Years"
     }
   },
   "PrevisionsCP": {
@@ -435,8 +435,8 @@
       "montantConsomme": "Consumed Amount"
     }
   },
-  "budgetaryExercises": {
-    "title": "Budgetary Exercises",
+  "fiscalYears": {
+    "title": "Fiscal Years",
     "subtitle": "Manage fiscal year budgets and monitor their execution",
     "addNew": "Add New Fiscal Year",
     "fiscalYear": "Fiscal Year",

@@ -15,150 +15,13 @@ import { getAllPaymentRequests, type PaymentRequestWithRelations } from "@/servi
 import { getAllEngagements } from "@/services/engagementsService";
 import { PaymentStats } from "@/components/stats/PaymentStats";
 import { StatCard } from "@/components/ui-custom/StatCard";
+import { Payment, PaymentRequest } from "@/types/database.types";
 
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
 import { CreditCard, FileCheck, Calendar, CheckCircle, Clock, X, ArrowRightLeft, Eye, Plus, FileEdit, Trash2 } from "lucide-react";
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { PaymentRequestTable } from "@/components/tables/PaymentRequestTable";
 import { PaymentRequestDialog } from "@/components/dialogs/PaymentRequestDialog";
-
-type FormattedPayment = {
-  id: string;
-  engagementId: string;
-  engagementRef: string;
-  operationId: string;
-  operationName: string;
-  amount: number;
-  requestDate: string;
-  paymentDate: string | null;
-  status: "pending" | "approved" | "rejected" | "paid";
-  beneficiary: string;
-  description: string;
-};
-
-type FormattedPaymentRequest = {
-  id: string;
-  engagementId: string;
-  engagementRef: string;
-  programName: string;
-  operationName: string;
-  amount: number;
-  frequency: "monthly" | "quarterly" | "annual";
-  startDate: string;
-  requestDate: string;
-  approvedDate: string | null;
-  status: "pending_officer" | "pending_accountant" | "approved" | "rejected";
-  requestedBy: string;
-  beneficiary: string;
-  description: string;
-};
-
-const mockPayments: FormattedPayment[] = [
-  {
-    id: "p1",
-    engagementId: "e1",
-    engagementRef: "ENG/2023/001",
-    operationId: "op1",
-    operationName: "Construction École Primaire de Koné",
-    amount: 35000000,
-    requestDate: "2023-05-10",
-    paymentDate: "2023-05-20",
-    status: "paid",
-    beneficiary: "Entreprise ABC Construction",
-    description: "Premier paiement pour travaux de fondation",
-  },
-  {
-    id: "p2",
-    engagementId: "e1",
-    engagementRef: "ENG/2023/001",
-    operationId: "op1",
-    operationName: "Construction École Primaire de Koné",
-    amount: 45000000,
-    requestDate: "2023-07-15",
-    paymentDate: "2023-07-30",
-    status: "paid",
-    beneficiary: "Entreprise ABC Construction",
-    description: "Deuxième paiement pour travaux de structure",
-  },
-  {
-    id: "p3",
-    engagementId: "e2",
-    engagementRef: "ENG/2023/008",
-    operationId: "op2",
-    operationName: "Équipement Hôpital Central",
-    amount: 40000000,
-    requestDate: "2023-06-05",
-    paymentDate: "2023-06-18",
-    status: "paid",
-    beneficiary: "MedEquip International",
-    description: "Paiement pour fourniture d'équipements médicaux",
-  },
-  {
-    id: "p4",
-    engagementId: "e3",
-    engagementRef: "ENG/2023/012",
-    operationId: "op3",
-    operationName: "Rénovation Route Nationale 1",
-    amount: 60000000,
-    requestDate: "2023-08-10",
-    paymentDate: "2023-08-28",
-    status: "paid",
-    beneficiary: "Routes & Ponts SA",
-    description: "Premier paiement pour travaux de terrassement",
-  },
-  {
-    id: "p5",
-    engagementId: "e1",
-    engagementRef: "ENG/2023/001",
-    operationId: "op1",
-    operationName: "Construction École Primaire de Koné",
-    amount: 15000000,
-    requestDate: "2023-09-20",
-    paymentDate: null,
-    status: "approved",
-    beneficiary: "Entreprise ABC Construction",
-    description: "Troisième paiement pour travaux de finition",
-  },
-  {
-    id: "p6",
-    engagementId: "e4",
-    engagementRef: "ENG/2023/025",
-    operationId: "op5",
-    operationName: "Formation des Enseignants",
-    amount: 18000000,
-    requestDate: "2023-10-05",
-    paymentDate: null,
-    status: "pending",
-    beneficiary: "Institut de Formation Pédagogique",
-    description: "Paiement pour services de formation",
-  },
-  {
-    id: "p7",
-    engagementId: "e5",
-    engagementRef: "ENG/2023/030",
-    operationId: "op6",
-    operationName: "Campagne de Vaccination",
-    amount: 25000000,
-    requestDate: "2023-09-15",
-    paymentDate: null,
-    status: "rejected",
-    beneficiary: "Santé Pour Tous",
-    description: "Paiement pour vaccins et matériel médical",
-  },
-  {
-    id: "p8",
-    engagementId: "e3",
-    engagementRef: "ENG/2023/012",
-    operationId: "op3",
-    operationName: "Rénovation Route Nationale 1",
-    amount: 35000000,
-    requestDate: "2023-10-10",
-    paymentDate: null,
-    status: "pending",
-    beneficiary: "Routes & Ponts SA",
-    description: "Deuxième paiement pour travaux de revêtement",
-  },
-];
 
 const Payments = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,10 +30,10 @@ const Payments = () => {
   const [activeRequestTab, setActiveRequestTab] = useState("all");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentDialogType, setPaymentDialogType] = useState<"add" | "edit" | "view" | "delete">("add");
-  const [selectedPayment, setSelectedPayment] = useState<FormattedPayment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [requestDialogType, setRequestDialogType] = useState<"add" | "edit" | "view">("add");
-  const [selectedRequest, setSelectedRequest] = useState<FormattedPaymentRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<PaymentRequest | null>(null);
 
   const {
     data: paymentsData,
@@ -197,38 +60,35 @@ const Payments = () => {
     queryFn: getAllEngagements,
   });
 
-  const formatPayments = (payments: PaymentWithRelations[]): FormattedPayment[] => {
+  const formatPayments = (payments: PaymentWithRelations[]): Payment[] => {
     return payments.map((payment) => ({
       id: payment.id,
-      engagementId: payment.engagement_id,
-      engagementRef: payment.engagement?.operation?.name || "Unknown",
-      operationId: payment.engagement?.operation_id || "",
-      operationName: payment.engagement?.operation?.name || "Unknown",
+      engagement_id: payment.engagement_id,
+      operation_id: payment.operation_id || payment.engagement?.operation_id || "",
       amount: payment.amount,
-      requestDate: payment.created_at || new Date().toISOString(),
-      paymentDate: payment.payment_date,
-      status: payment.status as "pending" | "approved" | "rejected" | "paid",
-      beneficiary: payment.engagement?.beneficiary || "Unknown",
-      description: payment.engagement?.operation?.name || "Payment description",
+      payment_date: payment.payment_date,
+      status: payment.status as "pending" | "approved" | "rejected" | "paid" | "draft",
+      beneficiary: payment.engagement?.beneficiary || payment.beneficiary || "Unknown",
+      description: payment.description || payment.engagement?.operation?.name || "Payment description",
+      created_at: payment.created_at || new Date().toISOString(),
     }));
   };
 
-  const formatPaymentRequests = (requests: PaymentRequestWithRelations[]): FormattedPaymentRequest[] => {
+  const formatPaymentRequests = (requests: PaymentRequestWithRelations[]): PaymentRequest[] => {
     return requests.map((request) => ({
       id: request.id,
-      engagementId: request.engagement_id,
-      engagementRef: request.engagement?.operation?.name || "Unknown",
-      programName: request.engagement?.operation?.action?.program?.name || "Unknown",
-      operationName: request.engagement?.operation?.name || "Unknown",
-      amount: request.amount,
-      frequency: request.frequency as "monthly" | "quarterly" | "annual",
-      startDate: request.start_date || "",
+      engagement_id: request.engagement_id,
+      operation_id: request.operation_id || request.engagement?.operation_id || "",
+      requested_amount: request.amount,
       requestDate: request.created_at || new Date().toISOString(),
-      approvedDate: request.approved_date || null,
-      status: request.status as "pending_officer" | "pending_accountant" | "approved" | "rejected",
-      requestedBy: request.requested_by,
-      beneficiary: request.engagement?.beneficiary || "Unknown",
+      period: request.period || "",
+      frequency: request.frequency as "monthly" | "quarterly" | "annual",
+      justification: request.justification || null,
+      status: request.status as "draft" | "pending" | "reviewed" | "approved" | "rejected",
+      document: request.document || null,
+      beneficiary: request.engagement?.beneficiary || request.beneficiary || "Unknown",
       description: request.description || "",
+      created_at: request.created_at || new Date().toISOString(),
     }));
   };
 
@@ -243,10 +103,10 @@ const Payments = () => {
     }).format(amount);
   };
 
-  const totalPayments = mockPayments.length;
-  const totalPaidAmount = mockPayments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
-  const totalPendingAmount = mockPayments.filter((p) => p.status === "pending" || p.status === "approved").reduce((sum, p) => sum + p.amount, 0);
-  const totalRejectedAmount = mockPayments.filter((p) => p.status === "rejected").reduce((sum, p) => sum + p.amount, 0);
+  const totalPayments = payments.length;
+  const totalPaidAmount = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);
+  const totalPendingAmount = payments.filter((p) => p.status === "pending" || p.status === "approved").reduce((sum, p) => sum + p.amount, 0);
+  const totalRejectedAmount = payments.filter((p) => p.status === "rejected").reduce((sum, p) => sum + p.amount, 0);
 
   const paymentStatusData = [
     { name: "Payé", value: totalPaidAmount, color: "#10b981" },
@@ -261,8 +121,8 @@ const Payments = () => {
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
-      payment.operationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.beneficiary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ((payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false) &&
+        payment.beneficiary.toLowerCase().includes(searchQuery.toLowerCase())) ||
       formatCurrency(payment.amount).includes(searchQuery);
 
     if (activePaymentTab === "all") return matchesSearch;
@@ -271,10 +131,9 @@ const Payments = () => {
 
   const filteredRequests = paymentRequests.filter((request) => {
     const matchesSearch =
-      request.operationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.beneficiary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.programName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      formatCurrency(request.amount).includes(searchQuery);
+      ((request.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false) &&
+        request.beneficiary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      formatCurrency(request.requested_amount).includes(searchQuery);
 
     if (activeRequestTab === "all") return matchesSearch;
     if (activeRequestTab === "pending") return (request.status === "pending_officer" || request.status === "pending_accountant") && matchesSearch;
@@ -287,19 +146,19 @@ const Payments = () => {
     setPaymentDialogOpen(true);
   };
 
-  const handleViewPayment = (payment: FormattedPayment) => {
+  const handleViewPayment = (payment: Payment) => {
     setPaymentDialogType("view");
     setSelectedPayment(payment);
     setPaymentDialogOpen(true);
   };
 
-  const handleEditPayment = (payment: FormattedPayment) => {
+  const handleEditPayment = (payment: Payment) => {
     setPaymentDialogType("edit");
     setSelectedPayment(payment);
     setPaymentDialogOpen(true);
   };
 
-  const handleDeletePayment = (payment: FormattedPayment) => {
+  const handleDeletePayment = (payment: Payment) => {
     setPaymentDialogType("delete");
     setSelectedPayment(payment);
     setPaymentDialogOpen(true);
@@ -311,19 +170,19 @@ const Payments = () => {
     setRequestDialogOpen(true);
   };
 
-  const handleViewRequest = (request: FormattedPaymentRequest) => {
+  const handleViewRequest = (request: PaymentRequest) => {
     setRequestDialogType("view");
     setSelectedRequest(request);
     setRequestDialogOpen(true);
   };
 
-  const handleEditRequest = (request: FormattedPaymentRequest) => {
+  const handleEditRequest = (request: PaymentRequest) => {
     setRequestDialogType("edit");
     setSelectedRequest(request);
     setRequestDialogOpen(true);
   };
 
-  const handleDeleteRequest = (request: FormattedPaymentRequest) => {
+  const handleDeleteRequest = (request: PaymentRequest) => {
     toast({
       title: "Demande supprimée",
       description: "La demande de paiement a été supprimée avec succès",
@@ -332,25 +191,25 @@ const Payments = () => {
     refetchRequests();
   };
 
-  const handleApproveRequest = (request: FormattedPaymentRequest) => {
+  const handleApproveRequest = (request: PaymentRequest) => {
     toast({
       title: "Demande approuvée",
-      description: `La demande de paiement ${request.operationName} a été approuvée`,
+      description: `La demande de paiement a été approuvée`,
       variant: "default",
     });
     refetchRequests();
   };
 
-  const handleRejectRequest = (request: FormattedPaymentRequest) => {
+  const handleRejectRequest = (request: PaymentRequest) => {
     toast({
       title: "Demande rejetée",
-      description: `La demande de paiement ${request.operationName} a été rejetée`,
+      description: `La demande de paiement a été rejetée`,
       variant: "destructive",
     });
     refetchRequests();
   };
 
-  const handleSavePayment = async (paymentData: Partial<FormattedPayment>) => {
+  const handleSavePayment = async (paymentData: Partial<Payment>) => {
     try {
       if (paymentDialogType === "add") {
         toast({
@@ -381,7 +240,7 @@ const Payments = () => {
     }
   };
 
-  const handleSaveRequest = async (requestData: Partial<FormattedPaymentRequest>) => {
+  const handleSaveRequest = async (requestData: Partial<PaymentRequest>) => {
     try {
       if (requestDialogType === "add") {
         toast({
@@ -549,11 +408,11 @@ const Payments = () => {
                       )}
                     </div>
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">{payment.operationName}</p>
+                      <p className="text-sm font-medium leading-none">{payment.description}</p>
                       <p className="text-sm text-muted-foreground">{payment.description}</p>
                       <div className="flex items-center gap-2 pt-1">
                         <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{formatDate(payment.requestDate)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(payment.payment_date)}</span>
                       </div>
                     </div>
                     <div className="text-right">

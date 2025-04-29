@@ -62,8 +62,8 @@ export function MainNav() {
       description: "Vue d'ensemble du budget",
     },
     {
-      label: t("app.navigation.budgetaryExercises"),
-      href: "/budgetary-exercises",
+      label: t("app.navigation.fiscalYears"),
+      href: "/fiscal-years",
       icon: BarChart3,
       description: "Gestion des exercices budgétaires",
     },
@@ -116,8 +116,8 @@ export function MainNav() {
       description: "Prévisions et mobilisation des CP",
     },
     {
-      label: "Ministry Requests",
-      href: "/ministry-requests",
+      label: "Requests",
+      href: "/requests",
       icon: Briefcase,
       description: "Gestion des demandes des ministères",
     },

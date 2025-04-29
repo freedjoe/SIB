@@ -157,14 +157,26 @@ export default function ProgramsPage() {
   });
 
   // Use React Query hooks for data fetching
-  const { data: rawPrograms = [], isLoading: isLoadingPrograms, refetch: refetchPrograms } = usePrograms();
+  const {
+    data: rawPrograms = [],
+    isLoading: isLoadingPrograms,
+    refetch: refetchPrograms,
+  } = usePrograms({
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
   const programs = rawPrograms as unknown as Program[];
 
-  const { data: portfolios = [], isLoading: isLoadingPortfolios } = usePortfolios();
+  const { data: portfolios = [], isLoading: isLoadingPortfolios } = usePortfolios({
+    staleTime: 1000 * 60 * 30, // 30 minutes - portfolios change less frequently
+  });
 
-  const { data: ministries = [], isLoading: isLoadingMinistries } = useMinistries();
+  const { data: ministries = [], isLoading: isLoadingMinistries } = useMinistries({
+    staleTime: 1000 * 60 * 30, // 30 minutes - ministries change less frequently
+  });
 
-  const { data: fiscalYears = [], isLoading: isLoadingFiscalYears } = useFiscalYears();
+  const { data: fiscalYears = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
+    staleTime: 1000 * 60 * 60, // 60 minutes - fiscal years rarely change
+  });
 
   // Use mutation hooks for data changes
   const programMutation = useProgramMutation({
@@ -469,12 +481,12 @@ export default function ProgramsPage() {
 
   if (isLoadingPrograms || isLoadingPortfolios || isLoadingMinistries || isLoadingFiscalYears) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span className="ml-4 text-lg text-muted-foreground">Chargement des programmes...</span>
+        <span className="text-lg text-muted-foreground text-center">Chargement des programmes...</span>
       </div>
     );
   }
@@ -669,7 +681,9 @@ export default function ProgramsPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 mt-4 border-t">
             <div className="flex-1 text-sm text-muted-foreground">
               {filteredPrograms.length > 0
-                ? `Affichage de ${currentPage * itemsPerPage + 1} à ${Math.min((currentPage + 1) * itemsPerPage, filteredPrograms.length)} sur ${filteredPrograms.length} programmes`
+                ? `Affichage de ${currentPage * itemsPerPage + 1} à ${Math.min((currentPage + 1) * itemsPerPage, filteredPrograms.length)} sur ${
+                    filteredPrograms.length
+                  } programmes`
                 : "Aucun programme trouvé"}
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
@@ -1218,8 +1232,8 @@ export default function ProgramsPage() {
                           (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 40
                             ? "text-red-600"
                             : (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 70
-                              ? "text-yellow-600"
-                              : "text-green-600"
+                            ? "text-yellow-600"
+                            : "text-green-600"
                         )}
                       >
                         {getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0}%
@@ -1262,8 +1276,8 @@ export default function ProgramsPage() {
                                   (actionFiscalYearData?.progress || 0) < 40
                                     ? "text-red-600"
                                     : (actionFiscalYearData?.progress || 0) < 70
-                                      ? "text-yellow-600"
-                                      : "text-green-600"
+                                    ? "text-yellow-600"
+                                    : "text-green-600"
                                 )}
                               >
                                 {actionFiscalYearData?.progress || 0}%

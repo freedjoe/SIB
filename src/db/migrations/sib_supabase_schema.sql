@@ -173,23 +173,29 @@ CREATE TABLE IF NOT EXISTS cp_consumptions (
 -- 15. Payments
 CREATE TABLE IF NOT EXISTS payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    engagement_id UUID REFERENCES engagements(id),
     operation_id UUID REFERENCES operations(id),
     amount NUMERIC,
     payment_date DATE,
-    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
+    status TEXT CHECK (status IN ('draft', 'pending', 'approved', 'paid', 'rejected')) DEFAULT 'draft',
+    beneficiary TEXT,
     description TEXT
 );
 
 -- 16. Payment Requests
 CREATE TABLE IF NOT EXISTS payment_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    engagement_id UUID REFERENCES engagements(id),
     operation_id UUID REFERENCES operations(id),
     requested_amount NUMERIC,
+    requestDate DATE,
     period VARCHAR(20),
-    status VARCHAR(20),
+    frequency TEXT CHECK (frequency IN ('monthly', 'quarterly', 'annual')) DEFAULT 'annual',
     justification TEXT,
-    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
-    document TEXT
+    status TEXT CHECK (status IN ('draft', 'pending', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
+    document TEXT,
+    beneficiary TEXT,
+    description TEXT
 );
 
 -- 17. CP Alerts
@@ -459,20 +465,28 @@ BEGIN
             ('cp_consumptions', 'description', 'TEXT'),
 
             -- payments
+            ('payments', 'engagement_id', 'UUID REFERENCES engagements(id)'),
             ('payments', 'operation_id', 'UUID REFERENCES operations(id)'),
+            ('payments', 'code', 'VARCHAR(20)'),
             ('payments', 'amount', 'NUMERIC'),
             ('payments', 'payment_date', 'DATE'),
-            ('payments', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
+            ('payments', 'status', 'TEXT CHECK (status IN (''draft'', ''pending'', ''approved'', ''paid'', ''rejected'')) DEFAULT ''draft'''),
+            ('payments', 'beneficiary', 'TEXT'),
             ('payments', 'description', 'TEXT'),
 
             -- payment_requests
+            ('payment_requests', 'engagement_id', 'UUID REFERENCES engagements(id)'),
             ('payment_requests', 'operation_id', 'UUID REFERENCES operations(id)'),
             ('payment_requests', 'requested_amount', 'NUMERIC'),
+            ('payment_requests', 'requested_date', 'DATE'),
             ('payment_requests', 'period', 'VARCHAR(20)'),
-            ('payment_requests', 'status', 'VARCHAR(20)'),
+            ('payment_requests', 'code', 'VARCHAR(20)'),
+            ('payment_requests', 'status', 'TEXT CHECK (status IN (''monthly'', ''quarterly'', ''annual'')) DEFAULT ''annual'''),
             ('payment_requests', 'justification', 'TEXT'),
-            ('payment_requests', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
+            ('payment_requests', 'status', 'TEXT CHECK (status IN (''draft'', ''pending'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
             ('payment_requests', 'document', 'TEXT'),
+            ('payments', 'beneficiary', 'TEXT'),
+            ('payment_requests', 'description', 'TEXT'),
 
             -- cp_alerts
             ('cp_alerts', 'operation_id', 'UUID REFERENCES operations(id)'),
