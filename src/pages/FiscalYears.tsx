@@ -188,6 +188,7 @@ export default function FiscalYearsPage() {
   const { t } = useTranslation();
   const [filteredYears, setFilteredYears] = useState<FiscalYear[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedYear, setSelectedYear] = useState<FiscalYear | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -237,6 +238,11 @@ export default function FiscalYearsPage() {
       );
     }
 
+    // Filter by status
+    if (statusFilter !== "all") {
+      result = result.filter((fy) => fy.status === statusFilter);
+    }
+
     // Sort by year (descending)
     result.sort((a, b) => b.year - a.year);
 
@@ -247,7 +253,7 @@ export default function FiscalYearsPage() {
     if (currentFilteredYearsStr !== newFilteredYearsStr) {
       setFilteredYears(result);
     }
-  }, [fiscalYears, searchTerm]);
+  }, [fiscalYears, searchTerm, statusFilter]);
 
   const handleViewDetails = (fiscalYear: FiscalYear) => {
     setSelectedYear(fiscalYear);
@@ -446,7 +452,7 @@ export default function FiscalYearsPage() {
           </div>
           <div className="w-full md:w-64">
             <Label htmlFor="statusFilter">{t("fiscalYears.filters.status")}</Label>
-            <Select value="all">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger id="statusFilter">
                 <SelectValue placeholder={t("fiscalYears.filters.allStatuses")} />
               </SelectTrigger>
