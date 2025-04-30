@@ -1,19 +1,22 @@
-import * as XLSX from "xlsx";
-import { supabase } from "@/integrations/supabase/client";
+import ExcelJS from "exceljs";
+import { supabase } from "@/lib/supabase";
 import path from "path";
 
 async function importExcelData() {
   try {
-    // Read ministries data
-    const ministriesWorkbook = XLSX.readFile(path.join(__dirname, "../../docs/loi_de_finance_2025_FR_tables.xlsx"));
-    const ministriesSheet = ministriesWorkbook.Sheets[ministriesWorkbook.SheetNames[0]];
-    const ministriesData = XLSX.utils.sheet_to_json(ministriesSheet);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(path.join(__dirname, "../../docs/loi_de_finance_2025_FR_tables.xlsx"));
 
     // Import ministries
-    for (const row of ministriesData) {
+    const ministriesSheet = workbook.getWorksheet(1);
+    const ministriesData = ministriesSheet.getSheetValues();
+
+    // Skip header row and convert to objects
+    for (let i = 2; i < ministriesData.length; i++) {
+      const row = ministriesData[i];
       const ministry = {
-        name: row["Ministry Name"],
-        code: row["Code"] || null,
+        name: row[1], // Assuming Ministry Name is in column A
+        code: row[2] || null, // Assuming Code is in column B
       };
 
       const { data, error } = await supabase.from("ministries").upsert(ministry, { onConflict: "code" }).select().single();
@@ -25,17 +28,17 @@ async function importExcelData() {
       console.log("Imported ministry:", data.name);
     }
 
-    // Read budget categories data
-    const categoriesWorkbook = XLSX.readFile(path.join(__dirname, "../../docs/loi_de_finance_2025_FR_tables.xlsx"));
-    const categoriesSheet = categoriesWorkbook.Sheets[categoriesWorkbook.SheetNames[1]];
-    const categoriesData = XLSX.utils.sheet_to_json(categoriesSheet);
-
     // Import categories
-    for (const row of categoriesData) {
+    const categoriesSheet = workbook.getWorksheet(2);
+    const categoriesData = categoriesSheet.getSheetValues();
+
+    // Skip header row and convert to objects
+    for (let i = 2; i < categoriesData.length; i++) {
+      const row = categoriesData[i];
       const category = {
-        name: row["Category Name"],
-        code: row["Code"] || null,
-        parent_id: row["Parent Code"] ? await getCategoryIdByCode(row["Parent Code"]) : null,
+        name: row[1], // Assuming Category Name is in column A
+        code: row[2] || null, // Assuming Code is in column B
+        parent_id: row[3] ? await getCategoryIdByCode(row[3].toString()) : null, // Assuming Parent Code is in column C
       };
 
       const { data, error } = await supabase.from("budget_categories").upsert(category, { onConflict: "code" }).select().single();
@@ -47,15 +50,15 @@ async function importExcelData() {
       console.log("Imported category:", data.name);
     }
 
-    // Read budget allocations data
-    const allocationsWorkbook = XLSX.readFile(path.join(__dirname, "../../docs/loi_de_finance_2025_FR_tables.xlsx"));
-    const allocationsSheet = allocationsWorkbook.Sheets[allocationsWorkbook.SheetNames[2]];
-    const allocationsData = XLSX.utils.sheet_to_json(allocationsSheet);
-
     // Import allocations
-    for (const row of allocationsData) {
-      const ministryId = await getMinistryIdByCode(row["Ministry Code"]);
-      const categoryId = await getCategoryIdByCode(row["Category Code"]);
+    const allocationsSheet = workbook.getWorksheet(3);
+    const allocationsData = allocationsSheet.getSheetValues();
+
+    // Skip header row and convert to objects
+    for (let i = 2; i < allocationsData.length; i++) {
+      const row = allocationsData[i];
+      const ministryId = await getMinistryIdByCode(row[1].toString()); // Assuming Ministry Code is in column A
+      const categoryId = await getCategoryIdByCode(row[2].toString()); // Assuming Category Code is in column B
 
       if (!ministryId || !categoryId) {
         console.error("Missing ministry or category for allocation:", row);
@@ -66,24 +69,24 @@ async function importExcelData() {
         ministry_id: ministryId,
         category_id: categoryId,
         fiscal_year: 2025,
-        initial_amount: row["Initial Amount"],
-        revised_amount: row["Revised Amount"] || null,
-        actual_amount: row["Actual Amount"] || null,
-        status: row["Status"] || "DRAFT",
+        initial_amount: row[3], // Assuming Initial Amount is in column C
+        revised_amount: row[4] || null, // Assuming Revised Amount is in column D
+        actual_amount: row[5] || null, // Assuming Actual Amount is in column E
+        status: row[6] || "DRAFT", // Assuming Status is in column F
       };
 
-      const { data, error } = await supabase.from("budget_allocations").upsert(allocation).select().single();
+      const { error } = await supabase.from("budget_allocations").upsert(allocation);
 
       if (error) {
         console.error("Error importing allocation:", error);
         continue;
       }
-      console.log("Imported allocation for ministry:", row["Ministry Code"]);
+      console.log("Imported allocation for ministry:", ministryId, "category:", categoryId);
     }
 
-    console.log("Data import completed successfully!");
+    console.log("Import completed successfully");
   } catch (error) {
-    console.error("Error importing data:", error);
+    console.error("Error during import:", error);
   }
 }
 
@@ -91,7 +94,7 @@ async function getMinistryIdByCode(code: string): Promise<string | null> {
   const { data, error } = await supabase.from("ministries").select("id").eq("code", code).single();
 
   if (error || !data) {
-    console.error("Error finding ministry by code:", code);
+    console.error("Error finding ministry by code:", code, error);
     return null;
   }
 
@@ -102,7 +105,7 @@ async function getCategoryIdByCode(code: string): Promise<string | null> {
   const { data, error } = await supabase.from("budget_categories").select("id").eq("code", code).single();
 
   if (error || !data) {
-    console.error("Error finding category by code:", code);
+    console.error("Error finding category by code:", code, error);
     return null;
   }
 

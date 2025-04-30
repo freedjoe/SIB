@@ -3,9 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Table, Header, Column } from "@tanstack/react-table";
 import { Eye, FileEdit, Trash2, Check, X, File, Download, Printer, RefreshCw, Plus } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export interface ActionHandlers<T> {
   onView?: (data: T) => void;
@@ -141,12 +141,11 @@ export function ReusableDataTable<T>({
     ];
   }, [columns, actionHandlers, customActions, hasActions]);
 
-  const handleExportToExcel = () => {
-    // Flatten data for Excel export
+  const handleExportToExcel = async () => {
     const flattenObject = (obj: Record<string, unknown>, prefix = ""): Record<string, unknown> => {
       return Object.keys(obj).reduce((acc: Record<string, unknown>, k: string) => {
-        const pre = prefix.length ? prefix + "." : "";
-        if (typeof obj[k] === "object" && obj[k] !== null && !Array.isArray(obj[k]) && !(obj[k] instanceof Date)) {
+        const pre = prefix.length ? prefix + "_" : "";
+        if (typeof obj[k] === "object" && obj[k] !== null) {
           Object.assign(acc, flattenObject(obj[k] as Record<string, unknown>, pre + k));
         } else {
           acc[pre + k] = obj[k];
@@ -170,7 +169,53 @@ export function ReusableDataTable<T>({
         if (!col.id) return;
 
         // Get the header name for this column
-        const headerName = typeof col.header === "function" ? col.header({ column: { id: col.id } } as any) : col.header || col.id;
+        const headerName =
+          typeof col.header === "function"
+            ? (col.header as (props: { column: Column<T>; header: Header<T, unknown>; table: Table<T> }) => React.ReactNode)({
+                column: {
+                  id: col.id,
+                  columnDef: col,
+                  getSize: () => 150,
+                  getStart: () => 0,
+                  getLeafColumns: () => [],
+                  getIsVisible: () => true,
+                  pin: undefined,
+                  getFlatColumns: () => [],
+                  depth: 0,
+                  columns: [],
+                  parent: null,
+                  headerGroup: null,
+                } as Column<T>,
+                header: {
+                  id: col.id,
+                  column: { id: col.id } as Column<T>,
+                  getContext: () => ({
+                    column: { id: col.id } as Column<T>,
+                    header: { id: col.id } as Header<T, unknown>,
+                    table: {} as Table<T>,
+                  }),
+                  getIsResizing: () => false,
+                  getSize: () => 150,
+                  getStart: () => 0,
+                } as Header<T, unknown>,
+                table: {
+                  options: {},
+                  getCenterTotalSize: () => 0,
+                  getExpandedRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+                  getFilteredRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+                  getFlatHeaders: () => [],
+                  getHeaderGroups: () => [],
+                  getLeafHeaders: () => [],
+                  getPaginationRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+                  getRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+                  getSortedRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+                  getState: () => ({}),
+                  setOptions: () => {},
+                  setState: () => {},
+                  refs: { tableElement: null, tableHeadElement: null, tableBodyElement: null },
+                } as Table<T>,
+              })
+            : col.header || col.id;
 
         // Get the cell value
         exportRow[typeof headerName === "string" ? headerName : col.id] = flatItem[col.id];
@@ -179,13 +224,33 @@ export function ReusableDataTable<T>({
       return exportRow;
     });
 
-    // Create workbook and add worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(formattedData);
-    XLSX.utils.book_append_sheet(wb, ws, tableName);
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(tableName);
 
-    // Save to file
-    XLSX.writeFile(wb, `${tableName}_export_${new Date().toISOString().split("T")[0]}.xlsx`);
+    // Add headers
+    const headers = Object.keys(formattedData[0] || {});
+    worksheet.columns = headers.map((header) => ({ header, key: header, width: 15 }));
+
+    // Add data rows
+    formattedData.forEach((row) => {
+      worksheet.addRow(row);
+    });
+
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+
+    // Generate and download the file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tableName}_export_${new Date().toISOString().split("T")[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handlePrint = () => {

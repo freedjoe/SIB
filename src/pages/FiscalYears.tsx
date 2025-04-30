@@ -222,17 +222,31 @@ export default function FiscalYearsPage() {
   });
 
   useEffect(() => {
-    let result = fiscalYears;
+    // Only process if fiscalYears array has data to prevent unnecessary updates
+    if (fiscalYears.length === 0) {
+      setFilteredYears([]);
+      return;
+    }
+
+    let result = [...fiscalYears]; // Create a copy only once
 
     // Filter by search term
     if (searchTerm) {
-      result = result.filter((fy) => fy.year.toString().includes(searchTerm) || fy.description?.toLowerCase().includes(searchTerm.toLowerCase()));
+      result = result.filter(
+        (fy) => fy.year.toString().includes(searchTerm) || (fy.description?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      );
     }
 
     // Sort by year (descending)
-    result = [...result].sort((a, b) => b.year - a.year);
+    result.sort((a, b) => b.year - a.year);
 
-    setFilteredYears(result);
+    // Use Object.is or JSON.stringify comparison to prevent unnecessary state updates
+    const currentFilteredYearsStr = JSON.stringify(filteredYears.map((fy) => fy.id));
+    const newFilteredYearsStr = JSON.stringify(result.map((fy) => fy.id));
+
+    if (currentFilteredYearsStr !== newFilteredYearsStr) {
+      setFilteredYears(result);
+    }
   }, [fiscalYears, searchTerm]);
 
   const handleViewDetails = (fiscalYear: FiscalYear) => {

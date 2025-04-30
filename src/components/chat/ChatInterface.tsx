@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ChatMessage,
@@ -18,10 +18,10 @@ import { Plus, Trash2, Send, Bot, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight } from "prism-react-renderer";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import type { ComponentPropsWithoutRef } from "react";
 
 export default function ChatInterface() {
   const { user } = useAuth();
@@ -33,32 +33,16 @@ export default function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (user) {
-      loadSessions();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (currentSession) {
-      loadMessages();
-    }
-  }, [currentSession]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       const data = await getChatSessions(user!.id);
       setSessions(data);
     } catch (error) {
       toast.error("Failed to load chat sessions");
     }
-  };
+  }, [user]);
 
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     if (!currentSession) return;
     try {
       const data = await getChatMessages(currentSession.id);
@@ -66,7 +50,23 @@ export default function ChatInterface() {
     } catch (error) {
       toast.error("Failed to load messages");
     }
-  };
+  }, [currentSession]);
+
+  useEffect(() => {
+    if (user) {
+      loadSessions();
+    }
+  }, [user, loadSessions]);
+
+  useEffect(() => {
+    if (currentSession) {
+      loadMessages();
+    }
+  }, [currentSession, loadMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const createNewSession = async () => {
     if (!user) return;
@@ -145,16 +145,30 @@ export default function ChatInterface() {
     return (
       <ReactMarkdown
         components={{
-          code({ node, inline, className, children, ...props }) {
+          code(props: ComponentPropsWithoutRef<"code">) {
+            const { children, className } = props;
             const match = /language-(\w+)/.exec(className || "");
-            return !inline && match ? (
-              <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
-                {String(children).replace(/\n$/, "")}
-              </SyntaxHighlighter>
-            ) : (
-              <code className={className} {...props}>
-                {children}
-              </code>
+            const language = match ? match[1] : "";
+
+            if (!className) {
+              return <code {...props} />;
+            }
+
+            return (
+              <Highlight code={String(children).replace(/\n$/, "")} language={language || "typescript"} theme={undefined}>
+                {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                  <pre className={cn(className, "rounded-md p-4")} style={style}>
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line })}>
+                        <span className="select-none opacity-50 mr-4">{i + 1}</span>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
             );
           },
         }}
