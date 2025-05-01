@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Request, RequestWithRelations, RequestType, PriorityLevel, RecordStatus } from "@/types/database.types";
 
 // Import the Supabase hooks for fetching real data
-import { useRequests, useRequest, useRequestMutation, useMinistries, useFiscalYears } from "@/hooks/useSupabaseData";
+import { useRequests, useRequest, useRequestMutation, useMinistries, useFiscalYears } from "@/hooks/supabase";
 
 // Import formatCurrency from utils
 import { formatCurrency } from "@/lib/utils";

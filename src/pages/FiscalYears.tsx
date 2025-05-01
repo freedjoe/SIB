@@ -24,9 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useFiscalYears, useFiscalYear, useFiscalYearMutation } from "@/hooks/useSupabaseData";
+import { useFiscalYears, useFiscalYear, useFiscalYearMutation } from "@/hooks/supabase";
 import { FiscalYear } from "@/types/database.types";
 import { formatCurrency } from "@/lib/utils";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 // Sample chart data
 const monthlyConsumptionData = {
@@ -193,14 +194,8 @@ export default function FiscalYearsPage() {
     description: "",
   });
 
-  // Fetch fiscal years data
-  const {
-    data: fiscalYears = [],
-    isLoading: isLoadingFiscalYears,
-    refetch: refetchFiscalYears,
-  } = useFiscalYears({
-    staleTime: 1000 * 60 * 15, // 15 minutes - fiscal years don't change often
-  });
+  // Fetch fiscal years data with entity-level optimizations
+  const { data: fiscalYears = [], isLoading: isLoadingFiscalYears, refetch: refetchFiscalYears } = useFiscalYears(); // All optimizations are now in the entity file
 
   // Use mutation hook for fiscal year operations
   const fiscalYearMutation = useFiscalYearMutation({
@@ -237,14 +232,10 @@ export default function FiscalYearsPage() {
     // Sort by year (descending)
     result.sort((a, b) => b.year - a.year);
 
-    // Use Object.is or JSON.stringify comparison to prevent unnecessary state updates
-    const currentFilteredYearsStr = JSON.stringify(filteredYears.map((fy) => fy.id));
-    const newFilteredYearsStr = JSON.stringify(result.map((fy) => fy.id));
-
-    if (currentFilteredYearsStr !== newFilteredYearsStr) {
-      setFilteredYears(result);
-    }
-  }, [fiscalYears, searchTerm, statusFilter]);
+    // Update filtered years without checking current state
+    // This eliminates the dependency on filteredYears and breaks the infinite loop
+    setFilteredYears(result);
+  }, [fiscalYears, searchTerm, statusFilter]); // Remove filteredYears from dependencies
 
   const handleViewDetails = (fiscalYear: FiscalYear) => {
     setSelectedYear(fiscalYear);
@@ -401,15 +392,7 @@ export default function FiscalYearsPage() {
   };
 
   if (isLoadingFiscalYears) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-        </svg>
-        <span className="text-lg text-muted-foreground text-center">Chargement des exercices budgétaires...</span>
-      </div>
-    );
+    return <PageLoadingSpinner message="Chargement des années fiscales..." />;
   }
 
   return (
@@ -462,7 +445,7 @@ export default function FiscalYearsPage() {
       <DashboardSection>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {filteredYears.map((fiscalYear) => (
-            <Card key={fiscalYear.id} className="overflow-hidden transition-all hover:shadow-md">
+            <Card key={fiscalYear.id} className="overflow-hidden transition-all hover:shadow-md flex flex-col justify-between">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
@@ -528,7 +511,7 @@ export default function FiscalYearsPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="pt-1 pb-4 flex flex-wrap justify-center gap-2">
+              <CardFooter className="pt-4 pb-4 flex flex-wrap justify-center gap-2 border-t">
                 <div className="flex gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleViewDetails(fiscalYear)} title={t("common.view")}>
                     <Eye className="h-4 w-4" />

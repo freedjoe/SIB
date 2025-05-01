@@ -22,6 +22,7 @@ import { CreditCard, FileCheck, Calendar, CheckCircle, Clock, X, ArrowRightLeft,
 import { BudgetChart } from "@/components/charts/BudgetChart";
 import { PaymentRequestTable } from "@/components/tables/PaymentRequestTable";
 import { PaymentRequestDialog } from "@/components/dialogs/PaymentRequestDialog";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 const Payments = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,6 +60,11 @@ const Payments = () => {
     queryKey: ["engagements"],
     queryFn: getAllEngagements,
   });
+
+  // Show loading spinner when any data is being fetched
+  if (isLoadingPayments || isLoadingRequests || isLoadingEngagements) {
+    return <PageLoadingSpinner message="Chargement des paiements..." />;
+  }
 
   const formatPayments = (payments: PaymentWithRelations[]): Payment[] => {
     return payments.map((payment) => ({

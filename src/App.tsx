@@ -16,13 +16,12 @@ import Engagements from "./pages/Engagements";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
-import Settings from "./pages/settings";
 import Profile from "./pages/settings/Profile";
 import Localization from "./pages/settings/Localization";
 import Security from "./pages/settings/Security";
 import BasicData from "./pages/settings/BasicData";
 import Ministries from "./pages/settings/basic-data/Ministries";
-import Companies from "./pages/settings/basic-data/Companies";
+import Entreprises from "./pages/settings/basic-data/Enterprises";
 import BudgetCatalog from "./pages/settings/basic-data/BudgetCatalog";
 import Nomenclature from "./pages/settings/basic-data/Nomenclature";
 import ReportTypes from "./pages/settings/basic-data/ReportTypes";
@@ -43,6 +42,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
 import { queryClient, prefetchCollection } from "./lib/reactQuery";
+import { PageLoadingSpinner } from "./components/ui-custom/PageLoadingSpinner";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,7 +50,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const adminLoggedIn = localStorage.getItem("adminLoggedIn") === "true";
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <PageLoadingSpinner message="Chargement de l'application..." />;
   }
 
   if (!user && !adminLoggedIn) {
@@ -69,7 +69,6 @@ const AppRoutes = () => {
     if (user || localStorage.getItem("adminLoggedIn") === "true") {
       // Prefetch basic data for the app
       prefetchCollection("ministries", "ministries");
-      prefetchCollection("companies", "companies");
 
       // Add other global data prefetches here as needed
     }
@@ -90,7 +89,7 @@ const AppRoutes = () => {
 
   // Show loading spinner while checking auth status
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <PageLoadingSpinner message="Chargement de l'application..." />;
   }
 
   return (
@@ -124,7 +123,7 @@ const AppRoutes = () => {
         <Route path="/settings/localization" element={<Localization />} />
         <Route path="/settings/basic-data" element={<BasicData />} />
         <Route path="/settings/basic-data/ministries" element={<Ministries />} />
-        <Route path="/settings/basic-data/companies" element={<Companies />} />
+        <Route path="/settings/basic-data/entreprises" element={<Entreprises />} />
         <Route path="/settings/basic-data/budget-catalog" element={<BudgetCatalog />} />
         <Route path="/settings/basic-data/nomenclature" element={<Nomenclature />} />
         <Route path="/settings/basic-data/report-types" element={<ReportTypes />} />

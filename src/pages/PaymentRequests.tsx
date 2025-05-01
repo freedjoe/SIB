@@ -14,6 +14,7 @@ import { PaymentRequestDialog } from "@/components/dialogs/PaymentRequestDialog"
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
 import { PaymentStats } from "@/components/stats/PaymentStats";
 import { formatCurrency } from "@/lib/utils";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 type FormattedPaymentRequest = {
   id: string;
@@ -53,6 +54,11 @@ const PaymentRequests = () => {
     queryKey: ["engagements"],
     queryFn: getAllEngagements,
   });
+
+  // Show loading spinner when any data is being fetched
+  if (isLoading || isLoadingEngagements) {
+    return <PageLoadingSpinner message="Chargement des demandes de paiement..." />;
+  }
 
   const formatPaymentRequests = (requests: PaymentRequestWithRelations[]): FormattedPaymentRequest[] => {
     return requests.map((request) => ({
@@ -207,14 +213,6 @@ const PaymentRequests = () => {
         allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0, // Simulation du montant déjà alloué
       }))
     : [];
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Chargement des demandes de paiement...</div>;
-  }
-
-  if (error) {
-    return <div className="flex items-center justify-center h-screen">Erreur lors du chargement des demandes de paiement</div>;
-  }
 
   return (
     <Dashboard>

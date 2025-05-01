@@ -367,7 +367,7 @@
     "type": "base",
     "schema": [
       { "name": "operation", "type": "relation", "required": true },
-      { "name": "company_name", "type": "text", "required": true },
+      { "name": "entreprise_name", "type": "text", "required": true },
       { "name": "amount", "type": "number", "options": { "min": 0 } },
       { "name": "physical_rate", "type": "number", "options": { "min": 0 } },
       { "name": "financial_rate", "type": "number", "options": { "min": 0 } },

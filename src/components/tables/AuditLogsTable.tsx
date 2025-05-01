@@ -2,15 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 import { Badge } from "@/components/ui/badge";
-
-export interface AuditLog {
-  id: string;
-  timestamp: string;
-  user: string;
-  action: string;
-  details: string;
-  ipAddress: string;
-}
+import { AuditLog } from "@/hooks/supabase/entities/audit_logs";
 
 interface AuditLogsTableProps {
   logs: AuditLog[];
@@ -22,15 +14,15 @@ interface AuditLogsTableProps {
 export function AuditLogsTable({ logs, formatTimestamp, onView, onRefresh }: AuditLogsTableProps) {
   const columns: ColumnDef<AuditLog, unknown>[] = [
     {
-      accessorKey: "timestamp",
+      accessorKey: "created_at",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
-      cell: ({ row }) => formatTimestamp(row.getValue("timestamp")),
+      cell: ({ row }) => formatTimestamp(row.getValue("created_at")),
       filterFn: "includesString",
     },
     {
-      accessorKey: "user",
+      accessorKey: "user_id",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Utilisateur" />,
-      cell: ({ row }) => row.getValue("user"),
+      cell: ({ row }) => row.getValue("user_id"),
       filterFn: "includesString",
     },
     {
@@ -44,19 +36,15 @@ export function AuditLogsTable({ logs, formatTimestamp, onView, onRefresh }: Aud
       filterFn: "includesString",
     },
     {
-      accessorKey: "details",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Détails" />,
-      cell: ({ row }) => (
-        <div className="max-w-[300px] truncate" title={row.getValue("details")}>
-          {row.getValue("details")}
-        </div>
-      ),
+      accessorKey: "table_name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Table" />,
+      cell: ({ row }) => row.getValue("table_name"),
       filterFn: "includesString",
     },
     {
-      accessorKey: "ipAddress",
+      accessorKey: "ip_address",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Adresse IP" />,
-      cell: ({ row }) => row.getValue("ipAddress"),
+      cell: ({ row }) => row.getValue("ip_address"),
       filterFn: "includesString",
     },
   ];

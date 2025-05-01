@@ -276,7 +276,12 @@ CREATE TABLE IF NOT EXISTS enterprises (
     rc TEXT,
     address TEXT,
     phone TEXT,
-    email TEXT
+    phone2 TEXT,
+    fax TEXT,
+    fax2 TEXT,
+    email TEXT,
+    website TEXT,
+    description TEXT
 );
 
 -- 25. Report Types
@@ -314,7 +319,7 @@ CREATE TABLE IF NOT EXISTS requests (
 CREATE TABLE IF NOT EXISTS deals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     operation_id UUID REFERENCES operations(id) ON DELETE CASCADE,
-    company_name TEXT NOT NULL,
+    entreprise_name TEXT NOT NULL,
     amount DECIMAL(18,2),
     date_signed DATE,
     physical_rate NUMERIC,
@@ -709,7 +714,7 @@ BEGIN
 
             -- deals
             ('deals', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
-            ('deals', 'company_name', 'TEXT NOT NULL'),
+            ('deals', 'entreprise_name', 'TEXT NOT NULL'),
             ('deals', 'amount', 'DECIMAL(18,2)'),
             ('deals', 'date_signed', 'DATE'),
             ('deals', 'physical_rate', 'NUMERIC'),

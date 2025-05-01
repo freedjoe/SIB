@@ -24,7 +24,7 @@ import { PrevisionsCPTable } from "@/components/tables/PrevisionsCPTable";
 import { DataLoadingWrapper } from "@/components/ui-custom/DataLoadingWrapper";
 
 // Import our custom React Query hooks
-import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/useSupabaseData";
+import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/supabase";
 import { formatCurrency } from "@/lib/utils";
 
 const PrevisionsCP = () => {

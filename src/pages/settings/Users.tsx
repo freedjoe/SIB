@@ -21,7 +21,7 @@ interface User {
   last_name: string;
   status: "active" | "inactive" | "pending";
   role: { id: string; name: string };
-  company: { id: string; name: string } | null;
+  entreprise: { id: string; name: string } | null;
   is_active: boolean;
   created_at: string;
   last_login: string | null;
@@ -34,13 +34,13 @@ interface UserFormData {
   username: string;
   password_hash: string;
   role_id: string;
-  company_id?: string;
+  entreprise_id?: string;
 }
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState([]);
-  const [companies, setCompanies] = useState([]);
+  const [entreprises, setEntreprises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "delete">("add");
@@ -54,14 +54,14 @@ export default function Users() {
       username: "",
       password_hash: "",
       role_id: "",
-      company_id: "",
+      entreprise_id: "",
     },
   });
 
   useEffect(() => {
     fetchUsers();
     fetchRoles();
-    fetchCompanies();
+    fetchEntreprises();
   }, []);
 
   async function fetchUsers() {
@@ -71,7 +71,7 @@ export default function Users() {
         .select(
           `
           *,
-          company:company_id(name),
+          entreprise:entreprise_id(name),
           role:role_id(name)
         `
         )
@@ -107,14 +107,14 @@ export default function Users() {
     }
   }
 
-  async function fetchCompanies() {
+  async function fetchEntreprises() {
     try {
-      const { data, error } = await supabase.from("companies").select("*").order("name");
+      const { data, error } = await supabase.from("entreprises").select("*").order("name");
 
       if (error) throw error;
-      setCompanies(data);
+      setEntreprises(data);
     } catch (error) {
-      console.error("Error fetching companies:", error);
+      console.error("Error fetching entreprises:", error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les organisations",
@@ -350,7 +350,7 @@ export default function Users() {
                 />
                 <FormField
                   control={form.control}
-                  name="company_id"
+                  name="entreprise_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Organisation</FormLabel>
@@ -361,9 +361,9 @@ export default function Users() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
+                          {entreprises.map((entreprise) => (
+                            <SelectItem key={entreprise.id} value={entreprise.id}>
+                              {entreprise.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

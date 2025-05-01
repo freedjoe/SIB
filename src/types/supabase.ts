@@ -835,7 +835,7 @@ export interface Database {
         Row: {
           id: string;
           operation_id: string | null;
-          company_name: string;
+          entreprise_name: string;
           amount: number | null;
           date_signed: string | null;
           physical_rate: number | null;
@@ -846,7 +846,7 @@ export interface Database {
         Insert: {
           id?: string;
           operation_id?: string | null;
-          company_name: string;
+          entreprise_name: string;
           amount?: number | null;
           date_signed?: string | null;
           physical_rate?: number | null;
@@ -857,7 +857,7 @@ export interface Database {
         Update: {
           id?: string;
           operation_id?: string | null;
-          company_name?: string;
+          entreprise_name?: string;
           amount?: number | null;
           date_signed?: string | null;
           physical_rate?: number | null;
@@ -904,7 +904,7 @@ export type Request = Database["public"]["Tables"]["requests"]["Row"];
 export type Deal = Database["public"]["Tables"]["deals"]["Row"];
 
 // Alias for backward compatibility
-export type Company = Enterprise;
+export type Entreprise = Enterprise;
 export type PrevisionCP = CPForecast;
 
 // Common types

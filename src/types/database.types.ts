@@ -108,7 +108,7 @@ export type ActionType = "Centralized" | "Decentralized" | "Unique" | "Programme
 export type ProgramType = "program" | "subprogram" | "dotation";
 
 // Maintain backward compatibility aliases
-export type Company = Enterprise;
+export type Entreprise = Enterprise;
 export type PrevisionCP = CPForecast;
 
 // Type to map table names to their row types

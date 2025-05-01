@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
@@ -35,6 +35,7 @@ import { CircularProgressIndicator } from "@/components/ui/ui-custom/CircularPro
 import { toast } from "@/components/ui/use-toast";
 import { DataLoadingWrapper } from "@/components/ui-custom/DataLoadingWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 // Mock data for fiscal years with different values for each year
 const fiscalYears = [
@@ -424,6 +425,12 @@ export default function DashboardPage() {
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [loading, setLoading] = useState(false); // Add this if not already present
+
+  useEffect(() => {
+    if (loading) {
+      return <PageLoadingSpinner message="Chargement du tableau de bord..." />;
+    }
+  }, [loading]);
 
   const handleGenerateReport = () => {
     setGeneratingPdf(true);

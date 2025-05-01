@@ -14,8 +14,9 @@ import { ActionsTable } from "@/components/tables/ActionsTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn, formatCurrency } from "@/lib/utils";
-import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/useSupabaseData";
+import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/supabase";
 import { Program, Portfolio, FiscalYear, Action } from "@/types/database.types";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 // Simple inline Spinner component
 const Spinner = ({ className }: { className?: string }) => (
@@ -93,6 +94,11 @@ export default function Actions() {
   const { data: fiscalYearsData = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
     staleTime: 1000 * 60 * 60, // 60 minutes - fiscal years rarely change
   });
+
+  // Show loading spinner when data is being fetched
+  if (isLoadingActions || isLoadingPrograms || isLoadingPortfolios || isLoadingFiscalYears) {
+    return <PageLoadingSpinner message="Chargement des actions..." />;
+  }
 
   // Use mutation hook for action operations
   const actionMutation = useActionMutation({

@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { OperationsTable } from "@/components/tables/OperationsTable";
 import { Operation, Wilaya, Program, Action } from "@/types/database.types";
-import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions } from "@/hooks/useSupabaseData";
+import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions } from "@/hooks/supabase";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
@@ -249,7 +250,7 @@ export default function OperationsPage() {
       montant_initial: 35000000,
       montant_actuel: 35000000,
       statut: "Approuvé",
-      beneficiaire: "Entreprise de construction ABC",
+      beneficiaire: "Enterprise de construction ABC",
     },
     {
       id: "eng2",
@@ -323,7 +324,7 @@ export default function OperationsPage() {
     {
       id: "cont1",
       reference: "CTR-2023-001",
-      entreprise: "Entreprise de construction ABC",
+      enterprise: "Enterprise de construction ABC",
       date_signature: "2023-02-01",
       montant: 35000000,
       objet: "Construction principale",
@@ -332,7 +333,7 @@ export default function OperationsPage() {
     {
       id: "cont2",
       reference: "CTR-2023-002",
-      entreprise: "Fournisseur XYZ",
+      enterprise: "Fournisseur XYZ",
       date_signature: "2023-04-05",
       montant: 25000000,
       objet: "Fourniture d'équipements",
@@ -650,7 +651,7 @@ export default function OperationsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Référence</TableHead>
-                        <TableHead>Entreprise</TableHead>
+                        <TableHead>Enterprise</TableHead>
                         <TableHead>Date de signature</TableHead>
                         <TableHead>Montant</TableHead>
                         <TableHead>Objet</TableHead>
@@ -661,7 +662,7 @@ export default function OperationsPage() {
                       {mockContrats.map((contrat) => (
                         <TableRow key={contrat.id}>
                           <TableCell className="font-medium">{contrat.reference}</TableCell>
-                          <TableCell>{contrat.entreprise}</TableCell>
+                          <TableCell>{contrat.enterprise}</TableCell>
                           <TableCell>{contrat.date_signature}</TableCell>
                           <TableCell>{formatCurrency(contrat.montant)}</TableCell>
                           <TableCell>{contrat.objet}</TableCell>
@@ -772,15 +773,7 @@ export default function OperationsPage() {
   };
 
   if (operationsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-        </svg>
-        <span className="ml-4 text-lg text-muted-foreground">Chargement des opérations...</span>
-      </div>
-    );
+    return <PageLoadingSpinner message="Chargement des opérations..." />;
   }
 
   return (

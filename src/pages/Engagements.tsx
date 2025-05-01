@@ -17,9 +17,10 @@ import { useEffect } from "react";
 import { ReevaluationsTable } from "@/components/tables/ReevaluationsTable";
 import { getAllEngagementReevaluations, EngagementReevaluationWithRelations } from "@/services/engagementReevaluationsService";
 import { EngagementsTable } from "@/components/tables/EngagementsTable";
-import { useEngagements, useOperations, useMinistries, useEngagementMutation } from "@/hooks/useSupabaseData";
+import { useEngagements, useOperations, useMinistries, useEngagementMutation } from "@/hooks/supabase";
 import { Engagement, Operation, Ministry } from "@/types/database.types";
 import { formatCurrency } from "@/lib/utils";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 export default function Engagements() {
   const { t } = useTranslation();
@@ -316,15 +317,7 @@ export default function Engagements() {
   };
 
   if (isLoadingEngagements || isLoadingOperations || isLoadingMinistries) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-        </svg>
-        <span className="ml-4 text-lg text-muted-foreground">Chargement des engagements...</span>
-      </div>
-    );
+    return <PageLoadingSpinner message="Chargement des engagements..." />;
   }
 
   // Extract operation names from operationsData
@@ -335,7 +328,7 @@ export default function Engagements() {
 
   // Mock beneficiaries until we have a proper API endpoint
   const beneficiaires = [
-    "Entreprise Nationale de Travaux Publics",
+    "Enterprise Nationale de Travaux Publics",
     "SONATRACH",
     "SONELGAZ",
     "Ministère de la Défense Nationale",

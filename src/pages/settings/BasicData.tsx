@@ -32,10 +32,10 @@ const dataCategories = [
     color: "bg-orange-500",
   },
   {
-    title: "Entreprises",
-    description: "Gérez les entreprises et fournisseurs",
+    title: "Enterprises",
+    description: "Gérez les enterprises et fournisseurs",
     icon: Building,
-    path: "/settings/basic-data/companies",
+    path: "/settings/basic-data/entreprises",
     color: "bg-pink-500",
   },
   {

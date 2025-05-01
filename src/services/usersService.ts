@@ -4,7 +4,7 @@ import { Tables } from "@/integrations/supabase/types";
 export type User = Tables<"users">;
 
 export interface UserWithRelations extends User {
-  company?: {
+  entreprise?: {
     name: string;
     code: string;
   };
@@ -25,7 +25,7 @@ export async function getAllUsers(): Promise<UserWithRelations[]> {
     .select(
       `
       *,
-      company:company_id (name, code),
+      entreprise:entreprise_id (name, code),
       role:role_id (
         name,
         permissions:role_permissions (
@@ -50,7 +50,7 @@ export async function getUserById(id: string): Promise<UserWithRelations | null>
     .select(
       `
       *,
-      company:company_id (name, code),
+      entreprise:entreprise_id (name, code),
       role:role_id (
         name,
         permissions:role_permissions (
@@ -76,7 +76,7 @@ export async function getUserByUsername(username: string): Promise<UserWithRelat
     .select(
       `
       *,
-      company:company_id (name, code),
+      entreprise:entreprise_id (name, code),
       role:role_id (
         name,
         permissions:role_permissions (
@@ -136,13 +136,13 @@ export async function updateUserLastLogin(id: string): Promise<void> {
   }
 }
 
-export async function getUsersByCompany(companyId: string): Promise<UserWithRelations[]> {
+export async function getUsersByEntreprise(entrepriseId: string): Promise<UserWithRelations[]> {
   const { data, error } = await supabase
     .from("users")
     .select(
       `
       *,
-      company:company_id (name, code),
+      entreprise:entreprise_id (name, code),
       role:role_id (
         name,
         permissions:role_permissions (
@@ -151,11 +151,11 @@ export async function getUsersByCompany(companyId: string): Promise<UserWithRela
       )
     `
     )
-    .eq("company_id", companyId)
+    .eq("entreprise_id", entrepriseId)
     .order("username", { ascending: true });
 
   if (error) {
-    console.error(`Error fetching users for company ${companyId}:`, error);
+    console.error(`Error fetching users for entreprise ${entrepriseId}:`, error);
     throw error;
   }
 
@@ -168,7 +168,7 @@ export async function getUsersByRole(roleId: string): Promise<UserWithRelations[
     .select(
       `
       *,
-      company:company_id (name, code),
+      entreprise:entreprise_id (name, code),
       role:role_id (
         name,
         permissions:role_permissions (

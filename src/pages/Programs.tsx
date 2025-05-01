@@ -13,9 +13,10 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 // Replace direct Supabase import with hooks
-import { usePrograms, usePortfolios, useMinistries, useFiscalYears, useProgramMutation, useActionsByProgram } from "@/hooks/useSupabaseData";
+import { usePrograms, usePortfolios, useMinistries, useFiscalYears, useProgramMutation, useActionsByProgram } from "@/hooks/supabase";
 // Import types from types folder
 import { Portfolio, Ministry, FiscalYear, Action, Program } from "@/types/database.types";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 export default function ProgramsPage() {
   // State for filters
@@ -470,15 +471,7 @@ export default function ProgramsPage() {
   const availableParentPrograms = programs.filter((p) => p.id !== currentProgram?.id);
 
   if (isLoadingPrograms || isLoadingPortfolios || isLoadingMinistries || isLoadingFiscalYears) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-        </svg>
-        <span className="text-lg text-muted-foreground text-center">Chargement des programmes...</span>
-      </div>
-    );
+    return <PageLoadingSpinner message="Chargement des programmes..." />;
   }
 
   return (

@@ -7,13 +7,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AuditLogsTable, AuditLog } from "@/components/tables/AuditLogsTable";
+import { AuditLogsTable } from "@/components/tables/AuditLogsTable";
 import { FinancialControlsTable, FinancialControl } from "@/components/tables/FinancialControlsTable";
 import { toast } from "@/hooks/use-toast";
 import { AuditControlDialog } from "@/components/dialogs/AuditControlDialog";
 import { AuditLogDialog } from "@/components/dialogs/AuditLogDialog";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { useUsers } from "@/hooks/supabase";
+import { useAuditLogs, type AuditLog } from "@/hooks/supabase/entities/audit_logs";
 
-// Mock data for audit controls
+// Mock data for audit controls only (audit logs now come from Supabase)
 const auditControlsData: FinancialControl[] = [
   {
     id: "control-1",
@@ -57,50 +60,6 @@ const auditControlsData: FinancialControl[] = [
   },
 ];
 
-// Mock data for audit logs
-const auditLogsData: AuditLog[] = [
-  {
-    id: "log-1",
-    timestamp: "2023-07-28T14:35:42",
-    user: "admin@sib.dz",
-    action: "Modification de budget",
-    details: "Budget modifié pour le Ministère de l'Éducation",
-    ipAddress: "192.168.1.105",
-  },
-  {
-    id: "log-2",
-    timestamp: "2023-07-28T12:18:23",
-    user: "finance@sib.dz",
-    action: "Approbation d'engagement",
-    details: "Engagement #E2023-167 approuvé",
-    ipAddress: "192.168.1.112",
-  },
-  {
-    id: "log-3",
-    timestamp: "2023-07-27T16:45:10",
-    user: "admin@sib.dz",
-    action: "Création d'utilisateur",
-    details: "Nouvel utilisateur créé: controle@sib.dz",
-    ipAddress: "192.168.1.105",
-  },
-  {
-    id: "log-4",
-    timestamp: "2023-07-27T10:22:51",
-    user: "operation@sib.dz",
-    action: "Création d'opération",
-    details: "Nouvelle opération créée dans le Programme d'Infrastructure",
-    ipAddress: "192.168.1.118",
-  },
-  {
-    id: "log-5",
-    timestamp: "2023-07-26T14:08:32",
-    user: "admin@sib.dz",
-    action: "Modification de rôle",
-    details: "Rôle modifié pour finance@sib.dz: Contrôleur -> Administrateur",
-    ipAddress: "192.168.1.105",
-  },
-];
-
 // Helper function to format date
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = {
@@ -125,6 +84,10 @@ const formatTimestamp = (timestamp: string) => {
 };
 
 export default function AuditPage() {
+  const { data: auditLogs = [], isLoading: isLoadingAuditLogs } = useAuditLogs({
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  const { data: users = [], isLoading: isLoadingUsers } = useUsers();
   const [searchTerm, setSearchTerm] = useState("");
   const [controlDialogOpen, setControlDialogOpen] = useState(false);
   const [controlDialogType, setControlDialogType] = useState<"add" | "edit" | "view">("add");
@@ -140,11 +103,8 @@ export default function AuditPage() {
       control.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredLogs = auditLogsData.filter(
-    (log) =>
-      log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLogs = auditLogs.filter(
+    (log) => log.action.toLowerCase().includes(searchTerm.toLowerCase()) || log.table_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getResultBadge = (result: string) => {
@@ -218,6 +178,11 @@ export default function AuditPage() {
     // Handle exporting logs
     console.log("Exporting logs");
   };
+
+  // Show loading spinner when any data is being fetched
+  if (isLoadingAuditLogs || isLoadingUsers) {
+    return <PageLoadingSpinner message="Chargement des données d'audit..." />;
+  }
 
   if (loading) {
     return (

@@ -12,7 +12,7 @@ interface User {
   last_name: string;
   status: "active" | "inactive" | "pending";
   role: { id: string; name: string };
-  company: { id: string; name: string } | null;
+  entreprise: { id: string; name: string } | null;
   created_at: string;
   last_login: string | null;
 }
@@ -68,9 +68,9 @@ export function UsersTable({ users, formatDate, getStatusBadge, onView, onEdit, 
       filterFn: "includesString",
     },
     {
-      accessorKey: "company.name",
+      accessorKey: "entreprise.name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Organisation" />,
-      cell: ({ row }) => row.original.company?.name || "N/A",
+      cell: ({ row }) => row.original.entreprise?.name || "N/A",
       filterFn: "includesString",
     },
     {
