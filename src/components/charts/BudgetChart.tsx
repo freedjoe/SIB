@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface BudgetItem {
   name: string;
@@ -29,15 +29,6 @@ export function BudgetChart({ title, data, className, showLegend = true }: Budge
     }, 100);
     return () => clearTimeout(timer);
   }, [data]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   return (
     <Card className={cn("budget-card h-full", className)}>

@@ -24,6 +24,7 @@ import { ForecastedExpenseDialog } from "@/components/dialogs/ForecastedExpenseD
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
 import { StatCard } from "@/components/ui-custom/StatCard";
 import { PlusCircle, FileText, BarChart } from "lucide-react";
+import { cn, formatCurrency } from "@/lib/utils";
 
 type ForecastedExpense = {
   id: string;
@@ -115,15 +116,6 @@ const ForecastedExpenses = () => {
   const handleAddClick = () => {
     setEditingExpense(null);
     setIsDialogOpen(true);
-  };
-
-  // Format currency helper
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      maximumFractionDigits: 2,
-    }).format(amount);
   };
 
   if (loading) {

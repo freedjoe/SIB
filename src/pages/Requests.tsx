@@ -25,6 +25,9 @@ import { Request, RequestWithRelations, RequestType, PriorityLevel, RecordStatus
 // Import the Supabase hooks for fetching real data
 import { useRequests, useRequest, useRequestMutation, useMinistries, useFiscalYears } from "@/hooks/useSupabaseData";
 
+// Import formatCurrency from utils
+import { formatCurrency } from "@/lib/utils";
+
 const Requests = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,15 +79,6 @@ const Requests = () => {
       });
     },
   });
-
-  // Format currency helper
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const getStatusBadge = (status: RecordStatus) => {
     const statusConfig = {

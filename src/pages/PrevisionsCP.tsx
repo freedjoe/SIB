@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Calendar, Check, Clock, Edit, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Calendar, Check, Clock, Edit, Plus, Trash2, AlertTriangle, Download, CreditCard, PlusCircle, FileText, BarChart } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,12 @@ import { PrevisionCP, PrevisionCPStatus } from "@/types/prevision_cp";
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/Dashboard";
 import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui-custom/StatCard";
-import { PlusCircle, FileText, BarChart, Download, CreditCard } from "lucide-react";
 import { PrevisionsCPTable } from "@/components/tables/PrevisionsCPTable";
+import { DataLoadingWrapper } from "@/components/ui-custom/DataLoadingWrapper";
 
 // Import our custom React Query hooks
 import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/useSupabaseData";
+import { formatCurrency } from "@/lib/utils";
 
 const PrevisionsCP = () => {
   const { t } = useTranslation();
@@ -241,15 +242,6 @@ const PrevisionsCP = () => {
     setIsMobilizationDialogOpen(true);
   };
 
-  // Format currency helper
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
   // Get status badge color helper
   const getStatusBadgeVariant = (status: PrevisionCPStatus) => {
     switch (status) {
@@ -437,40 +429,34 @@ const PrevisionsCP = () => {
               </Tabs>
             </div>
 
-            {isLoadingPrevisions ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : filteredProjections.length > 0 ? (
-              <PrevisionsCPTable
-                previsionsCP={filteredProjections}
-                formatCurrency={formatCurrency}
-                onView={handleViewPrevision}
-                onEdit={handleEditPrevision}
-                onDelete={(prevision) => {
-                  if (window.confirm(t("PrevisionsCP.confirmDelete"))) {
-                    handleDeletePrevision(prevision.id);
-                  }
-                }}
-                onMobilize={handleMobilizePrevision}
-                onRefresh={refetchPrevisions}
-                onAddNew={handleAddNewPrevision}
-              />
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                Aucune prévision trouvée pour les critères sélectionnés.
-                <div className="mt-4">
-                  <Button onClick={handleAddNewPrevision}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nouvelle prévision
-                  </Button>
+            <DataLoadingWrapper isLoading={isLoadingPrevisions}>
+              {filteredProjections.length > 0 ? (
+                <PrevisionsCPTable
+                  previsionsCP={filteredProjections}
+                  formatCurrency={formatCurrency}
+                  onView={handleViewPrevision}
+                  onEdit={handleEditPrevision}
+                  onDelete={(prevision) => {
+                    if (window.confirm(t("PrevisionsCP.confirmDelete"))) {
+                      handleDeletePrevision(prevision.id);
+                    }
+                  }}
+                  onMobilize={handleMobilizePrevision}
+                  onRefresh={refetchPrevisions}
+                  onAddNew={handleAddNewPrevision}
+                />
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  Aucune prévision trouvée pour les critères sélectionnés.
+                  <div className="mt-4">
+                    <Button onClick={handleAddNewPrevision}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Nouvelle prévision
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </DataLoadingWrapper>
           </CardContent>
         </Card>
       </DashboardSection>

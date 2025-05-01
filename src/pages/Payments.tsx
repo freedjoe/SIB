@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { getAllPayments, type PaymentWithRelations } from "@/services/paymentsService";
@@ -94,14 +94,6 @@ const Payments = () => {
 
   const payments = paymentsData ? formatPayments(paymentsData) : [];
   const paymentRequests = requestsData ? formatPaymentRequests(requestsData) : [];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const totalPayments = payments.length;
   const totalPaidAmount = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0);

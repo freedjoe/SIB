@@ -1,6 +1,30 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { PrevisionCP } from "@/types/supabase";
+import React from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+// BlurLoader component to blur content while loading
+interface BlurLoaderProps {
+  isLoading: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const BlurLoader = ({ isLoading, children, className }: BlurLoaderProps) => {
+  return (
+    <div
+      className={cn(
+        "transition-all duration-300",
+        isLoading ? "opacity-50 blur-[2px] pointer-events-none animate-pulse" : "opacity-100 blur-0",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
 export default function PrevisionsCP() {
   const [previsions, setPrevisions] = useState<PrevisionCP[]>([]);
@@ -76,8 +100,8 @@ export default function PrevisionsCP() {
                       prevision.status === "COMPLETED"
                         ? "bg-green-100 text-green-800"
                         : prevision.status === "PENDING"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {prevision.status}

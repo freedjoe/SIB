@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { FileCog, SearchIcon, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -171,16 +171,6 @@ export default function OperationsPage() {
           </Badge>
         );
     }
-  };
-
-  // Format currency helper
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (amount === undefined || amount === null) return "0 DZD";
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   // Get progress bar color based on percentage

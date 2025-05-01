@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
@@ -111,42 +111,117 @@ export function useSupabaseQuery<T extends keyof TableTypes>(table: T, queryKey:
 /**
  * Hook for setting up Supabase realtime subscriptions
  */
-export function useSupabaseRealtime(table: string, queryKey: string[] = []) {
+export function useSupabaseRealtime(table: string, queryKey: string[] = [], options: { select?: string } = {}) {
   const queryClient = useQueryClient();
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
+  // Use refs to track component lifecycle and minimize effect dependencies
+  const isMounted = useRef(true);
+  const queryKeyRef = useRef(queryKey);
+  const tableRef = useRef(table);
+  const selectRef = useRef(options.select || "*");
+
+  // Skip setup if empty queryKey is passed (disabled realtime)
+  const realtimeEnabled = queryKey.length > 0;
+
+  // Update refs when dependencies change
   useEffect(() => {
-    // Skip if queryKey is empty (means realtime is disabled)
-    if (!queryKey.length) return;
+    queryKeyRef.current = queryKey;
+    tableRef.current = table;
+    selectRef.current = options.select || "*";
+  }, [queryKey, table, options.select]);
+
+  // Set up and teardown the realtime subscription
+  useEffect(() => {
+    // Skip if realtime is disabled (empty queryKey)
+    if (!realtimeEnabled) {
+      return;
+    }
 
     // Create and subscribe to the channel
-    const newChannel = supabase
-      .channel(`${table}_changes`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table,
-        },
-        (payload) => {
-          console.log(`Realtime update for ${table}:`, payload);
-          queryClient.invalidateQueries({ queryKey: [table, ...queryKey] });
-        }
-      )
-      .subscribe((status) => {
-        console.log(`Realtime subscription status for ${table}:`, status);
-      });
+    let newChannel: RealtimeChannel | null = null;
+    const channelId = `${table}_changes_${Math.random().toString(36).substring(2, 7)}`;
 
-    setChannel(newChannel);
+    try {
+      console.log(`Setting up realtime subscription for ${table}`); // Added consistent logging
+      newChannel = supabase
+        .channel(channelId)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table,
+          },
+          async (payload) => {
+            if (!isMounted.current) return;
 
-    // Cleanup
-    return () => {
-      if (newChannel) {
-        supabase.removeChannel(newChannel);
+            console.log(`Realtime update for ${table}:`, payload);
+
+            // Get the cache key
+            const cacheKey = localStorageCache.getCacheKey(tableRef.current, queryKeyRef.current);
+
+            try {
+              // Handle different event types
+              if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
+                // First, update the React Query cache to ensure UI is updated immediately
+                queryClient.invalidateQueries({ queryKey: [tableRef.current, ...queryKeyRef.current] });
+
+                // Then fetch fresh data to update the local storage cache
+                if (queryKeyRef.current.length > 0) {
+                  // Only update cache if we have specific query keys
+                  const { data: freshData } = await supabase.from(tableRef.current).select(selectRef.current);
+
+                  if (freshData && isMounted.current) {
+                    // Update the local storage cache with fresh data
+                    localStorageCache.saveToCache(cacheKey, freshData);
+
+                    // Update the React Query data
+                    queryClient.setQueryData([tableRef.current, ...queryKeyRef.current], freshData);
+
+                    console.log(`Updated cache for ${tableRef.current} with realtime data`);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(`Error handling realtime update for ${tableRef.current}:`, error);
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log(`Realtime subscription status for ${table}:`, status);
+        });
+
+      // Only set the channel if mounted
+      if (isMounted.current) {
+        setChannel(newChannel);
+        //console.log(`Realtime channel set for ${table}`); // Added consistent logging
       }
+    } catch (error) {
+      console.error(`Error setting up realtime for ${table}:`, error);
+    }
+
+    // Cleanup function
+    return () => {
+      // Mark component as unmounted
+      isMounted.current = false;
+
+      // Safe cleanup of the channel
+      const cleanupChannel = async () => {
+        try {
+          if (newChannel) {
+            await supabase.removeChannel(newChannel);
+            //console.log(`Cleaned up realtime channel for ${table}`); // Added consistent logging
+          }
+        } catch (error) {
+          console.error(`Error cleaning up channel for ${table}:`, error);
+        }
+      };
+
+      // Execute cleanup
+      cleanupChannel();
     };
-  }, [table, queryClient, JSON.stringify(queryKey)]);
+  }, [table, queryClient, realtimeEnabled]); // Minimal dependencies to prevent recreation
 
   return channel;
 }
@@ -155,13 +230,14 @@ export function useSupabaseRealtime(table: string, queryKey: string[] = []) {
  * Combined hook for fetching data and optionally setting up realtime subscriptions
  */
 export function useSupabaseData<T extends keyof TableTypes>(table: T, queryKey: string[] = [], options: QueryOptions<TableTypes[T]> = {}) {
-  const { realtime = true, ...queryOptions } = options;
-  const query = useSupabaseQuery<T>(table, queryKey, queryOptions);
+  const { realtime = true, select = "*", ...queryOptions } = options;
+  const query = useSupabaseQuery<T>(table, queryKey, { select, ...queryOptions });
 
-  // Setup realtime subscription only if enabled
+  // Setup realtime subscription only if enabled, and pass the select option for cache updates
   useSupabaseRealtime(
-    table,
-    realtime ? queryKey : [] // Empty array disables the subscription
+    String(table),
+    realtime ? queryKey : [], // Empty array disables the subscription
+    { select }
   );
 
   return query;
@@ -612,7 +688,10 @@ export function useMinistryMutation(options: MutationOptions = {}) {
 
 // --- Budget Categories ---
 export function useBudgetCategories(options: QueryOptions = {}) {
-  return useSupabaseData("budget_categories", ["all"], options);
+  return useSupabaseData("budget_categories", ["all"], {
+    ...options,
+    sort: options.sort || { column: "code", ascending: true },
+  });
 }
 
 export function useBudgetCategory(id: string | null, options: QueryOptions = {}) {
@@ -633,6 +712,7 @@ export function usePortfolios(options: QueryOptions = {}) {
     ...options,
     select: options.select || "*, ministry:ministry_id(*)",
     sort: options.sort || { column: "name", ascending: true },
+    realtime: options.realtime !== false, // Enable realtime by default unless explicitly disabled
   });
 }
 
@@ -724,7 +804,7 @@ export function useActionMutation(options: MutationOptions = {}) {
 export function useWilayas(options: QueryOptions = {}) {
   return useSupabaseData("wilayas", ["all"], {
     ...options,
-    sort: options.sort || { column: "name", ascending: true },
+    sort: options.sort || { column: "code", ascending: true },
   });
 }
 
@@ -745,6 +825,7 @@ export function useOperations(options: QueryOptions = {}) {
   return useSupabaseData("operations", ["all"], {
     ...options,
     select: options.select || "*, action:action_id(*), wilaya:wilaya_id(*), budget_category:budget_category_id(*)",
+    sort: options.sort || { column: "title", ascending: true },
   });
 }
 
@@ -778,6 +859,7 @@ export function useEngagements(options: QueryOptions = {}) {
   return useSupabaseData("engagements", ["all"], {
     ...options,
     select: options.select || "*, operation:operation_id(*)",
+    sort: options.sort || { column: "inscription_date", ascending: false },
   });
 }
 
@@ -811,6 +893,7 @@ export function useRevaluations(options: QueryOptions = {}) {
   return useSupabaseData("revaluations", ["all"], {
     ...options,
     select: options.select || "*, engagement:engagement_id(*)",
+    sort: options.sort || { column: "revaluation_date", ascending: false },
   });
 }
 
@@ -844,6 +927,7 @@ export function useCreditPayments(options: QueryOptions = {}) {
   return useSupabaseData("credit_payments", ["all"], {
     ...options,
     select: options.select || "*, operation:operation_id(*), fiscal_year:fiscal_year_id(*)",
+    sort: options.sort || { column: "code", ascending: true },
   });
 }
 
@@ -876,7 +960,7 @@ export function usePayments(options: QueryOptions = {}) {
   return useSupabaseData("payments", ["all"], {
     ...options,
     select: options.select || "*, engagement:engagement_id(*), operation:operation_id(*)",
-    sort: options.sort || { column: "date", ascending: false },
+    sort: options.sort || { column: "payment_date", ascending: false },
   });
 }
 
@@ -1067,7 +1151,10 @@ export function useCPConsumptionMutation(options: MutationOptions = {}) {
 
 // --- Special Funds ---
 export function useSpecialFunds(options: QueryOptions = {}) {
-  return useSupabaseData("special_funds", ["all"], options);
+  return useSupabaseData("special_funds", ["all"], {
+    ...options,
+    sort: options.sort || { column: "name", ascending: true },
+  });
 }
 
 export function useSpecialFund(id: string | null, options: QueryOptions = {}) {
@@ -1084,7 +1171,10 @@ export function useSpecialFundMutation(options: MutationOptions = {}) {
 
 // --- Roles ---
 export function useRoles(options: QueryOptions = {}) {
-  return useSupabaseData("roles", ["all"], options);
+  return useSupabaseData("roles", ["all"], {
+    ...options,
+    sort: options.sort || { column: "name", ascending: true },
+  });
 }
 
 export function useRole(id: string | null, options: QueryOptions = {}) {
@@ -1107,6 +1197,7 @@ export function useUsers(options: QueryOptions = {}) {
   return useSupabaseData("users", ["all"], {
     ...options,
     select: options.select || "*, role:role_id(*)",
+    sort: options.sort || { column: "full_name", ascending: true },
   });
 }
 
@@ -1131,6 +1222,7 @@ export function useUserProfiles(options: QueryOptions = {}) {
   return useSupabaseData("user_profiles", ["all"], {
     ...options,
     select: options.select || "*, user:user_id(*), wilaya:wilaya_id(*)",
+    sort: options.sort || { column: "position", ascending: true },
   });
 }
 
@@ -1215,6 +1307,7 @@ export function useRequests(options: QueryOptions = {}) {
   return useSupabaseData("requests", ["all"], {
     ...options,
     select: options.select || "*, ministry:ministry_id(*), fiscal_year:fiscal_year_id(*)",
+    sort: options.sort || { column: "title", ascending: true },
   });
 }
 
@@ -1245,6 +1338,7 @@ export function useDeals(options: QueryOptions = {}) {
   return useSupabaseData("deals", ["all"], {
     ...options,
     select: options.select || "*, operation:operation_id(*)",
+    sort: options.sort || { column: "date_signed", ascending: false },
   });
 }
 
@@ -1271,6 +1365,237 @@ export function useDealMutation(options: MutationOptions = {}) {
     ...options,
     invalidateTables: ["operations", ...(options.invalidateTables || [])],
   });
+}
+
+// --- Extra Engagements ---
+export function useExtraEngagements(options: QueryOptions = {}) {
+  return useSupabaseData("extra_engagements", ["all"], {
+    ...options,
+    sort: options.sort || { column: "engagement_date", ascending: false },
+  });
+}
+
+// --- Tax Revenues ---
+export function useTaxRevenues(options: QueryOptions = {}) {
+  return useSupabaseData("tax_revenues", ["all"], {
+    ...options,
+    sort: options.sort || { column: "tax_name", ascending: true },
+  });
+}
+
+// --- Activity Logs ---
+export function useActivityLogs(options: QueryOptions = {}) {
+  return useSupabaseData("activity_logs", ["all"], {
+    ...options,
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useActivityLogsByUser(userId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("activity_logs", ["by_user", userId], {
+    ...options,
+    filter: (query) => query.eq("user_id", userId),
+    enabled: !!userId && options.enabled !== false,
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useActivityLogMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("activity_logs", options);
+}
+
+// --- Notifications ---
+export function useNotifications(options: QueryOptions = {}) {
+  return useSupabaseData("notifications", ["all"], {
+    ...options,
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useNotificationsByUser(userId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("notifications", ["by_user", userId], {
+    ...options,
+    filter: (query) => query.eq("user_id", userId),
+    enabled: !!userId && options.enabled !== false,
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useNotificationMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("notifications", options);
+}
+
+// --- Comments ---
+export function useComments(options: QueryOptions = {}) {
+  return useSupabaseData("comments", ["all"], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useCommentsByEntity(entityType: string, entityId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("comments", ["by_entity", entityType, entityId], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    filter: (query) => query.eq("entity_type", entityType).eq("entity_id", entityId),
+    enabled: !!entityId && options.enabled !== false,
+    sort: options.sort || { column: "created_at", ascending: true },
+  });
+}
+
+export function useCommentMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("comments", options);
+}
+
+// --- Documents ---
+export function useDocuments(options: QueryOptions = {}) {
+  return useSupabaseData("documents", ["all"], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
+}
+
+export function useDocumentsByEntity(entityType: string, entityId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("documents", ["by_entity", entityType, entityId], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    filter: (query) => query.eq("entity_type", entityType).eq("entity_id", entityId),
+    enabled: !!entityId && options.enabled !== false,
+  });
+}
+
+export function useDocumentMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("documents", options);
+}
+
+// --- Settings ---
+export function useSettings(options: QueryOptions = {}) {
+  return useSupabaseData("settings", ["all"], {
+    ...options,
+    sort: options.sort || { column: "key", ascending: true },
+  });
+}
+
+export function useSetting(key: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("settings", [key], {
+    ...options,
+    filter: (query) => query.eq("key", key),
+    enabled: !!key && options.enabled !== false,
+  });
+}
+
+export function useSettingMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("settings", options);
+}
+
+// --- Permissions ---
+export function usePermissions(options: QueryOptions = {}) {
+  return useSupabaseData("permissions", ["all"], {
+    ...options,
+    select: options.select || "*, role:role_id(*)",
+    sort: options.sort || { column: "resource", ascending: true },
+  });
+}
+
+export function usePermissionsByRole(roleId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("permissions", ["by_role", roleId], {
+    ...options,
+    select: options.select || "*, role:role_id(*)",
+    filter: (query) => query.eq("role_id", roleId),
+    enabled: !!roleId && options.enabled !== false,
+  });
+}
+
+export function usePermissionMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("permissions", options);
+}
+
+// --- Tags ---
+export function useTags(options: QueryOptions = {}) {
+  return useSupabaseData("tags", ["all"], {
+    ...options,
+    sort: options.sort || { column: "name", ascending: true },
+  });
+}
+
+export function useTag(id: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("tags", [id], {
+    ...options,
+    filter: (query) => query.eq("id", id),
+    enabled: !!id && options.enabled !== false,
+  });
+}
+
+export function useTagMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("tags", options);
+}
+
+// --- Milestones ---
+export function useMilestones(options: QueryOptions = {}) {
+  return useSupabaseData("milestones", ["all"], {
+    ...options,
+    select: options.select || "*, operation:operation_id(*)",
+    sort: options.sort || { column: "due_date", ascending: true },
+  });
+}
+
+export function useMilestonesByOperation(operationId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("milestones", ["by_operation", operationId], {
+    ...options,
+    select: options.select || "*, operation:operation_id(*)",
+    filter: (query) => query.eq("operation_id", operationId),
+    enabled: !!operationId && options.enabled !== false,
+  });
+}
+
+export function useMilestoneMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("milestones", options);
+}
+
+// --- Attachments ---
+export function useAttachments(options: QueryOptions = {}) {
+  return useSupabaseData("attachments", ["all"], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    sort: options.sort || { column: "uploaded_at", ascending: false },
+  });
+}
+
+export function useAttachmentsByEntity(entityType: string, entityId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("attachments", ["by_entity", entityType, entityId], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    filter: (query) => query.eq("entity_type", entityType).eq("entity_id", entityId),
+    enabled: !!entityId && options.enabled !== false,
+  });
+}
+
+export function useAttachmentMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("attachments", options);
+}
+
+// --- Audits ---
+export function useAudits(options: QueryOptions = {}) {
+  return useSupabaseData("audits", ["all"], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    sort: options.sort || { column: "timestamp", ascending: false },
+  });
+}
+
+export function useAuditsByEntity(entityType: string, entityId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("audits", ["by_entity", entityType, entityId], {
+    ...options,
+    select: options.select || "*, user:user_id(*)",
+    filter: (query) => query.eq("entity_type", entityType).eq("entity_id", entityId),
+    enabled: !!entityId && options.enabled !== false,
+  });
+}
+
+export function useAuditMutation(options: MutationOptions = {}) {
+  return useSupabaseMutation("audits", options);
 }
 
 // --- Legacy hook aliases (for backward compatibility) ---

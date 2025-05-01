@@ -9,23 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 // Replace direct Supabase import with hooks
 import { usePrograms, usePortfolios, useMinistries, useFiscalYears, useProgramMutation, useActionsByProgram } from "@/hooks/useSupabaseData";
 // Import types from types folder
 import { Portfolio, Ministry, FiscalYear, Action, Program } from "@/types/database.types";
-
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 export default function ProgramsPage() {
   // State for filters
@@ -149,11 +139,11 @@ export default function ProgramsPage() {
     name: "",
     description: "",
     portfolio_id: "",
-    parent_id: null,
-    type: undefined,
-    status: undefined,
-    allocated_ae: undefined,
-    allocated_cp: undefined,
+    parent_id: "", // Changed from null to empty string
+    type: "program", // Set default value instead of undefined
+    status: "draft", // Set default value instead of undefined
+    allocated_ae: 0, // Changed from undefined to 0
+    allocated_cp: 0, // Changed from undefined to 0
   });
 
   // Use React Query hooks for data fetching
@@ -323,11 +313,11 @@ export default function ProgramsPage() {
       name: "",
       description: "",
       portfolio_id: "",
-      parent_id: null,
-      type: undefined,
-      status: undefined,
-      allocated_ae: undefined,
-      allocated_cp: undefined,
+      parent_id: "", // Changed from null to empty string
+      type: "program", // Default value instead of undefined
+      status: "draft", // Default value instead of undefined
+      allocated_ae: 0, // Default to 0 instead of undefined
+      allocated_cp: 0, // Default to 0 instead of undefined
     });
 
     setIsAddDialogOpen(true);
@@ -893,7 +883,7 @@ export default function ProgramsPage() {
                       <SelectValue placeholder="Sélectionner un parent" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="null">Aucun (programme principal)</SelectItem>
+                      <SelectItem value="">Aucun (programme principal)</SelectItem>
                       {availableParentPrograms
                         ?.filter((p) => p.type === "program") // Only programs can be parents
                         .map((program) => (
@@ -1099,8 +1089,8 @@ export default function ProgramsPage() {
                     id="edit-form-ae"
                     type="number"
                     placeholder="Budget AE"
-                    value={formData.allocated_ae || ""}
-                    onChange={(e) => setFormData({ ...formData, allocated_ae: e.target.value ? Number(e.target.value) : undefined })}
+                    value={formData.allocated_ae === undefined ? "" : formData.allocated_ae}
+                    onChange={(e) => setFormData({ ...formData, allocated_ae: e.target.value === "" ? 0 : Number(e.target.value) })}
                     className="w-full"
                   />
                 </div>
@@ -1110,8 +1100,8 @@ export default function ProgramsPage() {
                     id="edit-form-cp"
                     type="number"
                     placeholder="Budget CP"
-                    value={formData.allocated_cp || ""}
-                    onChange={(e) => setFormData({ ...formData, allocated_cp: e.target.value ? Number(e.target.value) : undefined })}
+                    value={formData.allocated_cp === undefined ? "" : formData.allocated_cp}
+                    onChange={(e) => setFormData({ ...formData, allocated_cp: e.target.value === "" ? 0 : Number(e.target.value) })}
                     className="w-full"
                   />
                 </div>

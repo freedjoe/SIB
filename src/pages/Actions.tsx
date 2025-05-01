@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ActionsTable } from "@/components/tables/ActionsTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/useSupabaseData";
 import { Program, Portfolio, FiscalYear, Action } from "@/types/database.types";
 
@@ -202,15 +202,6 @@ export default function Actions() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   // Add new action

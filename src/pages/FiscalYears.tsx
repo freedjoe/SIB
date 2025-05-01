@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useFiscalYears, useFiscalYear, useFiscalYearMutation } from "@/hooks/useSupabaseData";
 import { FiscalYear } from "@/types/database.types";
+import { formatCurrency } from "@/lib/utils";
 
 // Sample chart data
 const monthlyConsumptionData = {
@@ -155,16 +156,6 @@ const actionsDistributionData = {
       ],
     },
   ],
-};
-
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
 };
 
 // Helper function to get status level

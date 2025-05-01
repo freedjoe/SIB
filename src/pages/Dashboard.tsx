@@ -26,13 +26,15 @@ import { BudgetChart } from "@/components/charts/BudgetChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, PieChart, BarChart } from "@/components/charts";
 import { CircularProgressIndicator } from "@/components/ui/ui-custom/CircularProgressIndicator";
 import { toast } from "@/components/ui/use-toast";
+import { DataLoadingWrapper } from "@/components/ui-custom/DataLoadingWrapper";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data for fiscal years with different values for each year
 const fiscalYears = [
@@ -376,16 +378,6 @@ const programDistributionData = {
   ],
 };
 
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
 // Helper function to format date
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -460,301 +452,299 @@ export default function DashboardPage() {
   // Get the selected fiscal year details
   const currentFiscalYear = fiscalYears.find((year) => year.id === selectedYear) || fiscalYears[0];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-        </svg>
-        <span className="ml-4 text-lg text-muted-foreground">Chargement des exercices budgétaires...</span>
-      </div>
-    );
-  }
-
   return (
-    <Dashboard>
-      <DashboardHeader title={t("dashboard.title")} description={t("dashboard.welcome")}>
-        <div className="flex items-center gap-3">
-          <div className="w-52">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("dashboard.selectFiscalYear")} />
-              </SelectTrigger>
-              <SelectContent>
-                {fiscalYears.map((year) => (
-                  <SelectItem key={year.id} value={year.id}>
-                    {t("dashboard.fiscalYear")} {year.year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button className="shadow-subtle" onClick={handleGenerateReport} disabled={generatingPdf}>
-            <BarChart3 className="mr-2 h-4 w-4" />
-            {generatingPdf ? t("dashboard.generatingReport", "Génération du rapport...") : t("dashboard.detailedReport", "Rapport détaillé")}
-          </Button>
+    <DataLoadingWrapper
+      loading={loading}
+      skeleton={
+        <div className="flex items-center justify-center min-h-screen">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <span className="ml-4 text-lg text-muted-foreground">Chargement des exercices budgétaires...</span>
         </div>
-      </DashboardHeader>
-
-      <DashboardSection>
-        <DashboardGrid columns={4}>
-          <StatCard
-            title={t("dashboard.totalBudget")}
-            value={formatCurrency(currentFiscalYear.totalBudget)}
-            description={t("dashboard.fiscalYearBudget")}
-            icon={<DollarSign className="h-4 w-4" />}
-            trend={{ value: 8.2, isPositive: true }}
-          />
-          <StatCard
-            title={t("dashboard.totalAllocated")}
-            value={formatCurrency(currentFiscalYear.allocated)}
-            description={`${Math.round((currentFiscalYear.allocated / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
-            icon={<Wallet className="h-4 w-4" />}
-            trend={{ value: 12.5, isPositive: true }}
-          />
-          <StatCard
-            title={t("dashboard.totalUtilized", "Total Utilized")}
-            value={formatCurrency(currentFiscalYear.paid)}
-            description={`${Math.round((currentFiscalYear.paid / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
-            icon={<CoinsIcon className="h-4 w-4" />}
-            trend={{ value: 4.3, isPositive: true }}
-          />
-          <StatCard
-            title={t("dashboard.remainingBudget")}
-            value={formatCurrency(currentFiscalYear.available)}
-            description={`${Math.round((currentFiscalYear.available / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
-            icon={<PiggyBank className="h-4 w-4" />}
-            trend={{ value: 9.1, isPositive: false }}
-          />
-        </DashboardGrid>
-      </DashboardSection>
-
-      <DashboardSection>
-        <DashboardGrid columns={2}>
-          <BudgetChart title={t("dashboard.byMinistry")} data={currentFiscalYear.budgetData} className="h-full" />
-          <BudgetChart title={t("dashboard.engagementStatus")} data={currentFiscalYear.engagementData} className="h-full" />
-        </DashboardGrid>
-      </DashboardSection>
-
-      <DashboardSection title={t("dashboard.programExecution")} description={t("dashboard.programExecutionDescription")}>
-        <Card className="budget-card">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">{t("dashboard.mainPrograms")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {currentFiscalYear.programmesData.map((program, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{program.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatCurrency(program.spent)} / {formatCurrency(program.allocation)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={program.progress} className="h-2" />
-                    <span
-                      className={cn(
-                        "text-xs font-medium",
-                        program.progress < 40 ? "text-budget-danger" : program.progress < 70 ? "text-budget-warning" : "text-budget-success"
-                      )}
-                    >
-                      {program.progress}%
-                    </span>
-                  </div>
-                </div>
-              ))}
+      }
+    >
+      <Dashboard>
+        <DashboardHeader title={t("dashboard.title")} description={t("dashboard.welcome")}>
+          <div className="flex items-center gap-3">
+            <div className="w-52">
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("dashboard.selectFiscalYear")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {fiscalYears.map((year) => (
+                    <SelectItem key={year.id} value={year.id}>
+                      {t("dashboard.fiscalYear")} {year.year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
-      </DashboardSection>
-
-      <DashboardGrid columns={2}>
-        <DashboardSection title="Approbations en attente" description="Engagements nécessitant une approbation">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {pendingApprovals.map((approval, index) => (
-                  <div key={index} className="flex items-start space-x-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <h4 className="text-sm font-medium">{approval.name}</h4>
-                        {getPriorityBadge(approval.priority)}
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <p className="text-sm text-muted-foreground">{approval.requestedBy}</p>
-                        <p className="text-sm font-medium">{formatCurrency(approval.amount)}</p>
-                      </div>
-                      <div className="flex items-center mt-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground mr-1" />
-                        <span className="text-xs text-muted-foreground">{formatDate(approval.date)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="ghost" size="sm" className="w-full justify-center">
-                Voir toutes les approbations
-              </Button>
-            </CardFooter>
-          </Card>
-        </DashboardSection>
-
-        <DashboardSection title="Activités récentes" description="Dernières actions effectuées sur la plateforme">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">{getStatusIcon(activity.status)}</div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between">
-                        <p className="text-sm font-medium leading-none">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(activity.date)}</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{activity.description}</p>
-                      <div className="flex items-center gap-2 pt-1">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{activity.user}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="ghost" size="sm" className="w-full justify-center">
-                Voir toutes les activités
-              </Button>
-            </CardFooter>
-          </Card>
-        </DashboardSection>
-      </DashboardGrid>
-
-      {/* PDF Report Preview Dialog */}
-      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileDown className="h-5 w-5 text-primary" />
-              {t("dashboard.pdfReportTitle", { year: currentFiscalYear.year })}
-            </DialogTitle>
-            <DialogDescription>{t("dashboard.pdfReportDescription")}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Report Header */}
-            <div className="text-center space-y-2 border-b pb-4">
-              <h1 className="text-2xl font-bold">{t("dashboard.reportTitle")}</h1>
-              <h2 className="text-xl">
-                {t("dashboard.fiscalYear")} {currentFiscalYear.year}
-              </h2>
-              <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
-            </div>
-
-            {/* Summary Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.summary")}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{t("dashboard.totalBudget")}</p>
-                  <p className="font-semibold">{formatCurrency(currentFiscalYear.totalBudget)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{t("dashboard.totalAllocated")}</p>
-                  <p className="font-semibold">{formatCurrency(currentFiscalYear.allocated)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{t("dashboard.totalUtilized", "Total Utilized")}</p>
-                  <p className="font-semibold">{formatCurrency(currentFiscalYear.paid)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{t("dashboard.remainingBudget")}</p>
-                  <p className="font-semibold">{formatCurrency(currentFiscalYear.available)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Budget Execution Progress */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.budgetExecution")}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="flex flex-col items-center">
-                  <CircularProgressIndicator
-                    value={currentFiscalYear.engagementRate}
-                    size={150}
-                    strokeWidth={12}
-                    color="primary"
-                    showValue={true}
-                    label={t("dashboard.engagementRate")}
-                  />
-                </div>
-                <div className="flex flex-col items-center">
-                  <CircularProgressIndicator
-                    value={currentFiscalYear.paymentRate}
-                    size={150}
-                    strokeWidth={12}
-                    color="secondary"
-                    showValue={true}
-                    label={t("dashboard.paymentRate")}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Monthly Consumption Chart */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.monthlyTrends")}</h3>
-              <div className="h-[300px]">
-                <LineChart data={monthlyConsumptionData} />
-              </div>
-            </div>
-
-            {/* Ministry Distribution */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.byMinistry")}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-[300px]">
-                  <PieChart data={ministryDistributionData} />
-                </div>
-                <div className="h-[300px]">
-                  <BarChart data={ministryDistributionData} />
-                </div>
-              </div>
-            </div>
-
-            {/* Programs Distribution */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.byProgram")}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-[300px]">
-                  <PieChart data={programDistributionData} />
-                </div>
-                <div className="h-[300px]">
-                  <BarChart data={programDistributionData} />
-                </div>
-              </div>
-            </div>
+            <Button className="shadow-subtle" onClick={handleGenerateReport} disabled={generatingPdf}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              {generatingPdf ? t("dashboard.generatingReport", "Génération du rapport...") : t("dashboard.detailedReport", "Rapport détaillé")}
+            </Button>
           </div>
+        </DashboardHeader>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
-              {t("common.close")}
-            </Button>
-            <Button onClick={handleDownloadPdf} className="gap-2">
-              <Download className="h-4 w-4" />
-              {t("dashboard.downloadPdf")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Dashboard>
+        <DashboardSection>
+          <DashboardGrid columns={4}>
+            <StatCard
+              title={t("dashboard.totalBudget")}
+              value={formatCurrency(currentFiscalYear.totalBudget)}
+              description={t("dashboard.fiscalYearBudget")}
+              icon={<DollarSign className="h-4 w-4" />}
+              trend={{ value: 8.2, isPositive: true }}
+            />
+            <StatCard
+              title={t("dashboard.totalAllocated")}
+              value={formatCurrency(currentFiscalYear.allocated)}
+              description={`${Math.round((currentFiscalYear.allocated / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
+              icon={<Wallet className="h-4 w-4" />}
+              trend={{ value: 12.5, isPositive: true }}
+            />
+            <StatCard
+              title={t("dashboard.totalUtilized", "Total Utilized")}
+              value={formatCurrency(currentFiscalYear.paid)}
+              description={`${Math.round((currentFiscalYear.paid / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
+              icon={<CoinsIcon className="h-4 w-4" />}
+              trend={{ value: 4.3, isPositive: true }}
+            />
+            <StatCard
+              title={t("dashboard.remainingBudget")}
+              value={formatCurrency(currentFiscalYear.available)}
+              description={`${Math.round((currentFiscalYear.available / currentFiscalYear.totalBudget) * 100)}% ${t("dashboard.ofTotalBudget")}`}
+              icon={<PiggyBank className="h-4 w-4" />}
+              trend={{ value: 9.1, isPositive: false }}
+            />
+          </DashboardGrid>
+        </DashboardSection>
+
+        <DashboardSection>
+          <DashboardGrid columns={2}>
+            <BudgetChart title={t("dashboard.byMinistry")} data={currentFiscalYear.budgetData} className="h-full" />
+            <BudgetChart title={t("dashboard.engagementStatus")} data={currentFiscalYear.engagementData} className="h-full" />
+          </DashboardGrid>
+        </DashboardSection>
+
+        <DashboardSection title={t("dashboard.programExecution")} description={t("dashboard.programExecutionDescription")}>
+          <Card className="budget-card">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">{t("dashboard.mainPrograms")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {currentFiscalYear.programmesData.map((program, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{program.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatCurrency(program.spent)} / {formatCurrency(program.allocation)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Progress value={program.progress} className="h-2" />
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          program.progress < 40 ? "text-budget-danger" : program.progress < 70 ? "text-budget-warning" : "text-budget-success"
+                        )}
+                      >
+                        {program.progress}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </DashboardSection>
+
+        <DashboardGrid columns={2}>
+          <DashboardSection title="Approbations en attente" description="Engagements nécessitant une approbation">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {pendingApprovals.map((approval, index) => (
+                    <div key={index} className="flex items-start space-x-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <h4 className="text-sm font-medium">{approval.name}</h4>
+                          {getPriorityBadge(approval.priority)}
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <p className="text-sm text-muted-foreground">{approval.requestedBy}</p>
+                          <p className="text-sm font-medium">{formatCurrency(approval.amount)}</p>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          <Calendar className="h-3 w-3 text-muted-foreground mr-1" />
+                          <span className="text-xs text-muted-foreground">{formatDate(approval.date)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button variant="ghost" size="sm" className="w-full justify-center">
+                  Voir toutes les approbations
+                </Button>
+              </CardFooter>
+            </Card>
+          </DashboardSection>
+
+          <DashboardSection title="Activités récentes" description="Dernières actions effectuées sur la plateforme">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {recentActivities.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">{getStatusIcon(activity.status)}</div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between">
+                          <p className="text-sm font-medium leading-none">{activity.title}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(activity.date)}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        <div className="flex items-center gap-2 pt-1">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{activity.user}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button variant="ghost" size="sm" className="w-full justify-center">
+                  Voir toutes les activités
+                </Button>
+              </CardFooter>
+            </Card>
+          </DashboardSection>
+        </DashboardGrid>
+
+        {/* PDF Report Preview Dialog */}
+        <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileDown className="h-5 w-5 text-primary" />
+                {t("dashboard.pdfReportTitle", { year: currentFiscalYear.year })}
+              </DialogTitle>
+              <DialogDescription>{t("dashboard.pdfReportDescription")}</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Report Header */}
+              <div className="text-center space-y-2 border-b pb-4">
+                <h1 className="text-2xl font-bold">{t("dashboard.reportTitle")}</h1>
+                <h2 className="text-xl">
+                  {t("dashboard.fiscalYear")} {currentFiscalYear.year}
+                </h2>
+                <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
+              </div>
+
+              {/* Summary Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.summary")}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{t("dashboard.totalBudget")}</p>
+                    <p className="font-semibold">{formatCurrency(currentFiscalYear.totalBudget)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{t("dashboard.totalAllocated")}</p>
+                    <p className="font-semibold">{formatCurrency(currentFiscalYear.allocated)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{t("dashboard.totalUtilized", "Total Utilized")}</p>
+                    <p className="font-semibold">{formatCurrency(currentFiscalYear.paid)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{t("dashboard.remainingBudget")}</p>
+                    <p className="font-semibold">{formatCurrency(currentFiscalYear.available)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget Execution Progress */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.budgetExecution")}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="flex flex-col items-center">
+                    <CircularProgressIndicator
+                      value={currentFiscalYear.engagementRate}
+                      size={150}
+                      strokeWidth={12}
+                      color="primary"
+                      showValue={true}
+                      label={t("dashboard.engagementRate")}
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <CircularProgressIndicator
+                      value={currentFiscalYear.paymentRate}
+                      size={150}
+                      strokeWidth={12}
+                      color="secondary"
+                      showValue={true}
+                      label={t("dashboard.paymentRate")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly Consumption Chart */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.monthlyTrends")}</h3>
+                <div className="h-[300px]">
+                  <LineChart data={monthlyConsumptionData} />
+                </div>
+              </div>
+
+              {/* Ministry Distribution */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.byMinistry")}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="h-[300px]">
+                    <PieChart data={ministryDistributionData} />
+                  </div>
+                  <div className="h-[300px]">
+                    <BarChart data={ministryDistributionData} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Programs Distribution */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">{t("dashboard.byProgram")}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="h-[300px]">
+                    <PieChart data={programDistributionData} />
+                  </div>
+                  <div className="h-[300px]">
+                    <BarChart data={programDistributionData} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+                {t("common.close")}
+              </Button>
+              <Button onClick={handleDownloadPdf} className="gap-2">
+                <Download className="h-4 w-4" />
+                {t("dashboard.downloadPdf")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Dashboard>
+    </DataLoadingWrapper>
   );
 }

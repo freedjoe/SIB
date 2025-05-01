@@ -19,6 +19,7 @@ import { getAllEngagementReevaluations, EngagementReevaluationWithRelations } fr
 import { EngagementsTable } from "@/components/tables/EngagementsTable";
 import { useEngagements, useOperations, useMinistries, useEngagementMutation } from "@/hooks/useSupabaseData";
 import { Engagement, Operation, Ministry } from "@/types/database.types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function Engagements() {
   const { t } = useTranslation();
@@ -259,15 +260,6 @@ export default function Engagements() {
       title: "Engagement rejeté",
       description: `L'engagement pour "${engagement.operation}" a été rejeté.`,
     });
-  };
-
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null) return "N/A";
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {

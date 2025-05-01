@@ -1,4 +1,3 @@
-
 -- Enable UUID support
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -188,7 +187,7 @@ CREATE TABLE IF NOT EXISTS payment_requests (
     engagement_id UUID REFERENCES engagements(id),
     operation_id UUID REFERENCES operations(id),
     requested_amount NUMERIC,
-    requestDate DATE,
+    request_date DATE,
     period VARCHAR(20),
     frequency TEXT CHECK (frequency IN ('monthly', 'quarterly', 'annual')) DEFAULT 'annual',
     justification TEXT,
@@ -214,6 +213,7 @@ CREATE TABLE IF NOT EXISTS extra_engagements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     operation_id UUID REFERENCES operations(id),
     requested_amount NUMERIC,
+    request_date DATE,
     justification TEXT,
     status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
     engagement_date DATE DEFAULT CURRENT_DATE
@@ -238,7 +238,6 @@ CREATE TABLE IF NOT EXISTS special_funds (
     category TEXT,
     balance_2023 NUMERIC
 );
-
 
 -- 21. Roles
 CREATE TABLE IF NOT EXISTS roles (
@@ -324,8 +323,149 @@ CREATE TABLE IF NOT EXISTS deals (
     description TEXT
 );
 
--- Enable UUID support
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- 29. Activity Logs
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    action_type TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id UUID,
+    details JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT
+);
+
+-- 30. Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id UUID,
+    is_read BOOLEAN DEFAULT false,
+    priority TEXT CHECK (priority IN ('low', 'medium', 'high')) DEFAULT 'medium',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    action_url TEXT
+);
+
+-- 31. Comments
+CREATE TABLE IF NOT EXISTS comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    entity_type TEXT NOT NULL,
+    entity_id UUID NOT NULL,
+    content TEXT NOT NULL,
+    parent_id UUID REFERENCES comments(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT false
+);
+
+-- 32. Documents
+CREATE TABLE IF NOT EXISTS documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    entity_type TEXT NOT NULL,
+    entity_id UUID NOT NULL,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
+    file_type TEXT,
+    title TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    access_level TEXT CHECK (access_level IN ('public', 'private', 'restricted')) DEFAULT 'private'
+);
+
+-- 33. Settings
+CREATE TABLE IF NOT EXISTS settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key TEXT NOT NULL UNIQUE,
+    value TEXT,
+    value_type TEXT CHECK (value_type IN ('string', 'number', 'boolean', 'json')) DEFAULT 'string',
+    description TEXT,
+    category TEXT,
+    is_system BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- 34. Permissions
+CREATE TABLE IF NOT EXISTS permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    role_id UUID REFERENCES roles(id),
+    resource TEXT NOT NULL,
+    action TEXT NOT NULL,
+    conditions JSONB,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(role_id, resource, action)
+);
+
+-- 35. Tags
+CREATE TABLE IF NOT EXISTS tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    color TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 36. Tag Associations
+CREATE TABLE IF NOT EXISTS tag_associations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    entity_type TEXT NOT NULL,
+    entity_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tag_id, entity_type, entity_id)
+);
+
+-- 37. Milestones
+CREATE TABLE IF NOT EXISTS milestones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    operation_id UUID REFERENCES operations(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    due_date DATE,
+    completion_date DATE,
+    status TEXT CHECK (status IN ('pending', 'in_progress', 'completed', 'delayed', 'cancelled')) DEFAULT 'pending',
+    progress NUMERIC CHECK (progress >= 0 AND progress <= 100) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- 38. Attachments
+CREATE TABLE IF NOT EXISTS attachments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    entity_type TEXT NOT NULL,
+    entity_id UUID NOT NULL,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
+    file_type TEXT,
+    description TEXT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_public BOOLEAN DEFAULT false
+);
+
+-- 39. Audits
+CREATE TABLE IF NOT EXISTS audits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    entity_type TEXT NOT NULL,
+    entity_id UUID,
+    action TEXT NOT NULL,
+    old_values JSONB,
+    new_values JSONB,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT,
+    user_agent TEXT
+);
+
 
 -- Create all tables if not exist (first part of your script)
 -- You can keep your original CREATE TABLE IF NOT EXISTS blocks
@@ -575,7 +715,115 @@ BEGIN
             ('deals', 'physical_rate', 'NUMERIC'),
             ('deals', 'financial_rate', 'NUMERIC'),
             ('deals', 'delay', 'NUMERIC'),
-            ('deals', 'description', 'TEXT')
+            ('deals', 'description', 'TEXT'),
+
+            -- activity_logs
+            ('activity_logs', 'user_id', 'UUID REFERENCES users(id)'),
+            ('activity_logs', 'action_type', 'TEXT NOT NULL'),
+            ('activity_logs', 'entity_type', 'TEXT NOT NULL'),
+            ('activity_logs', 'entity_id', 'UUID'),
+            ('activity_logs', 'details', 'JSONB'),
+            ('activity_logs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('activity_logs', 'ip_address', 'TEXT'),
+
+            -- notifications
+            ('notifications', 'user_id', 'UUID REFERENCES users(id)'),
+            ('notifications', 'title', 'TEXT NOT NULL'),
+            ('notifications', 'message', 'TEXT NOT NULL'),
+            ('notifications', 'entity_type', 'TEXT'),
+            ('notifications', 'entity_id', 'UUID'),
+            ('notifications', 'is_read', 'BOOLEAN DEFAULT false'),
+            ('notifications', 'priority', 'TEXT CHECK (priority IN (''low'', ''medium'', ''high'')) DEFAULT ''medium'''),
+            ('notifications', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('notifications', 'action_url', 'TEXT'),
+
+            -- comments
+            ('comments', 'user_id', 'UUID REFERENCES users(id)'),
+            ('comments', 'entity_type', 'TEXT NOT NULL'),
+            ('comments', 'entity_id', 'UUID NOT NULL'),
+            ('comments', 'content', 'TEXT NOT NULL'),
+            ('comments', 'parent_id', 'UUID REFERENCES comments(id)'),
+            ('comments', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('comments', 'updated_at', 'TIMESTAMP'),
+            ('comments', 'is_deleted', 'BOOLEAN DEFAULT false'),
+
+            -- documents
+            ('documents', 'user_id', 'UUID REFERENCES users(id)'),
+            ('documents', 'entity_type', 'TEXT NOT NULL'),
+            ('documents', 'entity_id', 'UUID NOT NULL'),
+            ('documents', 'file_name', 'TEXT NOT NULL'),
+            ('documents', 'file_path', 'TEXT NOT NULL'),
+            ('documents', 'file_size', 'INTEGER'),
+            ('documents', 'file_type', 'TEXT'),
+            ('documents', 'title', 'TEXT'),
+            ('documents', 'description', 'TEXT'),
+            ('documents', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('documents', 'updated_at', 'TIMESTAMP'),
+            ('documents', 'access_level', 'TEXT CHECK (access_level IN (''public'', ''private'', ''restricted'')) DEFAULT ''private'''),
+
+            -- settings
+            ('settings', 'key', 'TEXT NOT NULL UNIQUE'),
+            ('settings', 'value', 'TEXT'),
+            ('settings', 'value_type', 'TEXT CHECK (value_type IN (''string'', ''number'', ''boolean'', ''json'')) DEFAULT ''string'''),
+            ('settings', 'description', 'TEXT'),
+            ('settings', 'category', 'TEXT'),
+            ('settings', 'is_system', 'BOOLEAN DEFAULT false'),
+            ('settings', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('settings', 'updated_at', 'TIMESTAMP'),
+
+            -- permissions
+            ('permissions', 'role_id', 'UUID REFERENCES roles(id)'),
+            ('permissions', 'resource', 'TEXT NOT NULL'),
+            ('permissions', 'action', 'TEXT NOT NULL'),
+            ('permissions', 'conditions', 'JSONB'),
+            ('permissions', 'description', 'TEXT'),
+            ('permissions', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- tags
+            ('tags', 'name', 'TEXT NOT NULL UNIQUE'),
+            ('tags', 'color', 'TEXT'),
+            ('tags', 'description', 'TEXT'),
+            ('tags', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- tag_associations
+            ('tag_associations', 'tag_id', 'UUID REFERENCES tags(id) ON DELETE CASCADE'),
+            ('tag_associations', 'entity_type', 'TEXT NOT NULL'),
+            ('tag_associations', 'entity_id', 'UUID NOT NULL'),
+            ('tag_associations', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- milestones
+            ('milestones', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
+            ('milestones', 'title', 'TEXT NOT NULL'),
+            ('milestones', 'description', 'TEXT'),
+            ('milestones', 'due_date', 'DATE'),
+            ('milestones', 'completion_date', 'DATE'),
+            ('milestones', 'status', 'TEXT CHECK (status IN (''pending'', ''in_progress'', ''completed'', ''delayed'', ''cancelled'')) DEFAULT ''pending'''),
+            ('milestones', 'progress', 'NUMERIC CHECK (progress >= 0 AND progress <= 100) DEFAULT 0'),
+            ('milestones', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('milestones', 'updated_at', 'TIMESTAMP'),
+
+            -- attachments
+            ('attachments', 'user_id', 'UUID REFERENCES users(id)'),
+            ('attachments', 'entity_type', 'TEXT NOT NULL'),
+            ('attachments', 'entity_id', 'UUID NOT NULL'),
+            ('attachments', 'file_name', 'TEXT NOT NULL'),
+            ('attachments', 'file_path', 'TEXT NOT NULL'),
+            ('attachments', 'file_size', 'INTEGER'),
+            ('attachments', 'file_type', 'TEXT'),
+            ('attachments', 'description', 'TEXT'),
+            ('attachments', 'uploaded_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('attachments', 'is_public', 'BOOLEAN DEFAULT false'),
+
+            -- audits
+            ('audits', 'user_id', 'UUID REFERENCES users(id)'),
+            ('audits', 'entity_type', 'TEXT NOT NULL'),
+            ('audits', 'entity_id', 'UUID'),
+            ('audits', 'action', 'TEXT NOT NULL'),
+            ('audits', 'old_values', 'JSONB'),
+            ('audits', 'new_values', 'JSONB'),
+            ('audits', 'timestamp', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('audits', 'ip_address', 'TEXT'),
+            ('audits', 'user_agent', 'TEXT')
 
         ) AS columns(table_name, column_name, column_type)
     LOOP

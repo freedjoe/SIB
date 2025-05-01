@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Dashboard, DashboardHeader, DashboardSection, DashboardGrid } from "@/components/layout/DashboardComponents";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,20 +11,32 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { ChevronRight, FolderPlus, FileEdit, Trash2, Eye, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { usePortfolios, useMinistries, useFiscalYears, usePrograms, usePortfolioMutation } from "@/hooks/useSupabaseData";
 import { Portfolio, Ministry, FiscalYear, Program } from "@/types/database.types";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+// BlurLoader component to blur content while loading
+interface BlurLoaderProps {
+  isLoading: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const BlurLoader = ({ isLoading, children, className }: BlurLoaderProps) => {
+  return (
+    <div
+      className={cn(
+        "transition-all duration-300",
+        isLoading ? "opacity-50 blur-[2px] pointer-events-none animate-pulse" : "opacity-100 blur-0",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 };
 
 export default function PortfoliosPage() {
@@ -90,6 +102,7 @@ export default function PortfoliosPage() {
 
   const { data: programsData = [], isLoading: isLoadingPrograms } = usePrograms({
     staleTime: 1000 * 60 * 15, // 15 minutes
+    realtime: false, // IMPORTANT: Disable realtime
   });
 
   // Use mutation hook for portfolio operations
@@ -103,140 +116,173 @@ export default function PortfoliosPage() {
     },
   });
 
-  // Fetch portfolios data
-  const fetchPortfolios = useCallback(async () => {
-    try {
-      setLoading(true);
+  // Memoize the current year value to avoid recreating it on every render
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-      // Transform fiscal years data and find current year
-      const currentYear = new Date().getFullYear();
+  // Process data from the queries
+  const processData = useCallback(() => {
+    if (isLoadingPortfolios || isLoadingMinistries || isLoadingFiscalYears || isLoadingPrograms) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Process fiscal years
       const transformedFiscalYears: FiscalYear[] = fiscalYearsData.map((fy) => ({
         id: fy.id,
         year: fy.year,
         status: fy.status || "draft",
         description: fy.description,
       }));
-
       setFiscalYears(transformedFiscalYears);
 
-      // Set current fiscal year
+      // Find and set current fiscal year
       const currentFY = transformedFiscalYears.find((fy) => fy.year === currentYear);
       if (currentFY) {
         setCurrentFiscalYear(currentFY.id);
       } else if (transformedFiscalYears.length > 0) {
-        // Default to the most recent if no current year is marked
         setCurrentFiscalYear(transformedFiscalYears[0].id);
       }
 
-      // Fetch ministries data
+      // Set ministries
       setMinistries(ministriesData || []);
 
-      // Map portfolios data
-      const mappedPortfolios: Portfolio[] = (portfoliosData || []).map((portfolio) => ({
-        id: portfolio.id,
-        ministry_id: portfolio.ministry_id || "",
-        name: portfolio.name || "",
-        code: portfolio.code || "",
-        allocated_ae: portfolio.allocated_ae || 0,
-        allocated_cp: portfolio.allocated_cp || 0,
-        status: portfolio.status || "draft",
-        description: portfolio.description || "",
-        // You can add calculated or transformed properties here
-        consumedAE: 0, // This would come from a related table
-        consumedCP: 0, // This would come from a related table
-        programs: 0, // Count would be calculated after fetching programs
-      }));
-
-      setPortfolios(mappedPortfolios);
-
-      // Now fetch programs to calculate counts
-      // Count programs per portfolio and update portfolio objects
-      const updatedPortfolios = mappedPortfolios.map((portfolio) => {
+      // Process portfolios with program counts
+      const mappedPortfolios: Portfolio[] = (portfoliosData || []).map((portfolio) => {
         const portfolioPrograms = programsData.filter((p) => p.portfolio_id === portfolio.id);
+
         return {
-          ...portfolio,
+          id: portfolio.id,
+          ministry_id: portfolio.ministry_id || "",
+          name: portfolio.name || "",
+          code: portfolio.code || "",
+          allocated_ae: portfolio.allocated_ae || 0,
+          allocated_cp: portfolio.allocated_cp || 0,
+          status: portfolio.status || "draft",
+          description: portfolio.description || "",
+          consumedAE: 0, // Calculate these if you have the data
+          consumedCP: 0, // Calculate these if you have the data
           programs: portfolioPrograms.length,
         };
       });
 
-      setPortfolios(updatedPortfolios);
+      setPortfolios(mappedPortfolios);
 
-      setLoading(false);
+      // Initialize portfolioPortfolios if needed and not already set
+      if (Object.keys(portfolioPortfolios).length === 0 && mappedPortfolios.length > 0 && transformedFiscalYears.length > 0) {
+        const defaultFiscalYearId = currentFY ? currentFY.id : transformedFiscalYears[0]?.id || "";
+        const defaultPortfolios: { [key: string]: string } = {};
+
+        mappedPortfolios.forEach((portfolio) => {
+          defaultPortfolios[portfolio.id] = defaultFiscalYearId;
+        });
+
+        setPortfolioPortfolios(defaultPortfolios);
+      }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error processing data:", error);
       toast({
         title: t("common.error"),
         description: t("fiscalYears.fetchError"),
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
-  }, [t, fiscalYearsData, ministriesData, portfoliosData, programsData]);
+  }, [
+    isLoadingPortfolios,
+    isLoadingMinistries,
+    isLoadingFiscalYears,
+    isLoadingPrograms,
+    fiscalYearsData,
+    ministriesData,
+    portfoliosData,
+    programsData,
+    currentYear,
+    portfolioPortfolios,
+    t,
+  ]);
 
-  // Initial data fetch and subscription setup
-  useEffect(() => {
-    fetchPortfolios();
-  }, [fetchPortfolios]);
-
-  // Set default fiscal year for each portfolio on component mount
-  useEffect(() => {
-    const now = new Date().getFullYear();
-    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
-    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || "";
-    const defaultPortfolios: { [key: string]: string } = {};
-    portfolios.forEach((portfolio) => {
-      defaultPortfolios[portfolio.id] = defaultFiscalYearId;
-    });
-    setPortfolioPortfolios(defaultPortfolios);
-  }, [portfolios, fiscalYears]);
-
-  // Initialize filteredPortfolios with all portfolios initially (or based on default filter)
-  useEffect(() => {
-    const initialPortfolios =
-      portfolioStatusFilter === "all" ? portfolios : portfolios.filter((portfolio) => portfolio.status === portfolioStatusFilter);
-    setFilteredPortfolios(initialPortfolios);
-  }, [portfolios, portfolioStatusFilter]); // Depend on portfolioStatusFilter as well
-
-  // Update the existing useEffect for filtering to depend on portfolios changes
-  useEffect(() => {
-    let result = portfolios;
-
-    if (portfolioNameFilter) {
-      result = result.filter(
-        (portfolio) =>
-          portfolio.name?.toLowerCase().includes(portfolioNameFilter?.toLowerCase()) ||
-          portfolio.code?.toLowerCase().includes(portfolioNameFilter?.toLowerCase())
-      );
-    }
-
-    if (portfolioStatusFilter && portfolioStatusFilter !== "all") {
-      result = result.filter((portfolio) => portfolio.status === portfolioStatusFilter);
-    }
-
-    setFilteredPortfolios(result);
-  }, [portfolioNameFilter, portfolioStatusFilter, portfolios]);
-
-  // Pagination logic
-  useEffect(() => {
-    const start = currentPage * itemsPerPage;
-    const end = start + itemsPerPage;
-    setPaginatedPortfolios(filteredPortfolios.slice(start, end));
-  }, [filteredPortfolios, currentPage, itemsPerPage]);
-  // Function to get or set fiscal year for a specific portfolio
-  const getPortfolioPortfolio = (portfolioId: string) => {
-    // Find the fiscal year object for the current year
-    const now = new Date().getFullYear();
-    const currentFiscalYear = fiscalYears.find((fy) => fy.year === now);
-    const defaultFiscalYearId = currentFiscalYear ? currentFiscalYear.id : fiscalYears[0]?.id || ""; // fallback to first or empty
-    return portfolioPortfolios[portfolioId] || defaultFiscalYearId;
-  };
-
-  const setPortfolioPortfolio = (portfolioId: string, fiscalYearId: string) => {
+  // Safe function for portfolio fiscal year selection
+  const handlePortfolioFiscalYearChange = useCallback((portfolioId: string, fiscalYearId: string) => {
     setPortfolioPortfolios((prev) => ({
       ...prev,
       [portfolioId]: fiscalYearId,
     }));
-  };
+  }, []);
+
+  // Safe getter function that won't trigger rerenders
+  const getPortfolioFiscalYear = useCallback(
+    (portfolioId: string) => {
+      // If we have a specific fiscal year for this portfolio, return it
+      if (portfolioPortfolios[portfolioId]) {
+        return portfolioPortfolios[portfolioId];
+      }
+
+      // Otherwise fall back to the current fiscal year or the first available
+      if (currentFiscalYear) {
+        return currentFiscalYear;
+      }
+
+      // Last resort
+      return fiscalYears[0]?.id || "";
+    },
+    [portfolioPortfolios, currentFiscalYear, fiscalYears]
+  );
+
+  // Filter portfolios based on search and status
+  const computeFilteredPortfolios = useCallback(() => {
+    // No portfolios or loading, return empty array
+    if (portfolios.length === 0) {
+      return [];
+    }
+
+    let result = [...portfolios];
+
+    // Apply name/code filter if provided
+    if (portfolioNameFilter) {
+      const searchTerm = portfolioNameFilter.toLowerCase();
+      result = result.filter((portfolio) => portfolio.name?.toLowerCase().includes(searchTerm) || portfolio.code?.toLowerCase().includes(searchTerm));
+    }
+
+    // Apply status filter if not "all"
+    if (portfolioStatusFilter && portfolioStatusFilter !== "all") {
+      result = result.filter((portfolio) => portfolio.status === portfolioStatusFilter);
+    }
+
+    return result;
+  }, [portfolios, portfolioNameFilter, portfolioStatusFilter]);
+
+  // Apply pagination to filtered portfolios
+  const computePaginatedPortfolios = useCallback(
+    (filtered: Portfolio[]) => {
+      const start = currentPage * itemsPerPage;
+      const end = start + itemsPerPage;
+      return filtered.slice(start, end);
+    },
+    [currentPage, itemsPerPage]
+  );
+
+  // Effect to run data processing once all data is available
+  useEffect(() => {
+    processData();
+  }, [processData]);
+
+  // Effect to update filtered and paginated portfolios
+  useEffect(() => {
+    const filtered = computeFilteredPortfolios();
+    setFilteredPortfolios(filtered);
+
+    const paginated = computePaginatedPortfolios(filtered);
+    setPaginatedPortfolios(paginated);
+
+    // Reset to first page if current page exceeds available pages
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    if (currentPage >= totalPages && currentPage > 0 && filtered.length > 0) {
+      setCurrentPage(totalPages - 1);
+    }
+  }, [computeFilteredPortfolios, computePaginatedPortfolios, itemsPerPage, currentPage]);
 
   const getStatusBadge = (status: Program["status"]) => {
     switch (status) {
@@ -287,7 +333,7 @@ export default function PortfoliosPage() {
     setFormMinistryId(portfolio.ministry_id);
     setFormAllocatedAE(portfolio.allocated_ae);
     setFormAllocatedCP(portfolio.allocated_cp);
-    setFormStatus(portfolio.status);
+    setFormStatus(portfolio.status as "draft" | "active" | "archived");
 
     setIsEditPortfolioOpen(true);
   };
@@ -402,14 +448,14 @@ export default function PortfoliosPage() {
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingPortfolios) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span className="text-lg text-muted-foreground text-center">Chargement des exercices budgétaires...</span>
+        <span className="text-lg text-muted-foreground text-center">Chargement des portefeuilles...</span>
       </div>
     );
   }
@@ -417,14 +463,12 @@ export default function PortfoliosPage() {
   return (
     <Dashboard>
       <DashboardHeader title="Portefeuille des Programmes" description="Gérez les programmes et leurs actions associées">
-        {/* Moved Button Here */}
         <Button onClick={handleOpenAddPortfolio} className="ml-auto">
           <FolderPlus className="mr-2 h-4 w-4" />
           Nouveau Portefeuille
         </Button>
       </DashboardHeader>
 
-      {/* Moved Filter Card Here */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Filtrer les portefeuilles</CardTitle>
@@ -442,18 +486,16 @@ export default function PortfoliosPage() {
                   placeholder="Rechercher par nom ou code..."
                   value={portfolioNameFilter}
                   onChange={(e) => setPortfolioNameFilter(e.target.value)}
-                  className="w-full pl-8" // Added padding for the icon
+                  className="w-full pl-8"
                 />
               </div>
             </div>
             <div className="w-full sm:w-[200px]">
-              {/* Adjusted width */}
               <Label htmlFor="portfolio-status-filter" className="mb-2 block">
                 Statut
               </Label>
               <Select value={portfolioStatusFilter} onValueChange={setPortfolioStatusFilter}>
                 <SelectTrigger id="portfolio-status-filter" className="w-full">
-                  {/* Made trigger full width */}
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -471,22 +513,18 @@ export default function PortfoliosPage() {
       <DashboardSection>
         <Tabs defaultValue="portfolios" className="w-full">
           <TabsContent value="portfolios" className="animate-fade-in">
-            {/* Removed the outer div and filter card that were here */}
             <DashboardGrid columns={2}>
               {paginatedPortfolios.map((portfolio) => (
                 <Card key={portfolio.id} className="budget-card transition-all duration-300 hover:shadow-elevation flex flex-col">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start gap-4">
-                      {/* Added gap */}
                       <div className="flex-1">
-                        {/* Allow title/desc to take space */}
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">{portfolio.name}</CardTitle>
                           <span className="text-sm text-muted-foreground">({portfolio.code})</span>
                         </div>
-                        <CardDescription className="mt-1 line-clamp-2">{portfolio.description}</CardDescription> {/* Added line-clamp */}
+                        <CardDescription className="mt-1 line-clamp-2">{portfolio.description}</CardDescription>
                       </div>
-                      {/* Added whitespace-nowrap to prevent wrapping */}
                       <Badge
                         variant="outline"
                         className={cn(
@@ -552,7 +590,10 @@ export default function PortfoliosPage() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Select value={getPortfolioPortfolio(portfolio.id)} onValueChange={(value) => setPortfolioPortfolio(portfolio.id, value)}>
+                    <Select
+                      value={getPortfolioFiscalYear(portfolio.id)}
+                      onValueChange={(value) => handlePortfolioFiscalYearChange(portfolio.id, value)}
+                    >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Année fiscale" />
                       </SelectTrigger>
@@ -975,54 +1016,66 @@ export default function PortfoliosPage() {
                     <SelectValue placeholder="Année Fiscale" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fy1">Année Fiscale 2024</SelectItem>
-                    <SelectItem value="fy2">Année Fiscale 2023</SelectItem>
+                    <SelectItem value="fy1">Année Fiscale 2025</SelectItem>
+                    <SelectItem value="fy2">Année Fiscale 2024</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Summary Cards */}
+              {/* Wrap summary cards with BlurLoader */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Allouées</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_ae || 0)}</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-secondary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Alloués</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_cp || 0)}</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Consommées</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedAE || 0)}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {currentPortfolio.allocated_ae > 0 ? Math.round(((currentPortfolio.consumedAE || 0) / currentPortfolio.allocated_ae) * 100) : 0}
-                      % utilisés
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-green-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Consommés</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedCP || 0)}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {currentPortfolio.allocated_cp > 0 ? Math.round(((currentPortfolio.consumedCP || 0) / currentPortfolio.allocated_cp) * 100) : 0}
-                      % utilisés
-                    </div>
-                  </CardContent>
-                </Card>
+                <BlurLoader isLoading={loading || isLoadingPortfolios}>
+                  <Card className="border-l-4 border-l-primary">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">AE Allouées</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_ae || 0)}</div>
+                    </CardContent>
+                  </Card>
+                </BlurLoader>
+                <BlurLoader isLoading={loading || isLoadingPortfolios}>
+                  <Card className="border-l-4 border-l-secondary">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">CP Alloués</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.allocated_cp || 0)}</div>
+                    </CardContent>
+                  </Card>
+                </BlurLoader>
+                <BlurLoader isLoading={loading || isLoadingPortfolios}>
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">AE Consommées</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedAE || 0)}</div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {currentPortfolio.allocated_ae > 0
+                          ? Math.round(((currentPortfolio.consumedAE || 0) / currentPortfolio.allocated_ae) * 100)
+                          : 0}
+                        % utilisés
+                      </div>
+                    </CardContent>
+                  </Card>
+                </BlurLoader>
+                <BlurLoader isLoading={loading || isLoadingPortfolios}>
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">CP Consommés</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(currentPortfolio.consumedCP || 0)}</div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {currentPortfolio.allocated_cp > 0
+                          ? Math.round(((currentPortfolio.consumedCP || 0) / currentPortfolio.allocated_cp) * 100)
+                          : 0}
+                        % utilisés
+                      </div>
+                    </CardContent>
+                  </Card>
+                </BlurLoader>
               </div>
 
               {/* Progress Charts */}
@@ -1113,7 +1166,7 @@ export default function PortfoliosPage() {
               {/* Programs Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Programmes associés</CardTitle> {/* Increased title size */}
+                  <CardTitle className="text-lg">Programmes associés</CardTitle>
                   <CardDescription>Liste des programmes liés à ce portefeuille pour l'année fiscale sélectionnée</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1124,23 +1177,27 @@ export default function PortfoliosPage() {
                           <th className="py-3 px-4 text-left font-medium">Nom</th>
                           <th className="py-3 px-4 text-right font-medium">AE Allouées</th>
                           <th className="py-3 px-4 text-right font-medium">CP Alloués</th>
-                          <th className="py-3 px-4 text-center font-medium">Progression</th> {/* Added width */}
-                          <th className="py-3 px-4 text-center font-medium">Statut</th> {/* Added width */}
+                          <th className="py-3 px-4 text-center font-medium">Progression</th>
+                          <th className="py-3 px-4 text-center font-medium">Statut</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {programs
-                          .filter((program) => program.portfolioId === currentPortfolio.id)
+                        {programsData
+                          .filter((program) => program.portfolio_id === currentPortfolio.id)
                           .map((program) => (
                             <tr key={program.id} className="border-b hover:bg-muted/30 transition-colors">
                               <td className="py-3 px-4">{program.name}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(program.allocatedAmount)}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(Math.round(program.allocatedAmount * 0.9))}</td>
-                              <td className="py-3 px-4 text-center">{program.progress}%</td>
+                              <td className="py-3 px-4 text-right">{formatCurrency(program.allocated_ae || 0)}</td>
+                              <td className="py-3 px-4 text-right">{formatCurrency(program.allocated_cp || 0)}</td>
+                              <td className="py-3 px-4 text-center">
+                                {program.allocated_ae > 0 ? Math.round(((program.consumed_ae || 0) / program.allocated_ae) * 100) : 0}%
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {program.status === "active" ? "Actif" : program.status === "archived" ? "Archivé" : "Brouillon"}
+                              </td>
                             </tr>
                           ))}
-                        {/* Add a row if no programs */}
-                        {programs.filter((program) => program.portfolioId === currentPortfolio.id).length === 0 && (
+                        {programsData.filter((program) => program.portfolio_id === currentPortfolio.id).length === 0 && (
                           <tr>
                             <td colSpan={5} className="text-center py-4 text-muted-foreground">
                               Aucun programme associé pour cette année fiscale.
@@ -1152,6 +1209,7 @@ export default function PortfoliosPage() {
                   </div>
                 </CardContent>
               </Card>
+
               {/* Distribution Charts (Placeholder) */}
               <Card>
                 <CardHeader>
@@ -1209,7 +1267,7 @@ export default function PortfoliosPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Rapport détaillé - {currentPortfolio?.name}</DialogTitle>
-            <DialogDescription>Aperçu du rapport détaillé pour l'année fiscale {selectedPortfolio === "fy1" ? "2024" : "2023"}</DialogDescription>
+            <DialogDescription>Aperçu du rapport détaillé pour l'année fiscale {selectedPortfolio === "fy1" ? "2025" : "2024"}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
@@ -1220,7 +1278,7 @@ export default function PortfoliosPage() {
                 <p className="text-lg">
                   {currentPortfolio?.name} ({currentPortfolio?.code})
                 </p>
-                <p className="text-muted-foreground">Année Fiscale {selectedPortfolio === "fy1" ? "2024" : "2023"}</p>
+                <p className="text-muted-foreground">Année Fiscale {selectedPortfolio === "fy1" ? "2025" : "2024"}</p>
                 <p className="text-muted-foreground">Généré le {new Date().toLocaleDateString()}</p>
               </div>
 
@@ -1228,7 +1286,7 @@ export default function PortfoliosPage() {
                 <div>
                   <h2 className="text-lg font-semibold mb-2">Informations générales</h2>
                   <p>
-                    <strong>Ministère:</strong> {currentPortfolio?.ministry_id}
+                    <strong>Ministère:</strong> {ministries.find((m) => m.id === currentPortfolio?.ministry_id)?.name_fr}
                   </p>
                   <p>
                     <strong>Statut:</strong>{" "}
@@ -1241,20 +1299,16 @@ export default function PortfoliosPage() {
                 <div>
                   <h2 className="text-lg font-semibold mb-2">Budget</h2>
                   <p>
-                    <strong>AE Allouées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 0)}
+                    <strong>AE Allouées:</strong> {formatCurrency(currentPortfolio?.allocated_ae || 0)}
                   </p>
                   <p>
-                    <strong>CP Alloués:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 0)}
+                    <strong>CP Alloués:</strong> {formatCurrency(currentPortfolio?.allocated_cp || 0)}
                   </p>
                   <p>
-                    <strong>AE Consommées:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0)}
+                    <strong>AE Consommées:</strong> {formatCurrency(currentPortfolio?.consumedAE || 0)}
                   </p>
                   <p>
-                    <strong>CP Consommés:</strong>{" "}
-                    {formatCurrency(currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0)}
+                    <strong>CP Consommés:</strong> {formatCurrency(currentPortfolio?.consumedCP || 0)}
                   </p>
                 </div>
               </div>
@@ -1265,22 +1319,20 @@ export default function PortfoliosPage() {
                   <div>
                     <p className="mb-1">
                       AE:{" "}
-                      {Math.round(
-                        ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0) /
-                          (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 1)) *
-                          100
-                      )}
+                      {currentPortfolio?.allocated_ae > 0
+                        ? Math.round(((currentPortfolio?.consumedAE || 0) / currentPortfolio?.allocated_ae) * 100)
+                        : 0}
                       %
                     </p>
                     <div className="h-2 w-full bg-gray-200 rounded-full">
                       <div
                         className="h-2 bg-blue-500 rounded-full"
                         style={{
-                          width: `${Math.round(
-                            ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedAE || 0) /
-                              (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedAE || 1)) *
-                              100
-                          )}%`,
+                          width: `${
+                            currentPortfolio?.allocated_ae > 0
+                              ? Math.round(((currentPortfolio?.consumedAE || 0) / currentPortfolio?.allocated_ae) * 100)
+                              : 0
+                          }%`,
                         }}
                       ></div>
                     </div>
@@ -1288,22 +1340,20 @@ export default function PortfoliosPage() {
                   <div>
                     <p className="mb-1">
                       CP:{" "}
-                      {Math.round(
-                        ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0) /
-                          (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 1)) *
-                          100
-                      )}
+                      {currentPortfolio?.allocated_cp > 0
+                        ? Math.round(((currentPortfolio?.consumedCP || 0) / currentPortfolio?.allocated_cp) * 100)
+                        : 0}
                       %
                     </p>
                     <div className="h-2 w-full bg-gray-200 rounded-full">
                       <div
                         className="h-2 bg-green-500 rounded-full"
                         style={{
-                          width: `${Math.round(
-                            ((currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.consumedCP || 0) /
-                              (currentPortfolio?.portfolios?.find((fy) => fy.id === selectedPortfolio)?.allocatedCP || 1)) *
-                              100
-                          )}%`,
+                          width: `${
+                            currentPortfolio?.allocated_cp > 0
+                              ? Math.round(((currentPortfolio?.consumedCP || 0) / currentPortfolio?.allocated_cp) * 100)
+                              : 0
+                          }%`,
                         }}
                       ></div>
                     </div>
@@ -1323,16 +1373,25 @@ export default function PortfoliosPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {programs
-                      .filter((program) => program.portfolioId === currentPortfolio?.id)
+                    {programsData
+                      .filter((program) => program.portfolio_id === currentPortfolio?.id)
                       .map((program) => (
                         <tr key={program.id}>
                           <td className="border p-2">{program.name}</td>
-                          <td className="border p-2 text-right">{formatCurrency(program.allocatedAmount)}</td>
-                          <td className="border p-2 text-right">{formatCurrency(Math.round(program.allocatedAmount * 0.9))}</td>
-                          <td className="border p-2 text-center">{program.progress}%</td>
+                          <td className="border p-2 text-right">{formatCurrency(program.allocated_ae || 0)}</td>
+                          <td className="border p-2 text-right">{formatCurrency(program.allocated_cp || 0)}</td>
+                          <td className="border p-2 text-center">
+                            {program.allocated_ae > 0 ? Math.round(((program.consumed_ae || 0) / program.allocated_ae) * 100) : 0}%
+                          </td>
                         </tr>
                       ))}
+                    {programsData.filter((p) => p.portfolio_id === currentPortfolio?.id).length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-gray-500">
+                          Aucun programme associé
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1341,7 +1400,7 @@ export default function PortfoliosPage() {
                 <h2 className="text-lg font-semibold mb-2">Notes et observations</h2>
                 <p className="text-muted-foreground">
                   Ce rapport présente une synthèse des données budgétaires du portefeuille {currentPortfolio?.name} pour l'année fiscale{" "}
-                  {selectedPortfolio === "fy1" ? "2024" : "2023"}. Les données sont issues du Système Intégréde Gestion Budgétaire (SIB).
+                  {selectedPortfolio === "fy1" ? "2025" : "2024"}. Les données sont issues du Système Intégré de Gestion Budgétaire (SIB).
                 </p>
               </div>
             </div>

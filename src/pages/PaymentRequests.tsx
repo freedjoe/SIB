@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import { PaymentRequestTable } from "@/components/tables/PaymentRequestTable";
 import { PaymentRequestDialog } from "@/components/dialogs/PaymentRequestDialog";
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
 import { PaymentStats } from "@/components/stats/PaymentStats";
+import { formatCurrency } from "@/lib/utils";
 
 type FormattedPaymentRequest = {
   id: string;
@@ -39,18 +39,23 @@ const PaymentRequests = () => {
   const [dialogType, setDialogType] = useState<"add" | "edit" | "view">("add");
   const [selectedRequest, setSelectedRequest] = useState<FormattedPaymentRequest | null>(null);
 
-  const { data: requestsData, isLoading, error, refetch } = useQuery({
+  const {
+    data: requestsData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["payment-requests"],
-    queryFn: getAllPaymentRequests
+    queryFn: getAllPaymentRequests,
   });
 
   const { data: engagementsData, isLoading: isLoadingEngagements } = useQuery({
     queryKey: ["engagements"],
-    queryFn: getAllEngagements
+    queryFn: getAllEngagements,
   });
 
   const formatPaymentRequests = (requests: PaymentRequestWithRelations[]): FormattedPaymentRequest[] => {
-    return requests.map(request => ({
+    return requests.map((request) => ({
       id: request.id,
       engagementId: request.engagement_id,
       engagementRef: request.engagement?.operation?.name || "Unknown",
@@ -64,32 +69,24 @@ const PaymentRequests = () => {
       status: request.status as "pending_officer" | "pending_accountant" | "approved" | "rejected",
       requestedBy: request.requested_by,
       beneficiary: request.engagement?.beneficiary || "Unknown",
-      description: request.description || ""
+      description: request.description || "",
     }));
   };
 
   const paymentRequests = requestsData ? formatPaymentRequests(requestsData) : [];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-DZ', { 
-      style: 'currency', 
-      currency: 'DZD',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
     return format(new Date(dateString), "dd/MM/yyyy");
   };
 
-  const filteredRequests = paymentRequests.filter(request => {
-    const matchesSearch = 
+  const filteredRequests = paymentRequests.filter((request) => {
+    const matchesSearch =
       request.operationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.beneficiary.toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.programName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       formatCurrency(request.amount).includes(searchQuery);
-      
+
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "pending") return (request.status === "pending_officer" || request.status === "pending_accountant") && matchesSearch;
     return request.status === activeTab && matchesSearch;
@@ -117,7 +114,7 @@ const PaymentRequests = () => {
     // Implement deletion logic here
     toast({
       title: "Demande supprimée",
-      description: "La demande de paiement a été supprimée avec succès"
+      description: "La demande de paiement a été supprimée avec succès",
     });
     refetch();
   };
@@ -126,7 +123,7 @@ const PaymentRequests = () => {
     // Implement approval logic here
     toast({
       title: "Demande approuvée",
-      description: `La demande de paiement ${request.operationName} a été approuvée`
+      description: `La demande de paiement ${request.operationName} a été approuvée`,
     });
     refetch();
   };
@@ -136,7 +133,7 @@ const PaymentRequests = () => {
     toast({
       title: "Demande rejetée",
       description: `La demande de paiement ${request.operationName} a été rejetée`,
-      variant: "destructive"
+      variant: "destructive",
     });
     refetch();
   };
@@ -147,13 +144,13 @@ const PaymentRequests = () => {
         // Logic for adding request would go here
         toast({
           title: "Demande ajoutée",
-          description: "La demande de paiement a été ajoutée avec succès"
+          description: "La demande de paiement a été ajoutée avec succès",
         });
       } else if (dialogType === "edit") {
         // Logic for editing request would go here
         toast({
           title: "Demande modifiée",
-          description: "La demande de paiement a été modifiée avec succès"
+          description: "La demande de paiement a été modifiée avec succès",
         });
       }
 
@@ -164,7 +161,7 @@ const PaymentRequests = () => {
       toast({
         title: "Erreur",
         description: "Une erreur s'est produite lors de l'enregistrement de la demande de paiement",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -172,26 +169,44 @@ const PaymentRequests = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending_officer":
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-400">En attente (Officier)</Badge>;
+        return (
+          <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-400">
+            En attente (Officier)
+          </Badge>
+        );
       case "pending_accountant":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">En attente (Comptable)</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
+            En attente (Comptable)
+          </Badge>
+        );
       case "approved":
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">Approuvé</Badge>;
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">
+            Approuvé
+          </Badge>
+        );
       case "rejected":
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400">Rejeté</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400">
+            Rejeté
+          </Badge>
+        );
       default:
         return <Badge variant="outline">Inconnu</Badge>;
     }
   };
 
-  const engagements = engagementsData ? engagementsData.map(eng => ({
-    id: eng.id,
-    ref: eng.operation?.name || "N/A",
-    operation: eng.operation?.name || "N/A",
-    beneficiary: eng.beneficiary,
-    budget: eng.montant_approuve || 0, 
-    allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0 // Simulation du montant déjà alloué
-  })) : [];
+  const engagements = engagementsData
+    ? engagementsData.map((eng) => ({
+        id: eng.id,
+        ref: eng.operation?.name || "N/A",
+        operation: eng.operation?.name || "N/A",
+        beneficiary: eng.beneficiary,
+        budget: eng.montant_approuve || 0,
+        allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0, // Simulation du montant déjà alloué
+      }))
+    : [];
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Chargement des demandes de paiement...</div>;
@@ -213,20 +228,15 @@ const PaymentRequests = () => {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle>Demandes de Paiement</CardTitle>
-            <CardDescription>
-              Gérez les demandes de paiement pour les différentes opérations.
-            </CardDescription>
+            <CardDescription>Gérez les demandes de paiement pour les différentes opérations.</CardDescription>
           </div>
-          <Button onClick={handleAddNewRequest} size="sm">Soumettre une demande</Button>
+          <Button onClick={handleAddNewRequest} size="sm">
+            Soumettre une demande
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <Input 
-              placeholder="Rechercher..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
-            />
+            <Input placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-sm" />
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
               <TabsList>
                 <TabsTrigger value="all">Tous</TabsTrigger>
@@ -237,7 +247,7 @@ const PaymentRequests = () => {
             </Tabs>
           </div>
 
-          <PaymentRequestTable 
+          <PaymentRequestTable
             paymentRequests={filteredRequests}
             formatCurrency={formatCurrency}
             formatDate={formatDate}

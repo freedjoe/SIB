@@ -26,6 +26,7 @@ export function formatCurrency(amount: number | null): string {
     style: "currency",
     currency: "DZD",
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

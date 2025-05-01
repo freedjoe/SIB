@@ -15,6 +15,7 @@ import { useCreditPaymentMutation, useCreditPayments, useFiscalYears, useOperati
 import { CreditPaymentWithRelations } from "@/types/credit_payments";
 import { CreditPaymentsTable } from "@/components/tables/CreditPaymentsTable";
 import { Textarea } from "@/components/ui/textarea";
+import { formatCurrency } from "@/lib/utils";
 
 export default function CreditPayments() {
   const { t } = useTranslation();
@@ -210,15 +211,6 @@ export default function CreditPayments() {
       title: "Crédit de paiement rejeté",
       description: `Le crédit de paiement pour "${creditPayment.operation?.title || creditPayment.code}" a été rejeté.`,
     });
-  };
-
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null) return "N/A";
-    return new Intl.NumberFormat("fr-DZ", {
-      style: "currency",
-      currency: "DZD",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDate = (dateString: string | null) => {
