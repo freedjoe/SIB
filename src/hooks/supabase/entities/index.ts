@@ -1,7 +1,7 @@
 // Export all entity-specific hooks
 export * from "./fiscal";
 export * from "./ministries";
-export * from "./budgets";
+export * from "./budget_titles";
 export * from "./portfolios";
 export * from "./programs";
 export * from "./actions";

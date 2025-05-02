@@ -34,7 +34,7 @@ export default function OperationsPage() {
     isLoading: operationsLoading,
     refetch: refetchOperations,
   } = useOperations({
-    select: "*, action:action_id(*), wilaya:wilaya_id(*), budget_category:budget_category_id(*), ministry:ministry_id(*)",
+    select: "*, action:action_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*), ministry:ministry_id(*)",
   });
 
   // Fetch wilayas data

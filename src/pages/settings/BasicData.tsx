@@ -28,7 +28,7 @@ const dataCategories = [
     title: "Catalogue Budget",
     description: "Gérez les classifications budgétaires",
     icon: BookOpen,
-    path: "/settings/basic-data/budget-catalog",
+    path: "/settings/basic-data/budget-titles",
     color: "bg-orange-500",
   },
   {

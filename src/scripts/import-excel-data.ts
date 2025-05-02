@@ -41,7 +41,7 @@ async function importExcelData() {
         parent_id: row[3] ? await getCategoryIdByCode(row[3].toString()) : null, // Assuming Parent Code is in column C
       };
 
-      const { data, error } = await supabase.from("budget_categories").upsert(category, { onConflict: "code" }).select().single();
+      const { data, error } = await supabase.from("budget_titles").upsert(category, { onConflict: "code" }).select().single();
 
       if (error) {
         console.error("Error importing category:", error);
@@ -102,7 +102,7 @@ async function getMinistryIdByCode(code: string): Promise<string | null> {
 }
 
 async function getCategoryIdByCode(code: string): Promise<string | null> {
-  const { data, error } = await supabase.from("budget_categories").select("id").eq("code", code).single();
+  const { data, error } = await supabase.from("budget_titles").select("id").eq("code", code).single();
 
   if (error || !data) {
     console.error("Error finding category by code:", code, error);

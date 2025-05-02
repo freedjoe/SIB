@@ -3,9 +3,9 @@ import { useSupabaseMutation, MutationOptions } from "../core/useSupabaseMutatio
 import { QueryOptions } from "../core/useSupabaseQuery";
 import { useQueryClient } from "@tanstack/react-query";
 
-// --- Budget Categories ---
-export function useBudgetCategories(options: QueryOptions = {}) {
-  return useSupabaseData("budget_categories", ["all"], {
+// --- Budget Titles ---
+export function useBudgetTitles(options: QueryOptions = {}) {
+  return useSupabaseData("budget_titles", ["all"], {
     staleTime: Infinity, // Keep cached data indefinitely
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
@@ -15,8 +15,8 @@ export function useBudgetCategories(options: QueryOptions = {}) {
   });
 }
 
-export function useBudgetCategory(id: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("budget_categories", [id], {
+export function useBudgetTitle(id: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("budget_titles", [id], {
     staleTime: Infinity, // Keep cached data indefinitely
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
@@ -27,8 +27,8 @@ export function useBudgetCategory(id: string | null, options: QueryOptions = {})
   });
 }
 
-export function useBudgetCategoryByCode(code: string | null, options: QueryOptions = {}) {
-  return useSupabaseData("budget_categories", ["by_code", code], {
+export function useBudgetTitleByCode(code: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("budget_titles", ["by_code", code], {
     staleTime: Infinity, // Keep cached data indefinitely
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
@@ -39,20 +39,21 @@ export function useBudgetCategoryByCode(code: string | null, options: QueryOptio
   });
 }
 
-export function useBudgetCategoryMutation(options: MutationOptions = {}) {
+export function useBudgetTitleMutation(options: MutationOptions = {}) {
   const queryClient = useQueryClient();
 
-  return useSupabaseMutation("budget_categories", {
+  return useSupabaseMutation("budget_titles", {
     ...options,
+    invalidateTables: ["operations", ...(options.invalidateTables || [])],
     onSuccess: (data) => {
       // Force immediate update of the cache
-      queryClient.invalidateQueries({ queryKey: ["budget_categories"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_titles"] });
 
-      // Update any individual budget category queries if this was an update
+      // Update any individual budget title queries if this was an update
       if (data?.id) {
-        queryClient.invalidateQueries({ queryKey: ["budget_categories", data.id] });
+        queryClient.invalidateQueries({ queryKey: ["budget_titles", data.id] });
         if (data.code) {
-          queryClient.invalidateQueries({ queryKey: ["budget_categories", "by_code", data.code] });
+          queryClient.invalidateQueries({ queryKey: ["budget_titles", "by_code", data.code] });
         }
       }
 

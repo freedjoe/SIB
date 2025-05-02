@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActionsTable } from "@/components/tables/ActionsTable";
@@ -15,8 +16,42 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/supabase";
-import { Program, Portfolio, FiscalYear, Action } from "@/types/database.types";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+
+// Define types for the data arrays
+interface Program {
+  id: string;
+  name: string;
+}
+
+interface Portfolio {
+  id: string;
+  name: string;
+}
+
+interface FiscalYear {
+  id: string;
+  year: number;
+}
+
+// Define the Action type based on the specified structure
+type Action = {
+  id: string;
+  program_id: string | null;
+  code: string | null;
+  name: string | null;
+  type: "Centralized" | "Decentralized" | "Unique" | "Programmed" | "Complementary" | null;
+  allocated_ae: number | null;
+  allocated_cp: number | null;
+  status: "draft" | "active" | "archived";
+  description: string | null;
+};
+
+// Helper function to map between API and UI states
+const mapActionToMutation = (action: Action, type: "INSERT" | "UPDATE" | "DELETE" | "UPSERT") => ({
+  type,
+  data: action,
+});
 
 // Simple inline Spinner component
 const Spinner = ({ className }: { className?: string }) => (
@@ -24,10 +59,6 @@ const Spinner = ({ className }: { className?: string }) => (
     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
 );
-
-// Action types (the only types now)
-const actionTypes = ["Centralized", "Decentralized", "Unique", "Programmed", "Complementary"] as const;
-type ActionType = (typeof actionTypes)[number];
 
 // Status types
 const statusTypes = [
@@ -62,48 +93,35 @@ export default function Actions() {
   const [currentAction, setCurrentAction] = useState<Action | null>(null);
   const [newAction, setNewAction] = useState<Partial<Action>>({
     code: "",
-    programme_id: "",
-    nom: "",
+    program_id: "",
+    name: "",
     description: "",
-    type_action: "Centralized",
-    montant_alloue: 0,
-    status: "active",
-    consumption_rate: 0,
+    type: "Centralized",
+    allocated_ae: 0,
+    allocated_cp: 0,
+    status: "draft",
   });
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [viewAction, setViewAction] = useState<Action | null>(null);
 
+  // Filter Select components content
+  const actionTypes: Action["type"][] = ["Centralized", "Decentralized", "Unique", "Programmed", "Complementary"];
+  const statusOptions: Array<{ value: Action["status"]; label: string }> = [
+    { value: "active", label: "Actif" },
+    { value: "archived", label: "Archivé" },
+    { value: "draft", label: "Brouillon" },
+  ];
+
   // Use our custom React Query hooks with staleTime configurations for local storage persistence
-  const {
-    data: actionsData = [],
-    isLoading: isLoadingActions,
-    refetch: refetchActions,
-  } = useActions({
-    staleTime: 1000 * 60 * 10, // 10 minutes - actions change moderately often
-  });
-
-  const { data: programsData = [], isLoading: isLoadingPrograms } = usePrograms({
-    staleTime: 1000 * 60 * 30, // 30 minutes - programs change less frequently
-  });
-
-  const { data: portfoliosData = [], isLoading: isLoadingPortfolios } = usePortfolios({
-    staleTime: 1000 * 60 * 30, // 30 minutes - portfolios change less frequently
-  });
-
-  const { data: fiscalYearsData = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
-    staleTime: 1000 * 60 * 60, // 60 minutes - fiscal years rarely change
-  });
-
-  // Show loading spinner when data is being fetched
-  if (isLoadingActions || isLoadingPrograms || isLoadingPortfolios || isLoadingFiscalYears) {
-    return <PageLoadingSpinner message="Chargement des actions..." />;
-  }
+  const actionsData = useActions().data as Action[];
+  const programsData = usePrograms().data as Program[];
+  const portfoliosData = usePortfolios().data as Portfolio[];
+  const fiscalYearsData = useFiscalYears().data as FiscalYear[];
 
   // Use mutation hook for action operations
   const actionMutation = useActionMutation({
     onSuccess: () => {
-      refetchActions();
       toast({
         title: "Succès",
         description: "L'opération a été effectuée avec succès",
@@ -111,25 +129,28 @@ export default function Actions() {
     },
   });
 
+  // Show loading spinner when data is being fetched
+  if (!actionsData || !programsData || !portfoliosData || !fiscalYearsData) {
+    return <PageLoadingSpinner message="Chargement des actions..." />;
+  }
+
   // Filter actions based on all filters
   const filteredActions = actionsData.filter((action) => {
     const matchesSearch =
-      (action.nom?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (action.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
       (action.code?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (action.type_action?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (action.programme_name?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+      (action.type?.toLowerCase() || "").includes(searchTerm.toLowerCase());
 
-    const matchesProgram = programmeFilter === "all" || action.programme_id === programmeFilter;
+    const matchesProgram = programmeFilter === "all" || action.program_id === programmeFilter;
 
-    // Simplified portfolio matching (in a real app, would need correct relation)
     const matchesPortfolio =
       portfolioFilter === "all" ||
-      (portfolioFilter === "PORT001" && action.programme_id === "PRG001") ||
-      (portfolioFilter === "PORT002" && action.programme_id === "PRG002") ||
-      (portfolioFilter === "PORT003" && action.programme_id === "PRG003") ||
-      (portfolioFilter === "PORT004" && action.programme_id === "PRG004");
+      (portfolioFilter === "PORT001" && action.program_id === "PRG001") ||
+      (portfolioFilter === "PORT002" && action.program_id === "PRG002") ||
+      (portfolioFilter === "PORT003" && action.program_id === "PRG003") ||
+      (portfolioFilter === "PORT004" && action.program_id === "PRG004");
 
-    const matchesType = typeFilter === "all" || action.type_action === typeFilter;
+    const matchesType = typeFilter === "all" || action.type === typeFilter;
     const matchesStatus = statusFilter === "all" || action.status === statusFilter;
 
     return matchesSearch && matchesProgram && matchesPortfolio && matchesType && matchesStatus;
@@ -139,13 +160,13 @@ export default function Actions() {
   const handleOpenAddDialog = () => {
     setNewAction({
       code: "",
-      programme_id: "",
-      nom: "",
+      program_id: "",
+      name: "",
       description: "",
-      type_action: "Centralized",
-      montant_alloue: 0,
-      status: "active",
-      consumption_rate: 0,
+      type: "Centralized",
+      allocated_ae: 0,
+      allocated_cp: 0,
+      status: "draft",
     });
     setIsAddDialogOpen(true);
   };
@@ -155,13 +176,13 @@ export default function Actions() {
     setCurrentAction(action);
     setNewAction({
       code: action.code,
-      programme_id: action.programme_id,
-      nom: action.nom,
+      program_id: action.program_id,
+      name: action.name,
       description: action.description,
-      type_action: action.type_action,
-      montant_alloue: action.montant_alloue,
+      type: action.type,
+      allocated_ae: action.allocated_ae,
+      allocated_cp: action.allocated_cp,
       status: action.status,
-      consumption_rate: action.consumption_rate,
     });
     setIsEditDialogOpen(true);
   };
@@ -179,7 +200,7 @@ export default function Actions() {
   };
 
   // Helper function to get status badge
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: Action["status"]) => {
     switch (status) {
       case "active":
         return (
@@ -191,12 +212,6 @@ export default function Actions() {
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-400">
             Archivé
-          </Badge>
-        );
-      case "planned":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">
-            Planifié
           </Badge>
         );
       case "draft":
@@ -212,7 +227,7 @@ export default function Actions() {
 
   // Add new action
   const handleAddAction = () => {
-    if (!newAction.code || !newAction.programme_id || !newAction.nom || !newAction.type_action || !newAction.status) {
+    if (!newAction.code || !newAction.program_id || !newAction.name || !newAction.type || !newAction.status) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis (*)",
@@ -221,32 +236,31 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programsData.find((p) => p.id === newAction.programme_id);
+    const selectedProgram = programsData.find((p) => p.id === newAction.program_id);
 
     const action: Action = {
       id: `ACT${String(actionsData.length + 1).padStart(3, "0")}`,
-      code: newAction.code!,
-      programme_id: newAction.programme_id!,
-      programme_name: selectedProgramme?.name || "",
-      nom: newAction.nom!,
+      code: newAction.code,
+      program_id: newAction.program_id,
+      name: newAction.name,
       description: newAction.description,
-      type_action: newAction.type_action!,
-      status: newAction.status!,
-      montant_alloue: Number(newAction.montant_alloue) || 0,
-      consumption_rate: 0, // New actions start at 0% consumption
+      type: newAction.type,
+      status: newAction.status,
+      allocated_ae: newAction.allocated_ae ?? 0,
+      allocated_cp: newAction.allocated_cp ?? 0,
     };
 
-    actionMutation.mutate(action);
+    actionMutation.mutate(mapActionToMutation(action, "INSERT"));
     setIsAddDialogOpen(false);
     toast({
       title: "Action ajoutée",
-      description: `L'action "${action.nom}" a été ajoutée avec succès.`,
+      description: `L'action "${action.name}" a été ajoutée avec succès.`,
     });
   };
 
   // Edit action
   const handleEditAction = () => {
-    if (!currentAction || !newAction.code || !newAction.programme_id || !newAction.nom || !newAction.type_action || !newAction.status) {
+    if (!currentAction || !newAction.code || !newAction.program_id || !newAction.name || !newAction.type || !newAction.status) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis (*)",
@@ -255,26 +269,25 @@ export default function Actions() {
       return;
     }
 
-    const selectedProgramme = programsData.find((p) => p.id === newAction.programme_id);
+    const selectedProgram = programsData.find((p) => p.id === newAction.program_id);
 
     const updatedAction: Action = {
       ...currentAction,
-      code: newAction.code!,
-      programme_id: newAction.programme_id!,
-      programme_name: selectedProgramme?.name || currentAction.programme_name,
-      nom: newAction.nom!,
+      code: newAction.code,
+      program_id: newAction.program_id,
+      name: newAction.name,
       description: newAction.description,
-      type_action: newAction.type_action!,
-      status: newAction.status!,
-      montant_alloue: Number(newAction.montant_alloue) || 0,
-      consumption_rate: Number(newAction.consumption_rate) || 0,
+      type: newAction.type,
+      status: newAction.status,
+      allocated_ae: newAction.allocated_ae ?? 0,
+      allocated_cp: newAction.allocated_cp ?? 0,
     };
 
-    actionMutation.mutate(updatedAction);
+    actionMutation.mutate(mapActionToMutation(updatedAction, "UPDATE"));
     setIsEditDialogOpen(false);
     toast({
       title: "Action modifiée",
-      description: `L'action "${currentAction.nom}" a été modifiée avec succès.`,
+      description: `L'action "${currentAction.name}" a été modifiée avec succès.`,
     });
   };
 
@@ -282,390 +295,16 @@ export default function Actions() {
   const handleDeleteAction = () => {
     if (!currentAction) return;
 
-    actionMutation.mutate({ ...currentAction, deleted: true });
+    actionMutation.mutate(mapActionToMutation(currentAction, "DELETE"));
     setIsDeleteDialogOpen(false);
     toast({
       title: "Action supprimée",
-      description: `L'action "${currentAction.nom}" a été supprimée avec succès.`,
+      description: `L'action "${currentAction.name}" a été supprimée avec succès.`,
     });
   };
 
   const handleTypeActionChange = (value: string) => {
-    setNewAction({ ...newAction, type_action: value as ActionType });
-  };
-
-  // View Dialog Component
-  const ViewActionDialog = () => {
-    const [viewAction, setViewAction] = useState<Action | null>(null);
-    const [selectedYear, setSelectedYear] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
-
-    useEffect(() => {
-      if (currentAction && isViewDialogOpen) {
-        setViewAction(currentAction);
-        // If fiscal_year_id exists in the model, use it, otherwise default to first year
-        if (currentAction.fiscal_year_id) {
-          setSelectedYear(currentAction.fiscal_year_id);
-        } else if (fiscalYearsData.length > 0) {
-          setSelectedYear(fiscalYearsData[0].id);
-        }
-      }
-    }, [currentAction, isViewDialogOpen]);
-
-    // Fetch action data when fiscal year changes
-    const handleFiscalYearChange = (fiscalYearId: string) => {
-      setSelectedYear(fiscalYearId);
-      setLoading(true);
-
-      // Simulating data fetch for the selected fiscal year
-      setTimeout(() => {
-        // In a real implementation, you would fetch data from API
-        setLoading(false);
-      }, 500);
-    };
-
-    if (!viewAction) {
-      return null;
-    }
-
-    return (
-      <>
-        <div className="flex items-center justify-end mb-4 mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Année fiscale:</span>
-            <Select value={selectedYear} onValueChange={handleFiscalYearChange} className="w-[180px]">
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une année" />
-              </SelectTrigger>
-              <SelectContent>
-                {fiscalYearsData.map((year) => (
-                  <SelectItem key={year.id} value={year.id}>
-                    {year.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center items-center py-4">
-            <Spinner />
-          </div>
-        ) : (
-          <>
-            <div className="py-6 space-y-8">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Allouées</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(viewAction.montant_alloue)}</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-secondary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Alloués</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(viewAction.montant_alloue * 0.8)}</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">AE Consommées</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency((viewAction.montant_alloue * viewAction.consumption_rate) / 100)}</div>
-                    <div className="text-sm text-muted-foreground mt-1">{viewAction.consumption_rate}% utilisés</div>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-green-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">CP Consommés</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency((viewAction.montant_alloue * 0.8 * (viewAction.consumption_rate - 5)) / 100)}
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">{Math.max(0, viewAction.consumption_rate - 5)}% utilisés</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Progress Charts */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Progression de la Consommation (2024)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                    {/* AE Progress Circle */}
-                    <div className="flex flex-col items-center">
-                      <div className="w-40 h-40 relative flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
-                          <circle
-                            className="text-gray-200 dark:text-gray-700 stroke-current"
-                            strokeWidth="10"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="40"
-                            cx="50"
-                            cy="50"
-                          />
-                          <circle
-                            className="text-primary stroke-current"
-                            strokeWidth="10"
-                            strokeDasharray={`${viewAction.consumption_rate * 2.51} 251.2`}
-                            strokeLinecap="round"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="40"
-                            cx="50"
-                            cy="50"
-                            transform="rotate(-90 50 50)"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-xl font-bold">{viewAction.consumption_rate}%</div>
-                        </div>
-                      </div>
-                      <p className="mt-3 text-sm font-medium">Consommation AE</p>
-                    </div>
-
-                    {/* CP Progress Circle */}
-                    <div className="flex flex-col items-center">
-                      <div className="w-40 h-40 relative flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
-                          <circle
-                            className="text-gray-200 dark:text-gray-700 stroke-current"
-                            strokeWidth="10"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="40"
-                            cx="50"
-                            cy="50"
-                          />
-                          <circle
-                            className="text-secondary stroke-current"
-                            strokeWidth="10"
-                            strokeDasharray={`${Math.max(0, viewAction.consumption_rate - 5) * 2.51} 251.2`}
-                            strokeLinecap="round"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="40"
-                            cx="50"
-                            cy="50"
-                            transform="rotate(-90 50 50)"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-xl font-bold">{Math.max(0, viewAction.consumption_rate - 5)}%</div>
-                        </div>
-                      </div>
-                      <p className="mt-3 text-sm font-medium">Consommation CP</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Opérations Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Opérations Associées (2024)</CardTitle>
-                  <CardDescription>Liste des opérations liées à cette action pour l'année fiscale sélectionnée.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-x-auto">
-                    <table className="w-full min-w-[600px]">
-                      <thead>
-                        <tr className="border-b bg-muted/50 text-sm text-muted-foreground">
-                          <th className="py-3 px-4 text-left font-medium">Code</th>
-                          <th className="py-3 px-4 text-left font-medium">Nom Opération</th>
-                          <th className="py-3 px-4 text-right font-medium">AE Allouées</th>
-                          <th className="py-3 px-4 text-right font-medium">CP Alloués</th>
-                          <th className="py-3 px-4 text-right font-medium">AE Consommées</th>
-                          <th className="py-3 px-4 text-right font-medium">CP Consommés</th>
-                          <th className="py-3 px-4 text-center font-medium">Taux Physique (%)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Mock data for operations */}
-                        {[
-                          {
-                            code: "OP1",
-                            name: "Réhabilitation Route R10",
-                            ae: viewAction.montant_alloue * 0.4,
-                            cp: viewAction.montant_alloue * 0.3,
-                            aeUsed: viewAction.montant_alloue * 0.4 * 0.7,
-                            cpUsed: viewAction.montant_alloue * 0.3 * 0.6,
-                            physicalRate: 65,
-                          },
-                          {
-                            code: "OP2",
-                            name: "Réparation Pont P3",
-                            ae: viewAction.montant_alloue * 0.25,
-                            cp: viewAction.montant_alloue * 0.2,
-                            aeUsed: viewAction.montant_alloue * 0.25 * 0.5,
-                            cpUsed: viewAction.montant_alloue * 0.2 * 0.4,
-                            physicalRate: 40,
-                          },
-                          {
-                            code: "OP3",
-                            name: "Entretien Voirie",
-                            ae: viewAction.montant_alloue * 0.35,
-                            cp: viewAction.montant_alloue * 0.3,
-                            aeUsed: viewAction.montant_alloue * 0.35 * 0.8,
-                            cpUsed: viewAction.montant_alloue * 0.3 * 0.7,
-                            physicalRate: 75,
-                          },
-                        ].map((op, index) => {
-                          const tauxAE = op.ae > 0 ? Math.round((op.aeUsed / op.ae) * 100) : 0;
-                          return (
-                            <tr key={index} className="border-b hover:bg-muted/30 transition-colors">
-                              <td className="py-3 px-4">{op.code}</td>
-                              <td className="py-3 px-4">{op.name}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(op.ae)}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(op.cp)}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(op.aeUsed)}</td>
-                              <td className="py-3 px-4 text-right">{formatCurrency(op.cpUsed)}</td>
-                              <td className="py-3 px-4 text-center">{op.physicalRate}%</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Engagements Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Engagements (2024)</CardTitle>
-                  <CardDescription>Liste des engagements liés à cette action.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-x-auto">
-                    <table className="w-full min-w-[600px]">
-                      <thead>
-                        <tr className="border-b bg-muted/50 text-sm text-muted-foreground">
-                          <th className="py-3 px-4 text-left font-medium">N° Engagement</th>
-                          <th className="py-3 px-4 text-left font-medium">Opération</th>
-                          <th className="py-3 px-4 text-left font-medium">Date</th>
-                          <th className="py-3 px-4 text-right font-medium">Montant</th>
-                          <th className="py-3 px-4 text-right font-medium">CP Payés</th>
-                          <th className="py-3 px-4 text-left font-medium">Statut</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Mock data for engagements */}
-                        {[
-                          {
-                            code: "ENG2024-001",
-                            op: "OP1",
-                            date: "12/02/2024",
-                            amount: viewAction.montant_alloue * 0.25,
-                            paid: viewAction.montant_alloue * 0.15,
-                            status: "Validé",
-                          },
-                          {
-                            code: "ENG2024-002",
-                            op: "OP3",
-                            date: "20/03/2024",
-                            amount: viewAction.montant_alloue * 0.3,
-                            paid: viewAction.montant_alloue * 0.1,
-                            status: "En cours",
-                          },
-                          {
-                            code: "ENG2024-003",
-                            op: "OP2",
-                            date: "05/04/2024",
-                            amount: viewAction.montant_alloue * 0.2,
-                            paid: 0,
-                            status: "En attente",
-                          },
-                        ].map((eng, index) => (
-                          <tr key={index} className="border-b hover:bg-muted/30 transition-colors">
-                            <td className="py-3 px-4">{eng.code}</td>
-                            <td className="py-3 px-4">{eng.op}</td>
-                            <td className="py-3 px-4">{eng.date}</td>
-                            <td className="py-3 px-4 text-right">{formatCurrency(eng.amount)}</td>
-                            <td className="py-3 px-4 text-right">{formatCurrency(eng.paid)}</td>
-                            <td className="py-3 px-4">
-                              <Badge
-                                className={
-                                  eng.status === "Validé"
-                                    ? "bg-green-100 text-green-800 border-green-400"
-                                    : eng.status === "En cours"
-                                    ? "bg-blue-100 text-blue-800 border-blue-400"
-                                    : "bg-yellow-100 text-yellow-800 border-yellow-400"
-                                }
-                              >
-                                {eng.status}
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Credit de Paiement evolution chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Évolution des crédits de paiement</CardTitle>
-                  <CardDescription>Prévision et paiements par trimestre</CardDescription>
-                </CardHeader>
-                <CardContent className="h-80">
-                  {/* Mock chart with CSS */}
-                  <div className="w-full h-full flex items-end justify-between gap-2 pt-10 pb-5 px-4 relative">
-                    {/* Y-axis and X-axis lines */}
-                    <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-300"></div>
-                    <div className="absolute left-0 right-0 bottom-0 h-px bg-gray-300"></div>
-
-                    {/* Mock columns */}
-                    {["T1", "T2", "T3", "T4"].map((trimester, i) => (
-                      <div key={i} className="flex flex-col items-center gap-2 z-10" style={{ width: "22%" }}>
-                        <div className="w-full flex justify-center gap-2">
-                          <div className="w-8 rounded-t-md bg-blue-500" style={{ height: `${[30, 60, 85, 95][i]}%` }}></div>
-                          <div className="w-8 rounded-t-md bg-green-500" style={{ height: `${[20, 45, 65, 85][i]}%` }}></div>
-                        </div>
-                        <div className="text-sm font-medium text-muted-foreground">{trimester}</div>
-                      </div>
-                    ))}
-
-                    {/* Legend */}
-                    <div className="absolute top-2 right-4 flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500"></div>
-                        <span className="text-xs">Prévisions</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-green-500"></div>
-                        <span className="text-xs">Réalisations</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <DialogFooter className="gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => window.print()}>
-                Imprimer
-              </Button>
-              <Button variant="outline">Générer Rapport</Button>
-              <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-            </DialogFooter>
-          </>
-        )}
-      </>
-    );
+    setNewAction({ ...newAction, type: value as Action["type"] });
   };
 
   return (
@@ -770,7 +409,7 @@ export default function Actions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
-                  {statusTypes.map((status) => (
+                  {statusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>
@@ -792,9 +431,7 @@ export default function Actions() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Programme</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Distribution</TableHead>
                   <TableHead>Montant Alloué</TableHead>
-                  <TableHead>Consommation</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -802,7 +439,7 @@ export default function Actions() {
               <TableBody>
                 {filteredActions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       Aucune action ne correspond aux critères de recherche
                     </TableCell>
                   </TableRow>
@@ -810,17 +447,10 @@ export default function Actions() {
                   filteredActions.map((action) => (
                     <TableRow key={action.id}>
                       <TableCell className="font-medium">{action.code}</TableCell>
-                      <TableCell>{action.nom}</TableCell>
-                      <TableCell>{action.programme_name}</TableCell>
-                      <TableCell>{action.type_action}</TableCell>
-                      <TableCell>{action.type_action}</TableCell>
-                      <TableCell>{formatCurrency(action.montant_alloue)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={action.consumption_rate} className="h-2 w-24" />
-                          <span className="text-xs font-medium">{action.consumption_rate}%</span>
-                        </div>
-                      </TableCell>
+                      <TableCell>{action.name}</TableCell>
+                      <TableCell>{programsData.find((p) => p.id === action.program_id)?.name || "Non spécifié"}</TableCell>
+                      <TableCell>{action.type}</TableCell>
+                      <TableCell>{formatCurrency(action.allocated_ae)}</TableCell>
                       <TableCell>{getStatusBadge(action.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -844,71 +474,49 @@ export default function Actions() {
         </CardContent>
       </Card>
 
-      {/* Add Action Dialog */}
+      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Ajouter une nouvelle action</DialogTitle>
-            <DialogDescription>Complétez le formulaire pour ajouter une nouvelle action budgétaire.</DialogDescription>
+            <DialogTitle>Ajouter une action</DialogTitle>
+            <DialogDescription>Créez une nouvelle action budgétaire</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="code" className="text-right">
-                Code*
-              </Label>
-              <Input
-                id="code"
-                className="col-span-3"
-                value={newAction.code || ""}
-                onChange={(e) => setNewAction({ ...newAction, code: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="programme" className="text-right">
-                Programme*
-              </Label>
-              <Select value={newAction.programme_id} onValueChange={(value) => setNewAction({ ...newAction, programme_id: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un programme" />
+            {/* Programme Select */}
+            <div className="grid gap-2">
+              <Label htmlFor="program">Programme *</Label>
+              <Select value={newAction.program_id} onValueChange={(value) => setNewAction({ ...newAction, program_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un programme" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programsData.map((programme) => (
-                    <SelectItem key={programme.id} value={programme.id}>
-                      {programme.name}
+                  {programsData.map((program) => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nom" className="text-right">
-                Nom de l'action*
-              </Label>
-              <Input
-                id="nom"
-                className="col-span-3"
-                value={newAction.nom || ""}
-                onChange={(e) => setNewAction({ ...newAction, nom: e.target.value })}
-              />
+
+            {/* Code Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="code">Code *</Label>
+              <Input id="code" value={newAction.code || ""} onChange={(e) => setNewAction({ ...newAction, code: e.target.value })} />
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right pt-2">
-                Description
-              </Label>
-              <textarea
-                id="description"
-                className="col-span-3 min-h-[80px] px-3 py-2 rounded-md border border-input bg-transparent text-sm shadow-sm"
-                value={newAction.description || ""}
-                onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
-              />
+
+            {/* Name Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nom *</Label>
+              <Input id="name" value={newAction.name || ""} onChange={(e) => setNewAction({ ...newAction, name: e.target.value })} />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Type d'action*
-              </Label>
-              <Select value={newAction.type_action} onValueChange={handleTypeActionChange}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un type d'action" />
+
+            {/* Type Select */}
+            <div className="grid gap-2">
+              <Label htmlFor="type">Type *</Label>
+              <Select value={newAction.type} onValueChange={handleTypeActionChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un type" />
                 </SelectTrigger>
                 <SelectContent>
                   {actionTypes.map((type) => (
@@ -919,16 +527,16 @@ export default function Actions() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Statut*
-              </Label>
-              <Select value={newAction.status} onValueChange={(value) => setNewAction({ ...newAction, status: value as ActionStatus })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un statut" />
+
+            {/* Status Select */}
+            <div className="grid gap-2">
+              <Label htmlFor="status">Statut *</Label>
+              <Select value={newAction.status} onValueChange={(value) => setNewAction({ ...newAction, status: value as Action["status"] })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusTypes.map((status) => (
+                  {statusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>
@@ -936,44 +544,48 @@ export default function Actions() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="montant" className="text-right">
-                Montant alloué*
-              </Label>
+
+            {/* Allocated AE Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="allocated_ae">Montant AE alloué</Label>
               <Input
-                id="montant"
+                id="allocated_ae"
                 type="number"
-                className="col-span-3"
-                value={newAction.montant_alloue || ""}
+                value={newAction.allocated_ae || ""}
                 onChange={(e) =>
                   setNewAction({
                     ...newAction,
-                    montant_alloue: parseFloat(e.target.value),
+                    allocated_ae: parseFloat(e.target.value),
                   })
                 }
               />
             </div>
-            {isEditDialogOpen && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="consumption" className="text-right">
-                  Taux de consommation (%)
-                </Label>
-                <Input
-                  id="consumption"
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="col-span-3"
-                  value={newAction.consumption_rate || ""}
-                  onChange={(e) =>
-                    setNewAction({
-                      ...newAction,
-                      consumption_rate: Math.min(100, Math.max(0, parseFloat(e.target.value))),
-                    })
-                  }
-                />
-              </div>
-            )}
+
+            {/* Allocated CP Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="allocated_cp">Montant CP alloué</Label>
+              <Input
+                id="allocated_cp"
+                type="number"
+                value={newAction.allocated_cp || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    allocated_cp: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            {/* Description Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={newAction.description || ""}
+                onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -984,9 +596,74 @@ export default function Actions() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Action Dialog */}
+      {/* View Action Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {currentAction && (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="truncate">{currentAction.name}</span>
+                    <span className="text-sm font-normal text-muted-foreground">({currentAction.code})</span>
+                  </div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Programme: {programsData.find((p) => p.id === currentAction.program_id)?.name}
+                  </div>
+                </div>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {currentAction && (
+                <div className="flex items-center justify-between mt-1">
+                  <div>{currentAction.description || "Aucune description fournie"}</div>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-400">
+                      {currentAction.type}
+                    </Badge>
+                    {getStatusBadge(currentAction.status)}
+                  </div>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentAction && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                {/* AE/CP Information */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle>Allocation budgétaire</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-1">Autorisations d'engagement (AE)</h4>
+                      <div className="text-2xl font-bold">{formatCurrency(currentAction.allocated_ae || 0)}</div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-1">Crédits de paiement (CP)</h4>
+                      <div className="text-2xl font-bold">{formatCurrency(currentAction.allocated_cp || 0)}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+
+          <DialogFooter className="gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => window.print()}>
+              Imprimer
+            </Button>
+            <Button variant="outline">Générer Rapport</Button>
+            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'action</DialogTitle>
             <DialogDescription>Modifiez les détails de l'action.</DialogDescription>
@@ -1004,51 +681,51 @@ export default function Actions() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-programme" className="text-right">
+              <Label htmlFor="edit-program" className="text-right">
                 Programme*
               </Label>
-              <Select value={newAction.programme_id} onValueChange={(value) => setNewAction({ ...newAction, programme_id: value })}>
+              <Select value={newAction.program_id || ""} onValueChange={(value) => setNewAction({ ...newAction, program_id: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un programme" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programsData.map((programme) => (
-                    <SelectItem key={programme.id} value={programme.id}>
-                      {programme.name}
+                  {programsData.map((program) => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-nom" className="text-right">
+              <Label htmlFor="edit-name" className="text-right">
                 Nom de l'action*
               </Label>
               <Input
-                id="edit-nom"
+                id="edit-name"
                 className="col-span-3"
-                value={newAction.nom || ""}
-                onChange={(e) => setNewAction({ ...newAction, nom: e.target.value })}
+                value={newAction.name || ""}
+                onChange={(e) => setNewAction({ ...newAction, name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="edit-description" className="text-right pt-2">
                 Description
               </Label>
-              <textarea
+              <Textarea
                 id="edit-description"
-                className="col-span-3 min-h-[80px] px-3 py-2 rounded-md border border-input bg-transparent text-sm shadow-sm"
+                className="col-span-3 min-h-[80px]"
                 value={newAction.description || ""}
                 onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-type" className="text-right">
-                Type d'action*
+                Type*
               </Label>
-              <Select value={newAction.type_action} onValueChange={handleTypeActionChange}>
+              <Select value={newAction.type || ""} onValueChange={handleTypeActionChange}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un type d'action" />
+                  <SelectValue placeholder="Sélectionner un type" />
                 </SelectTrigger>
                 <SelectContent>
                   {actionTypes.map((type) => (
@@ -1060,57 +737,55 @@ export default function Actions() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-allocated-ae" className="text-right">
+                Montant AE alloué*
+              </Label>
+              <Input
+                id="edit-allocated-ae"
+                type="number"
+                className="col-span-3"
+                value={newAction.allocated_ae || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    allocated_ae: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-allocated-cp" className="text-right">
+                Montant CP alloué*
+              </Label>
+              <Input
+                id="edit-allocated-cp"
+                type="number"
+                className="col-span-3"
+                value={newAction.allocated_cp || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    allocated_cp: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-status" className="text-right">
                 Statut*
               </Label>
-              <Select value={newAction.status} onValueChange={(value) => setNewAction({ ...newAction, status: value as ActionStatus })}>
+              <Select value={newAction.status || ""} onValueChange={(value) => setNewAction({ ...newAction, status: value as Action["status"] })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusTypes.map((status) => (
+                  {statusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-montant" className="text-right">
-                Montant alloué*
-              </Label>
-              <Input
-                id="edit-montant"
-                type="number"
-                className="col-span-3"
-                value={newAction.montant_alloue || ""}
-                onChange={(e) =>
-                  setNewAction({
-                    ...newAction,
-                    montant_alloue: parseFloat(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-consumption" className="text-right">
-                Taux de consommation (%)
-              </Label>
-              <Input
-                id="edit-consumption"
-                type="number"
-                min="0"
-                max="100"
-                className="col-span-3"
-                value={newAction.consumption_rate || ""}
-                onChange={(e) =>
-                  setNewAction({
-                    ...newAction,
-                    consumption_rate: Math.min(100, Math.max(0, parseFloat(e.target.value))),
-                  })
-                }
-              />
             </div>
           </div>
           <DialogFooter>
@@ -1122,29 +797,35 @@ export default function Actions() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Action Dialog */}
+      {/* Delete Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer cette action? Cette action est irréversible.</DialogDescription>
+            <DialogTitle>Supprimer l'action</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer cette action ?</DialogDescription>
           </DialogHeader>
-          {currentAction && (
-            <div className="py-4">
-              <p>
-                <strong>Code:</strong> {currentAction.code}
-              </p>
-              <p>
-                <strong>Programme:</strong> {currentAction.programme_name}
-              </p>
-              <p>
-                <strong>Nom:</strong> {currentAction.nom}
-              </p>
-              <p>
-                <strong>Montant alloué:</strong> {formatCurrency(currentAction.montant_alloue)}
-              </p>
-            </div>
-          )}
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
+            {currentAction && (
+              <div className="mt-4 space-y-2">
+                <p>
+                  <strong>Code:</strong> {currentAction.code}
+                </p>
+                <p>
+                  <strong>Programme:</strong> {programsData.find((p) => p.id === currentAction.program_id)?.name}
+                </p>
+                <p>
+                  <strong>Nom:</strong> {currentAction.name}
+                </p>
+                <p>
+                  <strong>Montant AE alloué:</strong> {formatCurrency(currentAction.allocated_ae)}
+                </p>
+                <p>
+                  <strong>Montant CP alloué:</strong> {formatCurrency(currentAction.allocated_cp)}
+                </p>
+              </div>
+            )}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Annuler
@@ -1153,42 +834,6 @@ export default function Actions() {
               Supprimer
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Action Dialog - Enhanced with beautiful UI */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {currentAction && (
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="truncate">{currentAction.nom}</span>
-                    <span className="text-sm font-normal text-muted-foreground">({currentAction.code})</span>
-                  </div>
-                  <div className="text-sm font-normal text-muted-foreground">
-                    Programme: {currentAction.programme_name} • Portefeuille:{" "}
-                    {portfoliosData.find((p) => p.id === `PORT00${currentAction.programme_id.slice(-1)}`)?.name || "Non spécifié"}
-                  </div>
-                </div>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {currentAction && (
-                <div className="flex items-center justify-between mt-1">
-                  <div>{currentAction.description || "Aucune description fournie"}</div>
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-400">
-                      {actionTypeTranslations[currentAction.type_action] || currentAction.type_action}
-                    </Badge>
-                    {getStatusBadge(currentAction.status)}
-                  </div>
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <ViewActionDialog />
         </DialogContent>
       </Dialog>
     </Dashboard>

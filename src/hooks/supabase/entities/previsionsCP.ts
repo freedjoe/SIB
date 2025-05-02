@@ -1,82 +1,84 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import { useSupabaseData } from "../core/useSupabaseData";
+import { useSupabaseMutation, MutationOptions } from "../core/useSupabaseMutation";
+import { QueryOptions } from "../core/useSupabaseQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
-// Define the types based on your existing types
-import type { PrevisionCP } from "@/types/prevision_cp";
-
-// Helper type for filter functions
-type FilterFunction = (query: PostgrestFilterBuilder<any>) => PostgrestFilterBuilder<any>;
-
-/**
- * Hook to fetch previsions CP data
- */
-export const usePrevisionsCP = (
-  options: {
-    filter?: FilterFunction;
-    select?: string;
-  } = {},
-  queryOptions = {}
-) => {
-  return useQuery(
-    ["previsions-cp", options],
-    async () => {
-      let query = supabase.from("previsions_cp").select(
-        options.select ||
-          `
-          *,
-          operation:operation_id (*),
-          engagement:engagement_id (*)
-        `
-      );
-
-      // Apply any filters
-      if (options.filter) {
-        query = options.filter(query);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Error fetching previsions CP: ${error.message}`);
-      }
-
-      return data as PrevisionCP[];
-    },
-    {
-      ...queryOptions,
-    }
-  );
+// --- Previsions CP ---
+export const usePrevisionsCP = (options: QueryOptions = {}) => {
+  return useSupabaseData("previsions_cp", ["all"], {
+    staleTime: Infinity, // Keep cached data indefinitely
+    cacheTime: Infinity, // Keep the data cached forever
+    refetchOnWindowFocus: false,
+    realtime: true, // Enable realtime updates
+    ...options,
+    select:
+      options.select ||
+      `
+      *,
+      operation:operation_id (*),
+      engagement:engagement_id (*)
+    `,
+    sort: options.sort || { column: "created_at", ascending: false },
+  });
 };
 
-/**
- * Hook to fetch a single prevision CP by ID
- */
-export const usePrevisionCP = (id: string, queryOptions = {}) => {
-  return useQuery(
-    ["prevision-cp", id],
-    async () => {
-      const { data, error } = await supabase
-        .from("previsions_cp")
-        .select(
-          `
-          *,
-          operation:operation_id (*),
-          engagement:engagement_id (*)
-        `
-        )
-        .eq("id", id)
-        .single();
+export const usePrevisionCP = (id: string | null, options: QueryOptions = {}) => {
+  return useSupabaseData("previsions_cp", [id], {
+    staleTime: Infinity, // Keep cached data indefinitely
+    cacheTime: Infinity, // Keep the data cached forever
+    refetchOnWindowFocus: false,
+    realtime: true, // Enable realtime updates
+    ...options,
+    select:
+      options.select ||
+      `
+      *,
+      operation:operation_id (*),
+      engagement:engagement_id (*)
+    `,
+    filter: (query) => query.eq("id", id),
+    enabled: !!id && options.enabled !== false,
+  });
+};
 
-      if (error) {
-        throw new Error(`Error fetching prevision CP: ${error.message}`);
+export const usePrevisionsCPByOperation = (operationId: string | null, options: QueryOptions = {}) => {
+  return useSupabaseData("previsions_cp", ["by_operation", operationId], {
+    staleTime: Infinity, // Keep cached data indefinitely
+    cacheTime: Infinity, // Keep the data cached forever
+    refetchOnWindowFocus: false,
+    realtime: true, // Enable realtime updates
+    ...options,
+    select:
+      options.select ||
+      `
+      *,
+      operation:operation_id (*),
+      engagement:engagement_id (*)
+    `,
+    filter: (query) => query.eq("operation_id", operationId),
+    enabled: !!operationId && options.enabled !== false,
+  });
+};
+
+export const usePrevisionCPMutation = (options: MutationOptions = {}) => {
+  const queryClient = useQueryClient();
+
+  return useSupabaseMutation("previsions_cp", {
+    ...options,
+    onSuccess: (data) => {
+      // Force immediate update of the cache
+      queryClient.invalidateQueries({ queryKey: ["previsions_cp"] });
+
+      // Update any individual prevision CP queries if this was an update
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: ["previsions_cp", data.id] });
+        queryClient.invalidateQueries({ queryKey: ["previsions_cp", "by_operation", data.operation_id] });
       }
 
-      return data as PrevisionCP;
+      // Call the original onSuccess if provided
+      if (options.onSuccess) {
+        options.onSuccess(data);
+      }
     },
-    {
-      ...queryOptions,
-      enabled: !!id,
-    }
-  );
+  });
 };

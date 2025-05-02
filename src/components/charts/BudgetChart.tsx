@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { cn, formatCurrency } from "@/lib/utils";
 
-interface BudgetItem {
+interface BudgetTitle {
   name: string;
   value: number;
   color: string;
@@ -12,14 +12,14 @@ interface BudgetItem {
 
 interface BudgetChartProps {
   title: string;
-  data: BudgetItem[];
+  data: BudgetTitle[];
   className?: string;
   showLegend?: boolean;
 }
 
 export function BudgetChart({ title, data, className, showLegend = true }: BudgetChartProps) {
   const { t } = useTranslation();
-  const [chartData, setChartData] = useState<BudgetItem[]>([]);
+  const [chartData, setChartData] = useState<BudgetTitle[]>([]);
 
   // Animate chart data on mount
   useEffect(() => {

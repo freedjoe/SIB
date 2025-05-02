@@ -7,8 +7,8 @@ CREATE TABLE ministries (
     parent INT REFERENCES ministries(id),
 );
 
--- 2. Budget Categories
-CREATE TABLE budget_categories (
+-- 2. Budget Titles
+CREATE TABLE budget_titles (
     id INT PRIMARY KEY,
     code TEXT,
     label TEXT
@@ -110,7 +110,7 @@ CREATE TABLE cp_alerts (
 CREATE TABLE budget_allocations (
     id INT PRIMARY KEY,
     program_id INT REFERENCES programs(id),
-    budget_category_id INT REFERENCES budget_categories(id),
+    budget_title_id INT REFERENCES budget_titles(id),
     allocated_ae BIGINT,
     allocated_cp BIGINT,
     year INT

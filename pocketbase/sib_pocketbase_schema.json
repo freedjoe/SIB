@@ -29,7 +29,7 @@
     "options": {}
   },
   {
-    "name": "budget_categories",
+    "name": "budget_titles",
     "type": "base",
     "schema": [
       { "name": "code", "type": "text" },
@@ -99,7 +99,7 @@
       { "name": "code", "type": "text" },
       { "name": "title", "type": "text" },
       { "name": "inscription_date", "type": "text" },
-      { "name": "budget_category_id", "type": "text" },
+      { "name": "budget_title_id", "type": "text" },
       { "name": "allocated_ae", "type": "number" },
       { "name": "allocated_cp", "type": "number" },
       { "name": "consumed_ae", "type": "number" },

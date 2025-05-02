@@ -25,7 +25,7 @@ BEGIN;
     DELETE FROM operations;
     DELETE FROM financial_operations;
     DELETE FROM budget_allocations;
-    DELETE FROM budget_categories;
+    DELETE FROM budget_titles;
     DELETE FROM ministries;
     
     -- Re-enable triggers
@@ -73,8 +73,8 @@ INSERT INTO ministries (id, name, code, created_at) VALUES
     (uuid_generate_v4(), 'Affaires religieuses et wakfs', 'MARW', CURRENT_TIMESTAMP),
     (uuid_generate_v4(), 'Finances', 'MF', CURRENT_TIMESTAMP);
 
--- Insert budget categories
-INSERT INTO budget_categories (id, name, code, parent_id, created_at) VALUES
+-- Insert budget titles
+INSERT INTO budget_titles (id, name, code, parent_id, created_at) VALUES
     ('aaaaaaaa-0000-4000-a000-000000000000', 'Dépenses de Personnel', 'T1', NULL, CURRENT_TIMESTAMP),
     ('bbbbbbbb-1111-4111-b111-111111111111', 'Dépenses de Fonctionnement', 'T2', NULL, CURRENT_TIMESTAMP),
     ('cccccccc-2222-4222-c222-222222222222', 'Dépenses d''Investissement', 'T3', NULL, CURRENT_TIMESTAMP),

@@ -4,7 +4,7 @@ import type {
   CPForecast,
   FiscalYear,
   Ministry,
-  BudgetCategory,
+  BudgetTitle,
   Portfolio,
   Program,
   Action,
@@ -38,6 +38,32 @@ import type {
   RequestWithRelations,
   UserWithRelations,
   UserProfileWithRelations,
+  // New table types from SQL schema
+  Subprogram,
+  OperationCP,
+  Allocation,
+  BudgetModification,
+  Disbursement,
+  PerformanceIndicator,
+  ExternalFunding,
+  ActivityLog,
+  Notification,
+  Comment,
+  Document,
+  Setting,
+  Permission,
+  Tag,
+  TagAssociation,
+  Milestone,
+  Attachment,
+  Audit,
+  // New relation types
+  SubprogramWithRelations,
+  DisbursementWithRelations,
+  PerformanceIndicatorWithRelations,
+  MilestoneWithRelations,
+  CommentWithRelations,
+  DocumentWithRelations,
 } from "./supabase";
 
 // Extract all row types from the Database type
@@ -49,7 +75,7 @@ export type UpdateTables<T extends keyof Database["public"]["Tables"]> = Databas
 export type {
   FiscalYear,
   Ministry,
-  BudgetCategory,
+  BudgetTitle,
   Portfolio,
   Program,
   Action,
@@ -75,6 +101,25 @@ export type {
   Status,
   Request,
   Deal,
+  // New table types from SQL schema
+  Subprogram,
+  OperationCP,
+  Allocation,
+  BudgetModification,
+  Disbursement,
+  PerformanceIndicator,
+  ExternalFunding,
+  ActivityLog,
+  Notification,
+  Comment,
+  Document,
+  Setting,
+  Permission,
+  Tag,
+  TagAssociation,
+  Milestone,
+  Attachment,
+  Audit,
   // Common types and relations
   StatusOptions,
   OperationWithRelations,
@@ -86,6 +131,12 @@ export type {
   RequestWithRelations,
   UserWithRelations,
   UserProfileWithRelations,
+  SubprogramWithRelations,
+  DisbursementWithRelations,
+  PerformanceIndicatorWithRelations,
+  MilestoneWithRelations,
+  CommentWithRelations,
+  DocumentWithRelations,
 };
 
 // Define more specific union types for various status and type values
@@ -115,7 +166,7 @@ export type PrevisionCP = CPForecast;
 export type TableTypes = {
   fiscal_years: Tables<"fiscal_years">;
   ministries: Tables<"ministries">;
-  budget_categories: Tables<"budget_categories">;
+  budget_titles: Tables<"budget_titles">;
   portfolios: Tables<"portfolios">;
   programs: Tables<"programs">;
   actions: Tables<"actions">;
@@ -141,6 +192,24 @@ export type TableTypes = {
   statuses: Tables<"statuses">;
   requests: Tables<"requests">;
   deals: Tables<"deals">;
+  subprograms: Tables<"subprograms">;
+  operation_cps: Tables<"operation_cps">;
+  allocations: Tables<"allocations">;
+  budget_modifications: Tables<"budget_modifications">;
+  disbursements: Tables<"disbursements">;
+  performance_indicators: Tables<"performance_indicators">;
+  external_fundings: Tables<"external_fundings">;
+  activity_logs: Tables<"activity_logs">;
+  notifications: Tables<"notifications">;
+  comments: Tables<"comments">;
+  documents: Tables<"documents">;
+  settings: Tables<"settings">;
+  permissions: Tables<"permissions">;
+  tags: Tables<"tags">;
+  tag_associations: Tables<"tag_associations">;
+  milestones: Tables<"milestones">;
+  attachments: Tables<"attachments">;
+  audits: Tables<"audits">;
 };
 
 // Type to get row type for a specific table

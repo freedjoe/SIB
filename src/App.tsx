@@ -22,7 +22,7 @@ import Security from "./pages/settings/Security";
 import BasicData from "./pages/settings/BasicData";
 import Ministries from "./pages/settings/basic-data/Ministries";
 import Entreprises from "./pages/settings/basic-data/Enterprises";
-import BudgetCatalog from "./pages/settings/basic-data/BudgetCatalog";
+import BudgetTitles from "./pages/settings/basic-data/BudgetTitles";
 import Nomenclature from "./pages/settings/basic-data/Nomenclature";
 import ReportTypes from "./pages/settings/basic-data/ReportTypes";
 import Users from "./pages/settings/Users";
@@ -124,7 +124,7 @@ const AppRoutes = () => {
         <Route path="/settings/basic-data" element={<BasicData />} />
         <Route path="/settings/basic-data/ministries" element={<Ministries />} />
         <Route path="/settings/basic-data/entreprises" element={<Entreprises />} />
-        <Route path="/settings/basic-data/budget-catalog" element={<BudgetCatalog />} />
+        <Route path="/settings/basic-data/budget-titles" element={<BudgetTitles />} />
         <Route path="/settings/basic-data/nomenclature" element={<Nomenclature />} />
         <Route path="/settings/basic-data/report-types" element={<ReportTypes />} />
         <Route path="/settings/users" element={<Users />} />

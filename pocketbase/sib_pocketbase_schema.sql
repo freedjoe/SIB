@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS ministries (
     description TEXT
 );
 
--- 3. Budget Categories
-CREATE TABLE IF NOT EXISTS budget_categories (
+-- 3. Budget Titles
+CREATE TABLE IF NOT EXISTS budget_titles (
     id TEXT PRIMARY KEY,
     code TEXT,
     label TEXT,
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS operations (
     code TEXT,
     title TEXT,
     inscription_date TEXT,
-    budget_category_id TEXT,
+    budget_title_id TEXT,
     allocated_ae NUMERIC,
     allocated_cp NUMERIC,
     consumed_ae NUMERIC,
