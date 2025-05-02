@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Plus, FileEdit, Trash2, Search, Eye, Filter, Loader2 } from "lucide-react";
+import { Plus, FileEdit, Trash2, Search, Eye, Filter, Loader2, CalendarIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,38 +14,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ActionsTable } from "@/components/tables/ActionsTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { cn, formatCurrency } from "@/lib/utils";
-import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation } from "@/hooks/supabase";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { useActions, usePrograms, usePortfolios, useFiscalYears, useActionMutation, useUsers } from "@/hooks/supabase";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
-
-// Define types for the data arrays
-interface Program {
-  id: string;
-  name: string;
-}
-
-interface Portfolio {
-  id: string;
-  name: string;
-}
-
-interface FiscalYear {
-  id: string;
-  year: number;
-}
-
-// Define the Action type based on the specified structure
-type Action = {
-  id: string;
-  program_id: string | null;
-  code: string | null;
-  name: string | null;
-  type: "Centralized" | "Decentralized" | "Unique" | "Programmed" | "Complementary" | null;
-  allocated_ae: number | null;
-  allocated_cp: number | null;
-  status: "draft" | "active" | "archived";
-  description: string | null;
-};
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+// Import types from types folder
+import { Portfolio, Ministry, FiscalYear, Action, Program, User } from "@/types/database.types";
 
 // Helper function to map between API and UI states
 const mapActionToMutation = (action: Action, type: "INSERT" | "UPDATE" | "DELETE" | "UPSERT") => ({
@@ -59,25 +35,6 @@ const Spinner = ({ className }: { className?: string }) => (
     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
 );
-
-// Status types
-const statusTypes = [
-  { value: "active", label: "Actif" },
-  { value: "archived", label: "Archivé" },
-  { value: "planned", label: "Planifié" },
-  { value: "draft", label: "Brouillon" },
-];
-
-type ActionStatus = "active" | "archived" | "planned" | "draft";
-
-// Define translations for action types
-const actionTypeTranslations = {
-  Centralized: "Centralisée",
-  Decentralized: "Décentralisée",
-  Unique: "Unique",
-  Programmed: "Programmée",
-  Complementary: "Complémentaire",
-};
 
 export default function Actions() {
   const { t } = useTranslation();
@@ -94,12 +51,23 @@ export default function Actions() {
   const [newAction, setNewAction] = useState<Partial<Action>>({
     code: "",
     program_id: "",
+    responsible_id: null,
     name: "",
     description: "",
     type: "Centralized",
+    objectives: [],
+    indicators: null,
+    start_date: null,
+    end_date: null,
+    montant_ae_total: 0,
+    montant_cp_total: 0,
     allocated_ae: 0,
     allocated_cp: 0,
     status: "draft",
+    commentaires: "",
+    nb_operations: 0,
+    taux_execution_cp: 0,
+    taux_execution_physique: 0,
   });
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -161,12 +129,23 @@ export default function Actions() {
     setNewAction({
       code: "",
       program_id: "",
+      responsible_id: null,
       name: "",
       description: "",
       type: "Centralized",
+      objectives: [],
+      indicators: null,
+      start_date: null,
+      end_date: null,
+      montant_ae_total: 0,
+      montant_cp_total: 0,
       allocated_ae: 0,
       allocated_cp: 0,
       status: "draft",
+      commentaires: "",
+      nb_operations: 0,
+      taux_execution_cp: 0,
+      taux_execution_physique: 0,
     });
     setIsAddDialogOpen(true);
   };
@@ -177,12 +156,23 @@ export default function Actions() {
     setNewAction({
       code: action.code,
       program_id: action.program_id,
+      responsible_id: action.responsible_id,
       name: action.name,
       description: action.description,
       type: action.type,
+      objectives: action.objectives,
+      indicators: action.indicators,
+      start_date: action.start_date,
+      end_date: action.end_date,
+      montant_ae_total: action.montant_ae_total,
+      montant_cp_total: action.montant_cp_total,
       allocated_ae: action.allocated_ae,
       allocated_cp: action.allocated_cp,
       status: action.status,
+      commentaires: action.commentaires,
+      nb_operations: action.nb_operations,
+      taux_execution_cp: action.taux_execution_cp,
+      taux_execution_physique: action.taux_execution_physique,
     });
     setIsEditDialogOpen(true);
   };
@@ -242,12 +232,23 @@ export default function Actions() {
       id: `ACT${String(actionsData.length + 1).padStart(3, "0")}`,
       code: newAction.code,
       program_id: newAction.program_id,
+      responsible_id: newAction.responsible_id,
       name: newAction.name,
       description: newAction.description,
       type: newAction.type,
-      status: newAction.status,
+      objectives: newAction.objectives,
+      indicators: newAction.indicators,
+      start_date: newAction.start_date,
+      end_date: newAction.end_date,
+      montant_ae_total: newAction.montant_ae_total ?? 0,
+      montant_cp_total: newAction.montant_cp_total ?? 0,
       allocated_ae: newAction.allocated_ae ?? 0,
       allocated_cp: newAction.allocated_cp ?? 0,
+      status: newAction.status,
+      commentaires: newAction.commentaires,
+      nb_operations: newAction.nb_operations ?? 0,
+      taux_execution_cp: newAction.taux_execution_cp ?? 0,
+      taux_execution_physique: newAction.taux_execution_physique ?? 0,
     };
 
     actionMutation.mutate(mapActionToMutation(action, "INSERT"));
@@ -275,12 +276,23 @@ export default function Actions() {
       ...currentAction,
       code: newAction.code,
       program_id: newAction.program_id,
+      responsible_id: newAction.responsible_id,
       name: newAction.name,
       description: newAction.description,
       type: newAction.type,
-      status: newAction.status,
+      objectives: newAction.objectives,
+      indicators: newAction.indicators,
+      start_date: newAction.start_date,
+      end_date: newAction.end_date,
+      montant_ae_total: newAction.montant_ae_total ?? 0,
+      montant_cp_total: newAction.montant_cp_total ?? 0,
       allocated_ae: newAction.allocated_ae ?? 0,
       allocated_cp: newAction.allocated_cp ?? 0,
+      status: newAction.status,
+      commentaires: newAction.commentaires,
+      nb_operations: newAction.nb_operations ?? 0,
+      taux_execution_cp: newAction.taux_execution_cp ?? 0,
+      taux_execution_physique: newAction.taux_execution_physique ?? 0,
     };
 
     actionMutation.mutate(mapActionToMutation(updatedAction, "UPDATE"));
@@ -358,20 +370,20 @@ export default function Actions() {
               </Select>
             </div>
 
-            {/* Programme Filter */}
+            {/* Program Filter */}
             <div>
-              <Label htmlFor="programme-filter" className="mb-2 block">
+              <Label htmlFor="program-filter" className="mb-2 block">
                 Programme
               </Label>
               <Select value={programmeFilter} onValueChange={setProgrammeFilter}>
-                <SelectTrigger id="programme-filter" className="w-full">
+                <SelectTrigger id="program-filter" className="w-full">
                   <SelectValue placeholder="Tous les programmes" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les programmes</SelectItem>
-                  {programsData.map((programme) => (
-                    <SelectItem key={programme.id} value={programme.id}>
-                      {programme.name}
+                  {programsData.map((program) => (
+                    <SelectItem key={program.id} value={program.id}>
+                      {program.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -381,7 +393,7 @@ export default function Actions() {
             {/* Type Filter */}
             <div>
               <Label htmlFor="type-filter" className="mb-2 block">
-                Type d'action
+                Type
               </Label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger id="type-filter" className="w-full">
@@ -476,7 +488,7 @@ export default function Actions() {
 
       {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ajouter une action</DialogTitle>
             <DialogDescription>Créez une nouvelle action budgétaire</DialogDescription>
@@ -496,6 +508,17 @@ export default function Actions() {
                     </SelectItem>
                   ))}
                 </SelectContent>
+              </Select>
+            </div>
+
+            {/* Responsible Select */}
+            <div className="grid gap-2">
+              <Label htmlFor="responsible">Responsable</Label>
+              <Select value={newAction.responsible_id || ""} onValueChange={(value) => setNewAction({ ...newAction, responsible_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un responsable" />
+                </SelectTrigger>
+                <SelectContent>{/* Add your users data mapping here */}</SelectContent>
               </Select>
             </div>
 
@@ -528,6 +551,74 @@ export default function Actions() {
               </Select>
             </div>
 
+            {/* Objectives Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="objectives">Objectifs</Label>
+              <Textarea
+                id="objectives"
+                placeholder="Entrez les objectifs séparés par des virgules"
+                value={newAction.objectives ? newAction.objectives.join(", ") : ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    objectives: e.target.value.split(",").map((obj) => obj.trim()),
+                  })
+                }
+              />
+            </div>
+
+            {/* Start Date */}
+            <div className="grid gap-2">
+              <Label htmlFor="start_date">Date de début</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button id="start_date" variant={"outline"} className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newAction.start_date ? format(new Date(newAction.start_date), "PPP") : <span>Sélectionner une date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newAction.start_date ? new Date(newAction.start_date) : undefined}
+                    onSelect={(date) =>
+                      setNewAction({
+                        ...newAction,
+                        start_date: date ? date.toISOString() : null,
+                      })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* End Date */}
+            <div className="grid gap-2">
+              <Label htmlFor="end_date">Date de fin</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button id="end_date" variant={"outline"} className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newAction.end_date ? format(new Date(newAction.end_date), "PPP") : <span>Sélectionner une date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newAction.end_date ? new Date(newAction.end_date) : undefined}
+                    onSelect={(date) =>
+                      setNewAction({
+                        ...newAction,
+                        end_date: date ? date.toISOString() : null,
+                      })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
             {/* Status Select */}
             <div className="grid gap-2">
               <Label htmlFor="status">Statut *</Label>
@@ -543,6 +634,38 @@ export default function Actions() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Montant AE Total Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="montant_ae_total">Montant AE Total</Label>
+              <Input
+                id="montant_ae_total"
+                type="number"
+                value={newAction.montant_ae_total || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    montant_ae_total: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            {/* Montant CP Total Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="montant_cp_total">Montant CP Total</Label>
+              <Input
+                id="montant_cp_total"
+                type="number"
+                value={newAction.montant_cp_total || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    montant_cp_total: parseFloat(e.target.value),
+                  })
+                }
+              />
             </div>
 
             {/* Allocated AE Input */}
@@ -580,10 +703,20 @@ export default function Actions() {
             {/* Description Input */}
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
-              <Input
+              <Textarea
                 id="description"
                 value={newAction.description || ""}
                 onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
+              />
+            </div>
+
+            {/* Commentaires Input */}
+            <div className="grid gap-2">
+              <Label htmlFor="commentaires">Commentaires</Label>
+              <Textarea
+                id="commentaires"
+                value={newAction.commentaires || ""}
+                onChange={(e) => setNewAction({ ...newAction, commentaires: e.target.value })}
               />
             </div>
           </div>
@@ -663,7 +796,7 @@ export default function Actions() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'action</DialogTitle>
             <DialogDescription>Modifiez les détails de l'action.</DialogDescription>
@@ -680,6 +813,7 @@ export default function Actions() {
                 onChange={(e) => setNewAction({ ...newAction, code: e.target.value })}
               />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-program" className="text-right">
                 Programme*
@@ -697,6 +831,19 @@ export default function Actions() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-responsible" className="text-right">
+                Responsable
+              </Label>
+              <Select value={newAction.responsible_id || ""} onValueChange={(value) => setNewAction({ ...newAction, responsible_id: value })}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un responsable" />
+                </SelectTrigger>
+                <SelectContent>{/* Add your users data mapping here */}</SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right">
                 Nom de l'action*
@@ -708,6 +855,7 @@ export default function Actions() {
                 onChange={(e) => setNewAction({ ...newAction, name: e.target.value })}
               />
             </div>
+
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="edit-description" className="text-right pt-2">
                 Description
@@ -719,6 +867,7 @@ export default function Actions() {
                 onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
               />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-type" className="text-right">
                 Type*
@@ -736,6 +885,121 @@ export default function Actions() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-objectives" className="text-right pt-2">
+                Objectifs
+              </Label>
+              <Textarea
+                id="edit-objectives"
+                className="col-span-3 min-h-[80px]"
+                placeholder="Entrez les objectifs séparés par des virgules"
+                value={newAction.objectives ? newAction.objectives.join(", ") : ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    objectives: e.target.value.split(",").map((obj) => obj.trim()),
+                  })
+                }
+              />
+            </div>
+
+            {/* Start Date */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-start-date" className="text-right">
+                Date de début
+              </Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button id="edit-start-date" variant={"outline"} className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newAction.start_date ? format(new Date(newAction.start_date), "PPP") : <span>Sélectionner une date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newAction.start_date ? new Date(newAction.start_date) : undefined}
+                      onSelect={(date) =>
+                        setNewAction({
+                          ...newAction,
+                          start_date: date ? date.toISOString() : null,
+                        })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* End Date */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-end-date" className="text-right">
+                Date de fin
+              </Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button id="edit-end-date" variant={"outline"} className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newAction.end_date ? format(new Date(newAction.end_date), "PPP") : <span>Sélectionner une date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newAction.end_date ? new Date(newAction.end_date) : undefined}
+                      onSelect={(date) =>
+                        setNewAction({
+                          ...newAction,
+                          end_date: date ? date.toISOString() : null,
+                        })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-montant-ae-total" className="text-right">
+                Montant AE Total
+              </Label>
+              <Input
+                id="edit-montant-ae-total"
+                type="number"
+                className="col-span-3"
+                value={newAction.montant_ae_total || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    montant_ae_total: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-montant-cp-total" className="text-right">
+                Montant CP Total
+              </Label>
+              <Input
+                id="edit-montant-cp-total"
+                type="number"
+                className="col-span-3"
+                value={newAction.montant_cp_total || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    montant_cp_total: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-allocated-ae" className="text-right">
                 Montant AE alloué*
@@ -753,6 +1017,7 @@ export default function Actions() {
                 }
               />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-allocated-cp" className="text-right">
                 Montant CP alloué*
@@ -770,6 +1035,61 @@ export default function Actions() {
                 }
               />
             </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-nb-operations" className="text-right">
+                Nombre d'opérations
+              </Label>
+              <Input
+                id="edit-nb-operations"
+                type="number"
+                className="col-span-3"
+                value={newAction.nb_operations || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    nb_operations: parseInt(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-taux-execution-cp" className="text-right">
+                Taux d'exécution CP
+              </Label>
+              <Input
+                id="edit-taux-execution-cp"
+                type="number"
+                className="col-span-3"
+                value={newAction.taux_execution_cp || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    taux_execution_cp: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-taux-execution-physique" className="text-right">
+                Taux d'exécution physique
+              </Label>
+              <Input
+                id="edit-taux-execution-physique"
+                type="number"
+                className="col-span-3"
+                value={newAction.taux_execution_physique || ""}
+                onChange={(e) =>
+                  setNewAction({
+                    ...newAction,
+                    taux_execution_physique: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-status" className="text-right">
                 Statut*
@@ -786,6 +1106,18 @@ export default function Actions() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-commentaires" className="text-right pt-2">
+                Commentaires
+              </Label>
+              <Textarea
+                id="edit-commentaires"
+                className="col-span-3 min-h-[80px]"
+                value={newAction.commentaires || ""}
+                onChange={(e) => setNewAction({ ...newAction, commentaires: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
