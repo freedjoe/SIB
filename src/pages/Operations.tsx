@@ -1,17 +1,33 @@
 import { useState, useEffect } from "react";
 import { Dashboard, DashboardHeader, DashboardSection } from "@/components/layout/Dashboard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, formatCurrency } from "@/lib/utils";
-import { FileCog, SearchIcon, Plus, X } from "lucide-react";
+import {
+  FileCog,
+  SearchIcon,
+  Plus,
+  X,
+  FileText,
+  ClipboardEdit,
+  Map,
+  PenTool,
+  CalendarIcon,
+  Upload,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { OperationsTable } from "@/components/tables/OperationsTable";
 import { Operation, Wilaya, Program, Action } from "@/types/database.types";
@@ -57,8 +73,8 @@ export default function OperationsPage() {
     onSuccess: () => {
       refetchOperations();
       toast({
-        title: "Opération réussie",
-        description: "La base de données a été mise à jour avec succès.",
+        title: "Operation Successful",
+        description: "The database has been successfully updated.",
       });
     },
   });
@@ -89,11 +105,11 @@ export default function OperationsPage() {
 
   // Titre budgétaire options
   const titresBudgetaires = [
-    { id: 1, name: "Dépenses de fonctionnement", shortLabel: "T1" },
-    { id: 2, name: "Dépenses d'équipement public", shortLabel: "T2" },
-    { id: 3, name: "Dépenses en capital (ou transferts)", shortLabel: "T3" },
-    { id: 4, name: "Charge de la dette publique", shortLabel: "T4" },
-    { id: 5, name: "Dépenses exceptionnelles", shortLabel: "T5" },
+    { id: 1, name: "Operating Expenses", shortLabel: "T1" },
+    { id: 2, name: "Public Equipment Expenses", shortLabel: "T2" },
+    { id: 3, name: "Capital Expenses (or Transfers)", shortLabel: "T3" },
+    { id: 4, name: "Public Debt Charges", shortLabel: "T4" },
+    { id: 5, name: "Exceptional Expenses", shortLabel: "T5" },
   ];
 
   // Filter operations based on search and filter criteria
@@ -132,43 +148,43 @@ export default function OperationsPage() {
       case "in_progress":
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
-            En cours
+            In Progress
           </Badge>
         );
       case "completed":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
-            Terminé
+            Completed
           </Badge>
         );
       case "planned":
         return (
           <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">
-            Planifié
+            Planned
           </Badge>
         );
       case "en_pause":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
-            En pause
+            On Hold
           </Badge>
         );
       case "arreter":
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
-            Arrêté
+            Stopped
           </Badge>
         );
       case "draft":
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
-            Brouillon
+            Draft
           </Badge>
         );
       default:
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
-            Inconnu
+            Unknown
           </Badge>
         );
     }
@@ -241,451 +257,17 @@ export default function OperationsPage() {
     setIsViewDialogOpen(true);
   };
 
-  // Données fictives pour les tableaux dans la vue détaillée
-  const mockEngagementsHistory = [
-    {
-      id: "eng1",
-      date: "2023-02-15",
-      reference: "ENG-2023-001",
-      montant_initial: 35000000,
-      montant_actuel: 35000000,
-      statut: "Approuvé",
-      beneficiaire: "Enterprise de construction ABC",
-    },
-    {
-      id: "eng2",
-      date: "2023-04-20",
-      reference: "ENG-2023-002",
-      montant_initial: 25000000,
-      montant_actuel: 30000000,
-      statut: "Réévalué",
-      beneficiaire: "Fournisseur XYZ",
-    },
-    {
-      id: "eng3",
-      date: "2023-06-10",
-      reference: "ENG-2023-003",
-      montant_initial: 15000000,
-      montant_actuel: 15000000,
-      statut: "En cours",
-      beneficiaire: "Consultant DEF",
-    },
-  ];
-
-  const mockReevaluations = [
-    {
-      id: "reev1",
-      date: "2023-05-10",
-      engagement_ref: "ENG-2023-002",
-      montant_initial: 25000000,
-      montant_reevalue: 30000000,
-      motif: "Augmentation du périmètre des travaux",
-      statut: "Approuvée",
-    },
-  ];
-
-  const mockCPAnnuels = [
-    {
-      id: "cp1",
-      annee: "2023",
-      montant_alloue: 50000000,
-      montant_consomme: 35000000,
-      taux_consommation: 70,
-      statut: "En cours",
-    },
-    {
-      id: "cp2",
-      annee: "2024",
-      montant_alloue: 40000000,
-      montant_consomme: 0,
-      taux_consommation: 0,
-      statut: "Planifié",
-    },
-  ];
-
-  const mockDemandesCP = [
-    {
-      id: "dcp1",
-      date: "2023-01-20",
-      montant: 30000000,
-      motif: "Démarrage des travaux",
-      statut: "Approuvée",
-    },
-    {
-      id: "dcp2",
-      date: "2023-05-15",
-      montant: 20000000,
-      motif: "Phase intermédiaire",
-      statut: "En attente",
-    },
-  ];
-
-  const mockContrats = [
-    {
-      id: "cont1",
-      reference: "CTR-2023-001",
-      enterprise: "Enterprise de construction ABC",
-      date_signature: "2023-02-01",
-      montant: 35000000,
-      objet: "Construction principale",
-      statut: "En cours",
-    },
-    {
-      id: "cont2",
-      reference: "CTR-2023-002",
-      enterprise: "Fournisseur XYZ",
-      date_signature: "2023-04-05",
-      montant: 25000000,
-      objet: "Fourniture d'équipements",
-      statut: "En cours",
-    },
-  ];
-
   const handleOpenDeleteDialog = (operation: Operation) => {
     setCurrentOperation(operation);
     setIsDeleteDialogOpen(true);
-  };
-
-  // Dialogue de visualisation détaillée
-  const ViewDialog = () => {
-    if (!currentOperation) return null;
-
-    return (
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileCog className="h-6 w-6" />
-              {currentOperation?.name}
-            </DialogTitle>
-            <DialogDescription>{currentOperation.description}</DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-6">
-            {/* Informations générales */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations générales</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Code opération</Label>
-                    <div className="mt-1 font-medium">{currentOperation.code_operation}</div>
-                  </div>
-                  <div>
-                    <Label>Statut</Label>
-                    <div className="mt-1">{getStatusBadge(currentOperation.status)}</div>
-                  </div>
-                  <div>
-                    <Label>Programme</Label>
-                    <div className="mt-1 font-medium">{currentOperation.programName}</div>
-                  </div>
-                  <div>
-                    <Label>Action</Label>
-                    <div className="mt-1 font-medium">{currentOperation.actionName}</div>
-                  </div>
-                  <div>
-                    <Label>Wilaya</Label>
-                    <div className="mt-1 font-medium">{currentOperation.wilaya}</div>
-                  </div>
-                  <div>
-                    <Label>Titre budgétaire</Label>
-                    <div className="mt-1 font-medium">T{currentOperation.titre_budgetaire}</div>
-                  </div>
-                  <div>
-                    <Label>Date de début</Label>
-                    <div className="mt-1 font-medium">{currentOperation.start_date}</div>
-                  </div>
-                  <div>
-                    <Label>Date de fin</Label>
-                    <div className="mt-1 font-medium">{currentOperation.end_date}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Indicateurs de performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Indicateurs de performance</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-6">
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Taux d'avancement global */}
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Taux d'avancement global</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="text-2xl font-bold">{currentOperation.progress}%</div>
-                        <div className={cn("text-sm", getProgressTextColor(currentOperation.progress))}>
-                          {currentOperation.progress >= 100 ? "Complété" : "En cours"}
-                        </div>
-                      </div>
-                      <Progress
-                        value={currentOperation.progress}
-                        className="mt-2"
-                        indicatorClassName={getProgressBarColor(currentOperation.progress)}
-                      />
-                    </CardContent>
-                  </Card>
-
-                  {/* Taux d'avancement physique */}
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Taux d'avancement physique</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="text-2xl font-bold">{currentOperation.taux_physique}%</div>
-                        <div className={cn("text-sm", getProgressTextColor(currentOperation.taux_physique))}>
-                          {currentOperation.taux_physique >= 100 ? "Complété" : "En cours"}
-                        </div>
-                      </div>
-                      <Progress
-                        value={currentOperation.taux_physique}
-                        className="mt-2"
-                        indicatorClassName={getProgressBarColor(currentOperation.taux_physique)}
-                      />
-                    </CardContent>
-                  </Card>
-
-                  {/* Taux d'avancement financier */}
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Taux d'avancement financier</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="text-2xl font-bold">{currentOperation.taux_financier}%</div>
-                        <div className={cn("text-sm", getProgressTextColor(currentOperation.taux_financier))}>
-                          {currentOperation.taux_financier >= 100 ? "Complété" : "En cours"}
-                        </div>
-                      </div>
-                      <Progress
-                        value={currentOperation.taux_financier}
-                        className="mt-2"
-                        indicatorClassName={getProgressBarColor(currentOperation.taux_financier)}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Indicateurs financiers */}
-                <div className="grid grid-cols-3 gap-4">
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Montant alloué</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.allocatedAmount)}</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Montant consommé</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.montant_consomme)}</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Montant restant</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(currentOperation.allocatedAmount - currentOperation.montant_consomme)}</div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Historique des engagements */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique des engagements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Référence</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Bénéficiaire</TableHead>
-                        <TableHead>Montant initial</TableHead>
-                        <TableHead>Montant actuel</TableHead>
-                        <TableHead>Statut</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockEngagementsHistory.map((engagement) => (
-                        <TableRow key={engagement.id}>
-                          <TableCell className="font-medium">{engagement.reference}</TableCell>
-                          <TableCell>{engagement.date}</TableCell>
-                          <TableCell>{engagement.beneficiaire}</TableCell>
-                          <TableCell>{formatCurrency(engagement.montant_initial)}</TableCell>
-                          <TableCell>{formatCurrency(engagement.montant_actuel)}</TableCell>
-                          <TableCell>{engagement.statut}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Historique des réévaluations */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique des réévaluations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Engagement</TableHead>
-                        <TableHead>Montant initial</TableHead>
-                        <TableHead>Montant réévalué</TableHead>
-                        <TableHead>Motif</TableHead>
-                        <TableHead>Statut</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockReevaluations.map((reevaluation) => (
-                        <TableRow key={reevaluation.id}>
-                          <TableCell>{reevaluation.date}</TableCell>
-                          <TableCell className="font-medium">{reevaluation.engagement_ref}</TableCell>
-                          <TableCell>{formatCurrency(reevaluation.montant_initial)}</TableCell>
-                          <TableCell>{formatCurrency(reevaluation.montant_reevalue)}</TableCell>
-                          <TableCell>{reevaluation.motif}</TableCell>
-                          <TableCell>{reevaluation.statut}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Crédits de paiement */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Crédits de paiement</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="annuels" className="w-full">
-                  <TabsList className="w-full justify-start">
-                    <TabsTrigger value="annuels">CP Annuels</TabsTrigger>
-                    <TabsTrigger value="demandes">Demandes de CP</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="annuels">
-                    <div className="rounded-md border mt-4">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Année</TableHead>
-                            <TableHead>Montant alloué</TableHead>
-                            <TableHead>Montant consommé</TableHead>
-                            <TableHead>Taux de consommation</TableHead>
-                            <TableHead>Statut</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {mockCPAnnuels.map((cp) => (
-                            <TableRow key={cp.id}>
-                              <TableCell className="font-medium">{cp.annee}</TableCell>
-                              <TableCell>{formatCurrency(cp.montant_alloue)}</TableCell>
-                              <TableCell>{formatCurrency(cp.montant_consomme)}</TableCell>
-                              <TableCell>{cp.taux_consommation}%</TableCell>
-                              <TableCell>{cp.statut}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="demandes">
-                    <div className="rounded-md border mt-4">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Montant</TableHead>
-                            <TableHead>Motif</TableHead>
-                            <TableHead>Statut</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {mockDemandesCP.map((demande) => (
-                            <TableRow key={demande.id}>
-                              <TableCell>{demande.date}</TableCell>
-                              <TableCell>{formatCurrency(demande.montant)}</TableCell>
-                              <TableCell>{demande.motif}</TableCell>
-                              <TableCell>{demande.statut}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-
-            {/* Contrats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Contrats</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Référence</TableHead>
-                        <TableHead>Enterprise</TableHead>
-                        <TableHead>Date de signature</TableHead>
-                        <TableHead>Montant</TableHead>
-                        <TableHead>Objet</TableHead>
-                        <TableHead>Statut</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockContrats.map((contrat) => (
-                        <TableRow key={contrat.id}>
-                          <TableCell className="font-medium">{contrat.reference}</TableCell>
-                          <TableCell>{contrat.enterprise}</TableCell>
-                          <TableCell>{contrat.date_signature}</TableCell>
-                          <TableCell>{formatCurrency(contrat.montant)}</TableCell>
-                          <TableCell>{contrat.objet}</TableCell>
-                          <TableCell>{contrat.statut}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
   };
 
   // Handler for adding a new operation
   const handleAddOperation = async () => {
     if (!newOperation.name || !newOperation.action_id || !newOperation.code || !newOperation.wilaya_id) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        title: "Error",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -699,14 +281,14 @@ export default function OperationsPage() {
 
       setIsAddDialogOpen(false);
       toast({
-        title: "Opération ajoutée",
-        description: `L'opération "${newOperation.name}" a été ajoutée avec succès.`,
+        title: "Operation Added",
+        description: `The operation "${newOperation.name}" has been successfully added.`,
       });
     } catch (error) {
       console.error("Error adding operation:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'ajout de l'opération.",
+        title: "Error",
+        description: "An error occurred while adding the operation.",
         variant: "destructive",
       });
     }
@@ -718,8 +300,8 @@ export default function OperationsPage() {
 
     if (!newOperation.name || !newOperation.action_id || !newOperation.code) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        title: "Error",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -734,14 +316,14 @@ export default function OperationsPage() {
 
       setIsEditDialogOpen(false);
       toast({
-        title: "Opération modifiée",
-        description: `L'opération a été modifiée avec succès.`,
+        title: "Operation Updated",
+        description: `The operation has been successfully updated.`,
       });
     } catch (error) {
       console.error("Error updating operation:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la modification de l'opération.",
+        title: "Error",
+        description: "An error occurred while updating the operation.",
         variant: "destructive",
       });
     }
@@ -759,45 +341,1013 @@ export default function OperationsPage() {
 
       setIsDeleteDialogOpen(false);
       toast({
-        title: "Opération supprimée",
-        description: `L'opération a été supprimée avec succès.`,
+        title: "Operation Deleted",
+        description: `The operation has been successfully deleted.`,
       });
     } catch (error) {
       console.error("Error deleting operation:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la suppression de l'opération.",
+        title: "Error",
+        description: "An error occurred while deleting the operation.",
         variant: "destructive",
       });
     }
   };
 
   if (operationsLoading) {
-    return <PageLoadingSpinner message="Chargement des opérations..." />;
+    return <PageLoadingSpinner message="Loading operations..." />;
   }
+
+  // Add Operation Dialog - Wizard style
+  const AddOperationDialog = () => {
+    return (
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Operation</DialogTitle>
+            <DialogDescription>Fill in the operation details to create a new operation in the system.</DialogDescription>
+          </DialogHeader>
+
+          {/* Wizard steps */}
+          <div className="mt-2">
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="w-full grid grid-cols-5 mb-6">
+                <TabsTrigger value="details">Operation Details</TabsTrigger>
+                <TabsTrigger value="financial">Financial Information</TabsTrigger>
+                <TabsTrigger value="implementation">Implementation</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="notes">Observations</TabsTrigger>
+              </TabsList>
+
+              {/* Step 1: Operation Details */}
+              <TabsContent value="details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operation Details</CardTitle>
+                    <CardDescription>Basic information about the operation</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Operation Name</Label>
+                        <Input
+                          id="name"
+                          value={newOperation.name}
+                          onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
+                          placeholder="Operation name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="code">Operation Code</Label>
+                        <Input
+                          id="code"
+                          value={newOperation.code}
+                          onChange={(e) => setNewOperation({ ...newOperation, code: e.target.value })}
+                          placeholder="Operation code"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={newOperation.description}
+                        onChange={(e) => setNewOperation({ ...newOperation, description: e.target.value })}
+                        placeholder="Describe the operation"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="program">Program</Label>
+                        <Select
+                          value={newOperation.program_id}
+                          onValueChange={(value) => {
+                            setNewOperation({ ...newOperation, program_id: value });
+                            // Reset action when program changes
+                            setNewOperation((prev) => ({ ...prev, action_id: "" }));
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a program" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {programsData.map((program) => (
+                              <SelectItem key={program.id} value={program.id}>
+                                {program.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="action">Action</Label>
+                        <Select value={newOperation.action_id} onValueChange={(value) => setNewOperation({ ...newOperation, action_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {actionsData
+                              .filter((action) => !newOperation.program_id || action.program_id === newOperation.program_id)
+                              .map((action) => (
+                                <SelectItem key={action.id} value={action.id}>
+                                  {action.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="wilaya">Wilaya</Label>
+                        <Select value={newOperation.wilaya_id} onValueChange={(value) => setNewOperation({ ...newOperation, wilaya_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a wilaya" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {wilayasData.map((wilaya) => (
+                              <SelectItem key={wilaya.id} value={wilaya.id}>
+                                {wilaya.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="budget_title">Budget Title</Label>
+                        <Select
+                          value={newOperation.titre_budgetaire?.toString()}
+                          onValueChange={(value) => setNewOperation({ ...newOperation, titre_budgetaire: parseInt(value) })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a budget title" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {titresBudgetaires.map((titre) => (
+                              <SelectItem key={titre.id} value={titre.id.toString()}>
+                                {titre.shortLabel} - {titre.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={newOperation.status}
+                        onValueChange={(value) =>
+                          setNewOperation({
+                            ...newOperation,
+                            status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="planned">Planned</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="en_pause">On Hold</SelectItem>
+                          <SelectItem value="arreter">Stopped</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inscription_date">Registration Date</Label>
+                        <Input
+                          id="inscription_date"
+                          type="date"
+                          value={newOperation.inscription_date ? new Date(newOperation.inscription_date).toISOString().split("T")[0] : ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => document.querySelector('[data-value="financial"]')?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 2: Financial Information */}
+              <TabsContent value="financial">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Financial Information</CardTitle>
+                    <CardDescription>Funding sources and financial allocations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="funding_source">Funding Source</Label>
+                        <Select
+                          value={newOperation.origine_financement}
+                          onValueChange={(value) =>
+                            setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select funding source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="budget_national">National Budget</SelectItem>
+                            <SelectItem value="financement_exterieur">External Funding</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Commitment Authorizations (AE)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="allocated_ae">Allocated AE</Label>
+                          <Input
+                            id="allocated_ae"
+                            type="number"
+                            value={newOperation.allocated_ae || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, allocated_ae: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="consumed_ae">Consumed AE</Label>
+                          <Input
+                            id="consumed_ae"
+                            type="number"
+                            value={newOperation.consumed_ae || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Payment Credits (CP)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="allocated_cp">Allocated CP</Label>
+                          <Input
+                            id="allocated_cp"
+                            type="number"
+                            value={newOperation.allocated_cp || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, allocated_cp: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="consumed_cp">Consumed CP</Label>
+                          <Input
+                            id="consumed_cp"
+                            type="number"
+                            value={newOperation.consumed_cp || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Rates</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="financial_rate">Financial Rate (%)</Label>
+                          <Input
+                            id="financial_rate"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={newOperation.financial_rate || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, financial_rate: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                          {newOperation.allocated_ae && newOperation.allocated_ae > 0 && newOperation.consumed_ae ? (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Calculated: {((newOperation.consumed_ae / newOperation.allocated_ae) * 100).toFixed(1)}%
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="details"]')?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.querySelector('[data-value="implementation"]')?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 3: Implementation Details */}
+              <TabsContent value="implementation">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Implementation Details</CardTitle>
+                    <CardDescription>Timeline and physical progress</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="start_date">Start Date</Label>
+                        <Input
+                          id="start_date"
+                          type="date"
+                          value={newOperation.start_date || ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, start_date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="end_date">End Date</Label>
+                        <Input
+                          id="end_date"
+                          type="date"
+                          value={newOperation.end_date || ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, end_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="physical_rate">Physical Progress Rate (%)</Label>
+                      <Input
+                        id="physical_rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={newOperation.physical_rate || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, physical_rate: parseFloat(e.target.value) })}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="implementation_notes">Implementation Notes</Label>
+                      <Textarea
+                        id="implementation_notes"
+                        value={newOperation.implementation_notes || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, implementation_notes: e.target.value })}
+                        placeholder="Add any relevant notes about the implementation"
+                        rows={3}
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="financial"]')?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.querySelector('[data-value="documents"]')?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 4: Documents */}
+              <TabsContent value="documents">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operation Documents</CardTitle>
+                    <CardDescription>Upload and manage operation-related documents</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-md p-6">
+                      <div className="text-center">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600">Drag and drop documents here or click to browse</p>
+                          <p className="text-xs text-gray-500 mt-1">PDF, DOC, XLS, JPG, PNG (Max. 10MB)</p>
+                        </div>
+                        <Button type="button" variant="outline" className="mt-4" onClick={() => document.getElementById("document-upload")?.click()}>
+                          Upload Documents
+                        </Button>
+                        <input id="document-upload" type="file" multiple className="hidden" />
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium mb-2">Document types to include:</h3>
+                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        <li>Technical specifications</li>
+                        <li>Funding agreements</li>
+                        <li>Contract documents</li>
+                        <li>Progress reports</li>
+                        <li>Technical diagrams</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="implementation"]')?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.querySelector('[data-value="notes"]')?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 5: Observations */}
+              <TabsContent value="notes">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Observations and Notes</CardTitle>
+                    <CardDescription>Add any additional notes or observations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="observation">Add an observation</Label>
+                      <Textarea
+                        id="observation"
+                        value={newOperation.observation || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, observation: e.target.value })}
+                        placeholder="Add any observations or notes about this operation"
+                        rows={5}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2 mt-4">
+                      <Checkbox
+                        id="highlight"
+                        checked={newOperation.highlighted || false}
+                        onCheckedChange={(checked) => setNewOperation({ ...newOperation, highlighted: checked as boolean })}
+                      />
+                      <Label
+                        htmlFor="highlight"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Flag this operation for special attention
+                      </Label>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="documents"]')?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={handleAddOperation}>
+                      Save Operation
+                      <Save className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  // Edit Operation Dialog - Wizard style
+  const EditOperationDialog = () => {
+    return (
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Operation</DialogTitle>
+            <DialogDescription>Update operation information in the system</DialogDescription>
+          </DialogHeader>
+
+          {/* Wizard steps */}
+          <div className="mt-2">
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="w-full grid grid-cols-5 mb-6">
+                <TabsTrigger value="details">Operation Details</TabsTrigger>
+                <TabsTrigger value="financial">Financial Information</TabsTrigger>
+                <TabsTrigger value="implementation">Implementation</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="notes">Observations</TabsTrigger>
+              </TabsList>
+
+              {/* Step 1: Operation Details */}
+              <TabsContent value="details" id="edit-details-tab">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operation Details</CardTitle>
+                    <CardDescription>Basic information about the operation</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name">Operation Name</Label>
+                        <Input
+                          id="edit-name"
+                          value={newOperation.name}
+                          onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
+                          placeholder="Operation name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-code">Operation Code</Label>
+                        <Input
+                          id="edit-code"
+                          value={newOperation.code}
+                          onChange={(e) => setNewOperation({ ...newOperation, code: e.target.value })}
+                          placeholder="Operation code"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">Description</Label>
+                      <Textarea
+                        id="edit-description"
+                        value={newOperation.description}
+                        onChange={(e) => setNewOperation({ ...newOperation, description: e.target.value })}
+                        placeholder="Describe the operation"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-program">Program</Label>
+                        <Select
+                          value={newOperation.program_id}
+                          onValueChange={(value) => {
+                            setNewOperation({ ...newOperation, program_id: value });
+                            // Reset action when program changes
+                            setNewOperation((prev) => ({ ...prev, action_id: "" }));
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a program" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {programsData.map((program) => (
+                              <SelectItem key={program.id} value={program.id}>
+                                {program.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-action">Action</Label>
+                        <Select value={newOperation.action_id} onValueChange={(value) => setNewOperation({ ...newOperation, action_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {actionsData
+                              .filter((action) => !newOperation.program_id || action.program_id === newOperation.program_id)
+                              .map((action) => (
+                                <SelectItem key={action.id} value={action.id}>
+                                  {action.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-wilaya">Wilaya</Label>
+                        <Select value={newOperation.wilaya_id} onValueChange={(value) => setNewOperation({ ...newOperation, wilaya_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a wilaya" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {wilayasData.map((wilaya) => (
+                              <SelectItem key={wilaya.id} value={wilaya.id}>
+                                {wilaya.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-budget_title">Budget Title</Label>
+                        <Select
+                          value={newOperation.titre_budgetaire?.toString()}
+                          onValueChange={(value) => setNewOperation({ ...newOperation, titre_budgetaire: parseInt(value) })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a budget title" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {titresBudgetaires.map((titre) => (
+                              <SelectItem key={titre.id} value={titre.id.toString()}>
+                                {titre.shortLabel} - {titre.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-status">Status</Label>
+                      <Select
+                        value={newOperation.status}
+                        onValueChange={(value) =>
+                          setNewOperation({
+                            ...newOperation,
+                            status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="planned">Planned</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="en_pause">On Hold</SelectItem>
+                          <SelectItem value="arreter">Stopped</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-inscription_date">Registration Date</Label>
+                        <Input
+                          id="edit-inscription_date"
+                          type="date"
+                          value={newOperation.inscription_date ? new Date(newOperation.inscription_date).toISOString().split("T")[0] : ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => document.getElementById("edit-financial-tab")?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 2: Financial Information */}
+              <TabsContent value="financial" id="edit-financial-tab">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Financial Information</CardTitle>
+                    <CardDescription>Funding sources and financial allocations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-funding_source">Funding Source</Label>
+                        <Select
+                          value={newOperation.origine_financement}
+                          onValueChange={(value) =>
+                            setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select funding source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="budget_national">National Budget</SelectItem>
+                            <SelectItem value="financement_exterieur">External Funding</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Commitment Authorizations (AE)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-allocated_ae">Allocated AE</Label>
+                          <Input
+                            id="edit-allocated_ae"
+                            type="number"
+                            value={newOperation.allocated_ae || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, allocated_ae: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-consumed_ae">Consumed AE</Label>
+                          <Input
+                            id="edit-consumed_ae"
+                            type="number"
+                            value={newOperation.consumed_ae || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Payment Credits (CP)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-allocated_cp">Allocated CP</Label>
+                          <Input
+                            id="edit-allocated_cp"
+                            type="number"
+                            value={newOperation.allocated_cp || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, allocated_cp: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-consumed_cp">Consumed CP</Label>
+                          <Input
+                            id="edit-consumed_cp"
+                            type="number"
+                            value={newOperation.consumed_cp || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-sm font-medium mb-3">Rates</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-financial_rate">Financial Rate (%)</Label>
+                          <Input
+                            id="edit-financial_rate"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={newOperation.financial_rate || ""}
+                            onChange={(e) => setNewOperation({ ...newOperation, financial_rate: parseFloat(e.target.value) })}
+                            placeholder="0"
+                          />
+                          {newOperation.allocated_ae && newOperation.allocated_ae > 0 && newOperation.consumed_ae ? (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Calculated: {((newOperation.consumed_ae / newOperation.allocated_ae) * 100).toFixed(1)}%
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.getElementById("edit-details-tab")?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.getElementById("edit-implementation-tab")?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 3: Implementation Details */}
+              <TabsContent value="implementation" id="edit-implementation-tab">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Implementation Details</CardTitle>
+                    <CardDescription>Timeline and physical progress</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-start_date">Start Date</Label>
+                        <Input
+                          id="edit-start_date"
+                          type="date"
+                          value={newOperation.start_date ? new Date(newOperation.start_date).toISOString().split("T")[0] : ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, start_date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-end_date">End Date</Label>
+                        <Input
+                          id="edit-end_date"
+                          type="date"
+                          value={newOperation.end_date ? new Date(newOperation.end_date).toISOString().split("T")[0] : ""}
+                          onChange={(e) => setNewOperation({ ...newOperation, end_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-physical_rate">Physical Progress Rate (%)</Label>
+                      <Input
+                        id="edit-physical_rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={newOperation.physical_rate || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, physical_rate: parseFloat(e.target.value) })}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-implementation_notes">Implementation Notes</Label>
+                      <Textarea
+                        id="edit-implementation_notes"
+                        value={newOperation.implementation_notes || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, implementation_notes: e.target.value })}
+                        placeholder="Add any relevant notes about the implementation"
+                        rows={3}
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.getElementById("edit-financial-tab")?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.getElementById("edit-documents-tab")?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 4: Documents */}
+              <TabsContent value="documents" id="edit-documents-tab">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operation Documents</CardTitle>
+                    <CardDescription>Upload and manage operation-related documents</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* List existing documents if any */}
+                      {currentOperation?.documents && currentOperation.documents.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                          {currentOperation.documents.map((doc, index) => (
+                            <div key={index} className="border rounded-md overflow-hidden">
+                              <div className="bg-gray-100 h-48 flex items-center justify-center">
+                                <FileText className="h-16 w-16 text-gray-400" />
+                              </div>
+                              <div className="p-3">
+                                <p className="font-medium">{doc.name}</p>
+                                <div className="flex justify-between items-center mt-1">
+                                  <p className="text-xs text-gray-500">{doc.date}</p>
+                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-md p-6">
+                        <div className="text-center">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-600">Drag and drop documents here or click to browse</p>
+                            <p className="text-xs text-gray-500 mt-1">PDF, DOC, XLS, JPG, PNG (Max. 10MB)</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="mt-4"
+                            onClick={() => document.getElementById("edit-document-upload")?.click()}
+                          >
+                            Upload Documents
+                          </Button>
+                          <input id="edit-document-upload" type="file" multiple className="hidden" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.getElementById("edit-implementation-tab")?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={() => document.getElementById("edit-notes-tab")?.click()}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Step 5: Observations */}
+              <TabsContent value="notes" id="edit-notes-tab">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Observations and Notes</CardTitle>
+                    <CardDescription>Add any additional notes or observations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Display existing observations if any */}
+                    {currentOperation?.observations && currentOperation.observations.length > 0 && (
+                      <div className="space-y-3 mb-6">
+                        <h3 className="text-sm font-medium">Existing Observations</h3>
+                        {currentOperation.observations.map((obs, index) => (
+                          <div key={index} className="border p-3 rounded-md">
+                            <p className="text-sm">{obs.content}</p>
+                            <div className="flex justify-between items-center mt-2">
+                              <p className="text-xs text-gray-500">
+                                Added by: {obs.author} on {obs.date}
+                              </p>
+                              <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-observation">Add an observation</Label>
+                      <Textarea
+                        id="edit-observation"
+                        value={newOperation.observation || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, observation: e.target.value })}
+                        placeholder="Add any observations or notes about this operation"
+                        rows={5}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2 mt-4">
+                      <Checkbox
+                        id="edit-highlight"
+                        checked={newOperation.highlighted || false}
+                        onCheckedChange={(checked) => setNewOperation({ ...newOperation, highlighted: checked as boolean })}
+                      />
+                      <Label
+                        htmlFor="edit-highlight"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Flag this operation for special attention
+                      </Label>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.getElementById("edit-documents-tab")?.click()}>
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button onClick={handleEditOperation}>
+                      Save Changes
+                      <Save className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <Dashboard>
-      <DashboardHeader title="Gestion des Opérations" description="Suivez et gérez les opérations dans le cadre des actions budgétaires">
+      <DashboardHeader title="Operations Management" description="Track and manage operations within budgetary actions">
         <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
           <Plus className="mr-2 h-4 w-4" />
-          Nouvelle opération
+          New Operation
         </Button>
       </DashboardHeader>
 
       <DashboardSection>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/*<TabsList className="mb-6">
-            <TabsTrigger value="list">Liste des opérations</TabsTrigger>
-            <TabsTrigger value="engagements">Engagements</TabsTrigger>
-            <TabsTrigger value="payments">Paiements</TabsTrigger>
-          </TabsList>*/}
-
           <TabsContent value="list" className="animate-fade-in">
             <Card className="budget-card mb-6">
               <CardHeader>
-                <CardTitle className="text-base">Filtrer les opérations</CardTitle>
-                <CardDescription>Recherchez et filtrez par programme ou statut</CardDescription>
+                <CardTitle className="text-base">Filter Operations</CardTitle>
+                <CardDescription>Search and filter by program or status</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -806,7 +1356,7 @@ export default function OperationsPage() {
                       <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="search"
-                        placeholder="Rechercher une opération..."
+                        placeholder="Search for an operation..."
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -814,10 +1364,10 @@ export default function OperationsPage() {
                     </div>
                     <Select value={programFilter} onValueChange={setProgramFilter}>
                       <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filtrer par programme" />
+                        <SelectValue placeholder="Filter by program" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tous les programmes</SelectItem>
+                        <SelectItem value="all">All Programs</SelectItem>
                         {programsData.map((program) => (
                           <SelectItem key={program.id} value={program.id}>
                             {program.name}
@@ -827,10 +1377,10 @@ export default function OperationsPage() {
                     </Select>
                     <Select value={wilayaFilter} onValueChange={setWilayaFilter}>
                       <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filtrer par wilaya" />
+                        <SelectValue placeholder="Filter by wilaya" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Toutes les wilayas</SelectItem>
+                        <SelectItem value="all">All Wilayas</SelectItem>
                         {wilayasData.map((wilaya) => (
                           <SelectItem key={wilaya.id} value={wilaya.id}>
                             {wilaya.name}
@@ -840,24 +1390,24 @@ export default function OperationsPage() {
                     </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filtrer par statut" />
+                        <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tous les statuts</SelectItem>
-                        <SelectItem value="draft">Brouillon</SelectItem>
-                        <SelectItem value="planned">Planifié</SelectItem>
-                        <SelectItem value="in_progress">En cours</SelectItem>
-                        <SelectItem value="en_pause">En pause</SelectItem>
-                        <SelectItem value="arreter">Arrêté</SelectItem>
-                        <SelectItem value="completed">Terminé</SelectItem>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="en_pause">On Hold</SelectItem>
+                        <SelectItem value="arreter">Stopped</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={titreBudgetaireFilter} onValueChange={setTitreBudgetaireFilter}>
                       <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filtrer par titre budgétaire" />
+                        <SelectValue placeholder="Filter by budget title" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tous les titres</SelectItem>
+                        <SelectItem value="all">All Titles</SelectItem>
                         {titresBudgetaires.map((titre) => (
                           <SelectItem key={titre.id} value={titre.id.toString()}>
                             {titre.shortLabel} - {titre.name}
@@ -867,12 +1417,12 @@ export default function OperationsPage() {
                     </Select>
                     <Select value={origineFinancementFilter} onValueChange={setOrigineFinancementFilter}>
                       <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Filtrer par origine" />
+                        <SelectValue placeholder="Filter by funding source" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Toutes les origines</SelectItem>
-                        <SelectItem value="budget_national">Budget national</SelectItem>
-                        <SelectItem value="financement_exterieur">Financement extérieur</SelectItem>
+                        <SelectItem value="all">All Sources</SelectItem>
+                        <SelectItem value="budget_national">National Budget</SelectItem>
+                        <SelectItem value="financement_exterieur">External Funding</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -882,10 +1432,9 @@ export default function OperationsPage() {
 
             <Card className="budget-card">
               <CardHeader>
-                <CardTitle>Liste des Opérations</CardTitle>
+                <CardTitle>Operations List</CardTitle>
                 <CardDescription>
-                  {filteredOperations.length} opération{filteredOperations.length !== 1 ? "s" : ""} trouvée
-                  {filteredOperations.length !== 1 ? "s" : ""}
+                  {filteredOperations.length} operation{filteredOperations.length !== 1 ? "s" : ""} found
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -898,8 +1447,8 @@ export default function OperationsPage() {
                   onRefresh={() => {
                     // Simulate refresh
                     toast({
-                      title: "Données actualisées",
-                      description: "La liste des opérations a été actualisée",
+                      title: "Data Refreshed",
+                      description: "The operations list has been refreshed",
                     });
                     refetchOperations();
                   }}
@@ -907,489 +1456,11 @@ export default function OperationsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="engagements" className="animate-fade-in">
-            <Card className="budget-card p-6">
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileCog className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Gestion des Engagements</h3>
-                <p className="text-muted-foreground max-w-md mb-6">
-                  Cette section permet de gérer les autorisations d'engagement (AE) liées aux opérations.
-                </p>
-                <Button>Voir les engagements</Button>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="payments" className="animate-fade-in">
-            <Card className="budget-card p-6">
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileCog className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Gestion des Paiements</h3>
-                <p className="text-muted-foreground max-w-md mb-6">Cette section permet de gérer les crédits de paiement (CP) liés aux opérations.</p>
-                <Button>Voir les paiements</Button>
-              </div>
-            </Card>
-          </TabsContent>
         </Tabs>
       </DashboardSection>
 
-      {/* Add Operation Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Ajouter une opération</DialogTitle>
-            <DialogDescription>Remplissez les informations pour créer une nouvelle opération.</DialogDescription>
-            <Button
-              variant="ghost"
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-              onClick={() => setIsAddDialogOpen(false)}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Fermer</span>
-            </Button>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom de l'opération</Label>
-                <Input
-                  id="name"
-                  value={newOperation.name}
-                  onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
-                  placeholder="Nom de l'opération"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="code_operation">Code opération</Label>
-                <Input
-                  id="code_operation"
-                  value={newOperation.code_operation}
-                  onChange={(e) => setNewOperation({ ...newOperation, code_operation: e.target.value })}
-                  placeholder="Code opération"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={newOperation.description}
-                onChange={(e) => setNewOperation({ ...newOperation, description: e.target.value })}
-                placeholder="Description de l'opération"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="program">Programme</Label>
-                <Select value={newOperation.programId} onValueChange={(value) => setNewOperation({ ...newOperation, programId: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un programme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {programsData.map((program) => (
-                      <SelectItem key={program.id} value={program.id}>
-                        {program.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="action">Action</Label>
-                <Select value={newOperation.action_id} onValueChange={(value) => setNewOperation({ ...newOperation, action_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une action" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {actionsData.map((action) => (
-                      <SelectItem key={action.id} value={action.id}>
-                        {action.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="wilaya">Wilaya</Label>
-                <Select value={newOperation.wilaya_id} onValueChange={(value) => setNewOperation({ ...newOperation, wilaya_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une wilaya" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wilayasData.map((wilaya) => (
-                      <SelectItem key={wilaya.id} value={wilaya.id}>
-                        {wilaya.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="titre_budgetaire">Titre budgétaire</Label>
-                <Select
-                  value={newOperation.titre_budgetaire?.toString()}
-                  onValueChange={(value) => setNewOperation({ ...newOperation, titre_budgetaire: parseInt(value) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un titre budgétaire" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {titresBudgetaires.map((titre) => (
-                      <SelectItem key={titre.id} value={titre.id.toString()}>
-                        {titre.shortLabel} - {titre.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="origine_financement">Origine du financement</Label>
-                <Select
-                  value={newOperation.origine_financement}
-                  onValueChange={(value) =>
-                    setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner l'origine du financement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="budget_national">Budget national</SelectItem>
-                    <SelectItem value="financement_exterieur">Financement extérieur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="allocatedAmount">AE Allouées</Label>
-                <Input
-                  id="allocatedAmount"
-                  type="number"
-                  value={newOperation.allocatedAmount}
-                  onChange={(e) => setNewOperation({ ...newOperation, allocatedAmount: parseFloat(e.target.value) })}
-                  placeholder="AE Allouées"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="montant_consomme">AE Engagées</Label>
-              <Input
-                id="montant_consomme"
-                type="number"
-                value={newOperation.montant_consomme}
-                onChange={(e) => setNewOperation({ ...newOperation, montant_consomme: parseFloat(e.target.value) })}
-                placeholder="AE Engagées"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
-              <Select
-                value={newOperation.status}
-                onValueChange={(value) =>
-                  setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Brouillon</SelectItem>
-                  <SelectItem value="planned">Planifié</SelectItem>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="en_pause">En pause</SelectItem>
-                  <SelectItem value="arreter">Arrêté</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="taux_physique">Taux physique (%)</Label>
-                <Input
-                  id="taux_physique"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newOperation.taux_physique}
-                  onChange={(e) => setNewOperation({ ...newOperation, taux_physique: parseFloat(e.target.value) })}
-                  placeholder="Taux physique"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="taux_financier">Taux financier (%)</Label>
-                <Input
-                  id="taux_financier"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newOperation.taux_financier}
-                  onChange={(e) => setNewOperation({ ...newOperation, taux_financier: parseFloat(e.target.value) })}
-                  placeholder="Taux financier"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start_date">Date de début</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={newOperation.start_date}
-                  onChange={(e) => setNewOperation({ ...newOperation, start_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end_date">Date de fin</Label>
-                <Input
-                  id="end_date"
-                  type="date"
-                  value={newOperation.end_date}
-                  onChange={(e) => setNewOperation({ ...newOperation, end_date: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleAddOperation}>Ajouter</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Operation Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Modifier l'opération</DialogTitle>
-            <DialogDescription>Modifiez les informations de l'opération.</DialogDescription>
-            <Button
-              variant="ghost"
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Fermer</span>
-            </Button>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Nom de l'opération</Label>
-                <Input
-                  id="edit-name"
-                  value={newOperation.name}
-                  onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
-                  placeholder="Nom de l'opération"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-code_operation">Code opération</Label>
-                <Input
-                  id="edit-code_operation"
-                  value={newOperation.code_operation}
-                  onChange={(e) => setNewOperation({ ...newOperation, code_operation: e.target.value })}
-                  placeholder="Code opération"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Input
-                id="edit-description"
-                value={newOperation.description}
-                onChange={(e) => setNewOperation({ ...newOperation, description: e.target.value })}
-                placeholder="Description de l'opération"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-program">Programme</Label>
-                <Select value={newOperation.programId} onValueChange={(value) => setNewOperation({ ...newOperation, programId: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un programme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {programsData.map((program) => (
-                      <SelectItem key={program.id} value={program.id}>
-                        {program.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-action">Action</Label>
-                <Select value={newOperation.actionId} onValueChange={(value) => setNewOperation({ ...newOperation, actionId: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une action" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {actionsData.map((action) => (
-                      <SelectItem key={action.id} value={action.id}>
-                        {action.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-wilaya">Wilaya</Label>
-                <Select value={newOperation.wilaya} onValueChange={(value) => setNewOperation({ ...newOperation, wilaya: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une wilaya" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wilayasData.map((wilaya) => (
-                      <SelectItem key={wilaya.id} value={wilaya.id}>
-                        {wilaya.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-titre_budgetaire">Titre budgétaire</Label>
-                <Select
-                  value={newOperation.titre_budgetaire?.toString()}
-                  onValueChange={(value) => setNewOperation({ ...newOperation, titre_budgetaire: parseInt(value) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un titre budgétaire" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {titresBudgetaires.map((titre) => (
-                      <SelectItem key={titre.id} value={titre.id.toString()}>
-                        {titre.shortLabel} - {titre.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-origine_financement">Origine du financement</Label>
-                <Select
-                  value={newOperation.origine_financement}
-                  onValueChange={(value) =>
-                    setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner l'origine du financement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="budget_national">Budget national</SelectItem>
-                    <SelectItem value="financement_exterieur">Financement extérieur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-allocatedAmount">Montant alloué</Label>
-                <Input
-                  id="edit-allocatedAmount"
-                  type="number"
-                  value={newOperation.allocatedAmount}
-                  onChange={(e) => setNewOperation({ ...newOperation, allocatedAmount: parseFloat(e.target.value) })}
-                  placeholder="Montant alloué"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-montant_consomme">Montant consommé</Label>
-              <Input
-                id="edit-montant_consomme"
-                type="number"
-                value={newOperation.montant_consomme}
-                onChange={(e) => setNewOperation({ ...newOperation, montant_consomme: parseFloat(e.target.value) })}
-                placeholder="Montant consommé"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Statut</Label>
-              <Select
-                value={newOperation.status}
-                onValueChange={(value) =>
-                  setNewOperation({ ...newOperation, status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Brouillon</SelectItem>
-                  <SelectItem value="planned">Planifié</SelectItem>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="en_pause">En pause</SelectItem>
-                  <SelectItem value="arreter">Arrêté</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleEditOperation}>Enregistrer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Operation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer cette opération? Cette action est irréversible.</DialogDescription>
-          </DialogHeader>
-          {currentOperation && (
-            <div className="py-4">
-              <p>
-                <strong>Nom:</strong> {currentOperation.name}
-              </p>
-              <p>
-                <strong>Code opération:</strong> {currentOperation.code_operation}
-              </p>
-              <p>
-                <strong>Programme:</strong> {currentOperation.programName}
-              </p>
-              <p>
-                <strong>Action:</strong> {currentOperation.actionName}
-              </p>
-              <p>
-                <strong>Wilaya:</strong> {currentOperation.wilaya}
-              </p>
-              <p>
-                <strong>Titre budgétaire:</strong>{" "}
-                {titresBudgetaires.find((t) => t.id === currentOperation.titre_budgetaire)?.shortLabel || `T${currentOperation.titre_budgetaire}`} -{" "}
-                {titresBudgetaires.find((t) => t.id === currentOperation.titre_budgetaire)?.name || `Titre ${currentOperation.titre_budgetaire}`}
-              </p>
-              <p>
-                <strong>Budget alloué:</strong> {formatCurrency(currentOperation.allocatedAmount)}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteOperation}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ViewDialog />
+      <AddOperationDialog />
+      <EditOperationDialog />
     </Dashboard>
   );
 }
