@@ -3,64 +3,79 @@ import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
-import { supabase } from "@/lib/supabase";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLoading } from "@/hooks/useLoading";
 import { MinistryTable } from "@/components/tables/MinistryTable";
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMinistries, useMinistryMutation } from "@/hooks/supabase/entities/ministries";
+import { Ministry } from "@/types/database.types";
+import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormDescription } from "@/components/ui/form";
 
-interface MinistryFormData {
-  name_ar: string;
-  name_en: string;
-  name_fr: string;
-  code: string;
-  description: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  phone2?: string;
-  fax?: string;
-  fax2?: string;
-  is_active: boolean;
-  parent_id?: string;
-}
+const formSchema = z.object({
+  code: z.string().min(1, "Le code est requis"),
+  name_fr: z.string().min(1, "Le nom en français est requis"),
+  name_ar: z.string().min(1, "Le nom en arabe est requis"),
+  name_en: z.string().min(1, "Le nom en anglais est requis"),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  email: z.string().email("Email invalide").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  phone2: z.string().optional(),
+  fax: z.string().optional(),
+  fax2: z.string().optional(),
+  is_active: z.boolean().default(true),
+  parent_id: z.string().nullable(),
+});
 
-interface Ministry {
-  id: string;
-  name_ar: string;
-  name_en: string;
-  name_fr: string;
-  code: string;
-  description?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  phone2?: string;
-  fax?: string;
-  fax2?: string;
-  is_active: boolean;
-  parent_id?: string;
-}
+type FormData = z.infer<typeof formSchema>;
 
 export default function Ministries() {
-  const [ministries, setMinistries] = useState<Ministry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "delete">("add");
-  const [currentMinistry, setCurrentMinistry] = useState<Ministry | null>(null);
+  const [currentItem, setCurrentItem] = useState<Ministry | null>(null);
+  const { setLoading } = useLoading();
 
-  const form = useForm({
+  // Use the real-time hooks
+  const {
+    data: ministryItems = [],
+    isLoading,
+    refetch: refetchMinistries,
+  } = useMinistries({
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  const ministryMutation = useMinistryMutation({
+    onSuccess: () => {
+      setDialogOpen(false);
+      toast({
+        title: "Succès",
+        description: "Opération effectuée avec succès",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
+      code: "",
+      name_fr: "",
       name_ar: "",
       name_en: "",
-      name_fr: "",
-      code: "",
       description: "",
       address: "",
       email: "",
@@ -69,141 +84,121 @@ export default function Ministries() {
       fax: "",
       fax2: "",
       is_active: true,
-      parent_id: "null", // Default to 'null' string for the 'Aucun' option
+      parent_id: null,
     },
   });
 
+  // Update form when editing
   useEffect(() => {
-    fetchMinistries();
-
-    const channel = supabase
-      .channel("ministries-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ministries" }, (payload) => {
-        console.log("Change received!", payload);
-        fetchMinistries();
-      })
-      .subscribe();
-
-    // Cleanup subscription on component unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (currentMinistry && dialogMode === "edit") {
+    if (currentItem && dialogMode === "edit") {
       form.reset({
-        name_ar: currentMinistry.name_ar || "",
-        name_en: currentMinistry.name_en || "",
-        name_fr: currentMinistry.name_fr || "",
-        code: currentMinistry.code || "",
-        description: currentMinistry.description || "",
-        address: currentMinistry.address || "",
-        email: currentMinistry.email || "",
-        phone: currentMinistry.phone || "",
-        is_active: currentMinistry.is_active,
-        parent_id: currentMinistry.parent_id || "null", // Reset to 'null' string if no parent
+        code: currentItem.code || "",
+        name_fr: currentItem.name_fr || "",
+        name_ar: currentItem.name_ar || "",
+        name_en: currentItem.name_en || "",
+        description: currentItem.description || "",
+        address: currentItem.address || "",
+        email: currentItem.email || "",
+        phone: currentItem.phone || "",
+        phone2: currentItem.phone2 || "",
+        fax: currentItem.fax || "",
+        fax2: currentItem.fax2 || "",
+        is_active: currentItem.is_active,
+        parent_id: currentItem.parent_id,
       });
     }
-  }, [currentMinistry, dialogMode, form]);
+  }, [currentItem, dialogMode, form]);
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd/MM/yyyy");
-  };
-
-  async function fetchMinistries() {
-    try {
-      // Get ministries
-      const { data: ministriesData, error: ministriesError } = await supabase.from("ministries").select("*").order("name_fr");
-
-      // Set the fetched ministries directly
-      setMinistries(ministriesData);
-    } catch (error) {
-      console.error("Error fetching ministries:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les ministères",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleAddMinistry = () => {
-    setCurrentMinistry(null);
+  const handleAddItem = () => {
     setDialogMode("add");
-    form.reset();
+    form.reset({
+      code: "",
+      name_fr: "",
+      name_ar: "",
+      name_en: "",
+      description: "",
+      address: "",
+      email: "",
+      phone: "",
+      phone2: "",
+      fax: "",
+      fax2: "",
+      is_active: true,
+      parent_id: null,
+    });
     setDialogOpen(true);
   };
 
-  const handleViewMinistry = (ministry: Ministry) => {
-    setCurrentMinistry(ministry);
+  const handleViewItem = (item: Ministry) => {
+    setCurrentItem(item);
     setDialogMode("view");
     setDialogOpen(true);
   };
 
-  const handleEditMinistry = (ministry: Ministry) => {
-    setCurrentMinistry(ministry);
+  const handleEditItem = (item: Ministry) => {
+    setCurrentItem(item);
     setDialogMode("edit");
     setDialogOpen(true);
   };
 
-  const handleDeleteMinistry = (ministry: Ministry) => {
-    setCurrentMinistry(ministry);
+  const handleDeleteItem = (item: Ministry) => {
+    setCurrentItem(item);
     setDialogMode("delete");
     setDialogOpen(true);
   };
 
-  const onSubmit = async (formData: MinistryFormData) => {
-    // Convert 'null' string back to actual null for the database
-    const dataToSubmit = {
-      ...formData,
-      parent_id: formData.parent_id === "null" ? null : formData.parent_id,
-    };
-
+  const onSubmit = async (data: FormData) => {
     try {
+      setLoading(true);
       if (dialogMode === "add") {
-        await supabase.from("ministries").insert([dataToSubmit]);
-      } else if (dialogMode === "edit" && currentMinistry) {
-        await supabase.from("ministries").update(dataToSubmit).eq("id", currentMinistry.id);
+        await ministryMutation.mutateAsync({
+          type: "INSERT",
+          data,
+        });
+      } else if (dialogMode === "edit" && currentItem) {
+        await ministryMutation.mutateAsync({
+          type: "UPDATE",
+          id: currentItem.id,
+          data,
+        });
       }
-      toast({
-        title: "Succès",
-        description: dialogMode === "add" ? "Ministère ajouté" : "Ministère modifié",
-      });
-      // fetchMinistries(); // Removed: Realtime handles updates
-      setDialogOpen(false);
+      refetchMinistries();
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteConfirm = async () => {
-    if (!currentMinistry) return;
+    if (!currentItem) return;
 
     try {
-      await supabase.from("ministries").delete().eq("id", currentMinistry.id);
-      toast({
-        title: "Succès",
-        description: "Ministère supprimé",
+      setLoading(true);
+      await ministryMutation.mutateAsync({
+        type: "DELETE",
+        id: currentItem.id,
       });
-      // fetchMinistries(); // Removed: Realtime handles updates
       setDialogOpen(false);
+      refetchMinistries();
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la suppression",
-        variant: "destructive",
-      });
+    } finally {
+      setLoading(false);
     }
   };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return <PageLoadingSpinner message="Chargement des institutions gouvernementales..." />;
+  }
 
   return (
     <div className="space-y-6">
@@ -212,38 +207,28 @@ export default function Ministries() {
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>Institutions gouvernementales</CardTitle>
-              <CardDescription>Gérez les Institutions gouvernementales du système</CardDescription>
+              <CardDescription>Gérez les institutions gouvernementales du système</CardDescription>
             </div>
-            <Button onClick={handleAddMinistry}>
+            <Button onClick={handleAddItem}>
               <Plus className="mr-2 h-4 w-4" />
               Ajouter une institution
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex flex-col items-center justify-center min-h-[40vh]">
-              <svg className="animate-spin h-12 w-12 text-primary mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-              </svg>
-              <span className="text-lg text-muted-foreground text-center">Chargement des institutions...</span>
-            </div>
-          ) : (
-            <MinistryTable
-              ministries={ministries}
-              formatDate={formatDate}
-              onView={handleViewMinistry}
-              onEdit={handleEditMinistry}
-              onDelete={handleDeleteMinistry}
-              onRefresh={fetchMinistries}
-            />
-          )}
+          <MinistryTable
+            ministries={ministryItems}
+            formatDate={formatDate}
+            onView={handleViewItem}
+            onEdit={handleEditItem}
+            onDelete={handleDeleteItem}
+            onRefresh={() => refetchMinistries()}
+          />
         </CardContent>
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {dialogMode === "add"
@@ -314,7 +299,7 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Code</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} placeholder="Code de l'institution" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -327,14 +312,14 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea rows={3} {...field} />
+                        <Textarea {...field} placeholder="Description de l'institution" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="email"
@@ -342,68 +327,70 @@ export default function Ministries() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
+                          <Input {...field} type="email" placeholder="Email de contact" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone 1</FormLabel>
+                        <FormControl>
                           <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Téléphone 1</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Téléphone 2</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="fax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fax 1</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="fax2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fax 2</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="phone2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone 2</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fax 1</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fax2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fax 2</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <FormField
@@ -427,7 +414,10 @@ export default function Ministries() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Ministère Parent</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === "null" ? null : value)}
+                        value={field.value === null ? "null" : field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner un ministère parent (optionnel)" />
@@ -435,8 +425,8 @@ export default function Ministries() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="null">Aucun</SelectItem>
-                          {ministries
-                            .filter((m) => !currentMinistry || m.id !== currentMinistry.id) // Prevent selecting self
+                          {ministryItems
+                            .filter((m) => !currentItem || m.id !== currentItem.id) // Prevent selecting self
                             .map((ministry) => (
                               <SelectItem key={ministry.id} value={ministry.id}>
                                 {ministry.name_fr}
@@ -472,29 +462,31 @@ export default function Ministries() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit">Sauvegarder</Button>
+                  <Button type="submit" disabled={ministryMutation.isPending}>
+                    {ministryMutation.isPending ? "Enregistrement..." : "Sauvegarder"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
           )}
 
-          {dialogMode === "view" && currentMinistry && (
+          {dialogMode === "view" && currentItem && (
             <div className="space-y-6 p-4">
               <div className="flex justify-between items-start border-b pb-4 mb-6">
                 <div className="space-y-1">
                   <Label className="text-sm font-medium text-gray-500">Code</Label>
-                  <p className="font-mono text-base bg-muted px-3 py-1.5 rounded-md inline-block text-foreground">{currentMinistry.code}</p>
+                  <p className="font-mono text-base bg-muted px-3 py-1.5 rounded-md inline-block text-foreground">{currentItem.code}</p>
                 </div>
                 <div>
                   <Badge
-                    variant={currentMinistry.is_active ? "default" : "destructive"}
+                    variant={currentItem.is_active ? "default" : "destructive"}
                     className={
-                      currentMinistry.is_active
+                      currentItem.is_active
                         ? "bg-green-100 text-green-800 border-green-300 text-sm px-3 py-1"
                         : "bg-red-100 text-red-800 border-red-300 text-sm px-3 py-1"
                     }
                   >
-                    {currentMinistry.is_active ? "Actif" : "Inactif"}
+                    {currentItem.is_active ? "Actif" : "Inactif"}
                   </Badge>
                 </div>
               </div>
@@ -505,17 +497,17 @@ export default function Ministries() {
                   <div className="space-y-2">
                     <div>
                       <Label className="text-xs text-muted-foreground">Français</Label>
-                      <p className="text-base font-medium text-foreground">{currentMinistry.name_fr}</p>
+                      <p className="text-base font-medium text-foreground">{currentItem.name_fr}</p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Arabe</Label>
                       <p className="text-base font-medium text-foreground" dir="rtl">
-                        {currentMinistry.name_ar}
+                        {currentItem.name_ar}
                       </p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Anglais</Label>
-                      <p className="text-base font-medium text-foreground">{currentMinistry.name_en}</p>
+                      <p className="text-base font-medium text-foreground">{currentItem.name_en}</p>
                     </div>
                   </div>
                 </div>
@@ -523,20 +515,20 @@ export default function Ministries() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-500">Description</Label>
                   <p className="text-base text-gray-700 leading-relaxed">
-                    {currentMinistry.description || <span className="italic text-gray-400">Non spécifiée</span>}
+                    {currentItem.description || <span className="italic text-gray-400">Non spécifiée</span>}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-500">Adresse</Label>
-                  <p className="text-base text-gray-700">{currentMinistry.address || <span className="italic text-gray-400">Non spécifiée</span>}</p>
+                  <p className="text-base text-gray-700">{currentItem.address || <span className="italic text-gray-400">Non spécifiée</span>}</p>
                 </div>
 
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                     <p className="text-base text-foreground">
-                      {currentMinistry.email || <span className="italic text-muted-foreground">Non spécifié</span>}
+                      {currentItem.email || <span className="italic text-muted-foreground">Non spécifié</span>}
                     </p>
                   </div>
 
@@ -545,13 +537,13 @@ export default function Ministries() {
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Téléphone 1</Label>
                         <p className="text-base text-foreground">
-                          {currentMinistry.phone || <span className="italic text-muted-foreground">Non spécifié</span>}
+                          {currentItem.phone || <span className="italic text-muted-foreground">Non spécifié</span>}
                         </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Téléphone 2</Label>
                         <p className="text-base text-foreground">
-                          {currentMinistry.phone2 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                          {currentItem.phone2 || <span className="italic text-muted-foreground">Non spécifié</span>}
                         </p>
                       </div>
                     </div>
@@ -560,32 +552,39 @@ export default function Ministries() {
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Fax 1</Label>
                         <p className="text-base text-foreground">
-                          {currentMinistry.fax || <span className="italic text-muted-foreground">Non spécifié</span>}
+                          {currentItem.fax || <span className="italic text-muted-foreground">Non spécifié</span>}
                         </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Fax 2</Label>
                         <p className="text-base text-foreground">
-                          {currentMinistry.fax2 || <span className="italic text-muted-foreground">Non spécifié</span>}
+                          {currentItem.fax2 || <span className="italic text-muted-foreground">Non spécifié</span>}
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {currentItem.parent_id && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-500">Institution Parent</Label>
+                    <p className="text-base text-gray-700">{ministryItems.find((m) => m.id === currentItem.parent_id)?.name_fr || "N/A"}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {dialogMode === "delete" && (
             <div className="space-y-4">
-              <p>Êtes-vous sûr de vouloir supprimer ce ministère ? Cette action est irréversible.</p>
+              <p>Êtes-vous sûr de vouloir supprimer cette institution ? Cette action est irréversible.</p>
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Annuler
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm}>
-                  Supprimer
+                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={ministryMutation.isPending}>
+                  {ministryMutation.isPending ? "Suppression..." : "Supprimer"}
                 </Button>
               </DialogFooter>
             </div>

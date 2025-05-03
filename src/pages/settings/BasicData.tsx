@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Building2, Users2, ShieldCheck, BookOpen, Building, FileSpreadsheet, Library, GitGraph } from "lucide-react";
+import { Building2, Users2, ShieldCheck, BookOpen, Building, FileSpreadsheet, Library, GitGraph, Map } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const dataCategories = [
@@ -9,6 +9,13 @@ const dataCategories = [
     icon: Building2,
     path: "/settings/basic-data/ministries",
     color: "bg-blue-500",
+  },
+  {
+    title: "Wilayas",
+    description: "Gérez la liste des wilayas et leurs informations",
+    icon: Map,
+    path: "/settings/basic-data/wilayas",
+    color: "bg-teal-500",
   },
   {
     title: "Utilisateurs",

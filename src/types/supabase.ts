@@ -273,19 +273,31 @@ export interface Database {
         Row: {
           id: string;
           code: string | null;
-          name: string | null;
+          name_ar: string;
+          name_en: string | null;
+          name_fr: string;
+          is_active: boolean | null;
+          parent_id: string | null;
           description: string | null;
         };
         Insert: {
           id?: string;
           code?: string | null;
-          name?: string | null;
+          name_ar: string;
+          name_en?: string | null;
+          name_fr: string;
+          is_active?: boolean | null;
+          parent_id?: string | null;
           description?: string | null;
         };
         Update: {
           id?: string;
           code?: string | null;
-          name?: string | null;
+          name_ar?: string;
+          name_en?: string | null;
+          name_fr?: string;
+          is_active?: boolean | null;
+          parent_id?: string | null;
           description?: string | null;
         };
       };

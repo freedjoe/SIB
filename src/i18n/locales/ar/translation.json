@@ -2,12 +2,12 @@
   "app": {
     "name": "النظام المتكامل لإدارة الميزانية",
     "common": {
-      "search": "بحث...",
+      "search": "بحث",
       "notifications": "الإشعارات",
       "markAllRead": "تحديد الكل كمقروء",
       "viewAll": "عرض الكل",
-      "lightMode": "وضع الإضاءة",
-      "darkMode": "الوضع الداكن",
+      "lightMode": "الوضع المضيء",
+      "darkMode": "الوضع المظلم",
       "profile": "الملف الشخصي",
       "settings": "الإعدادات",
       "help": "المساعدة",
@@ -53,7 +53,8 @@
       "details": "التفاصيل",
       "quantity": "الكمية",
       "price": "السعر",
-      "none": "لا شيء"
+      "none": "لا شيء",
+      "close": "إغلاق"
     },
     "auth": {
       "login": "تسجيل الدخول",
@@ -251,7 +252,45 @@
       "fiscalYear": "السنة المالية",
       "defaultCurrency": "العملة الافتراضية",
       "systemLogs": "سجلات النظام",
-      "clearCache": "مسح ذاكرة التخزين المؤقت"
+      "clearCache": "مسح ذاكرة التخزين المؤقت",
+      "profile": {
+        "title": "الملف الشخصي",
+        "description": "إدارة معلوماتك الشخصية وتفضيلات الحساب"
+      },
+      "security": {
+        "title": "الأمن",
+        "description": "إدارة إعدادات الأمن لحسابك"
+      },
+      "localization": {
+        "title": "التوطين",
+        "description": "تكوين تفضيلات اللغة والمنطقة"
+      },
+      "translation": {
+        "title": "إدارة الترجمة",
+        "description": "إدارة ترجمات التطبيق للغات المتعددة",
+        "addNew": "إضافة ترجمة",
+        "saveChanges": "حفظ التغييرات",
+        "addTranslation": "إضافة ترجمة جديدة",
+        "editTranslation": "تعديل الترجمة",
+        "deleteTranslation": "حذف الترجمة",
+        "translationKey": "مفتاح الترجمة",
+        "keyPlaceholder": "app.common.submit",
+        "keyHint": "استخدم نقطة التدوين للمفاتيح المتداخلة (مثال: \"app.common.submit\")",
+        "englishValue": "القيمة الإنجليزية",
+        "frenchValue": "القيمة الفرنسية",
+        "arabicValue": "القيمة العربية",
+        "searchPlaceholder": "البحث عن ترجمات...",
+        "deleteConfirmation": "هل أنت متأكد من حذف مفتاح الترجمة هذا؟ لا يمكن التراجع عن هذا الإجراء.",
+        "addSuccess": "تمت إضافة الترجمة بنجاح",
+        "updateSuccess": "تم تحديث الترجمة بنجاح",
+        "deleteSuccess": "تم حذف الترجمة بنجاح",
+        "saveSuccess": "تم حفظ الترجمات بنجاح",
+        "keyRequired": "مفتاح الترجمة مطلوب",
+        "errorSaving": "فشل في حفظ الترجمات",
+        "errorAdding": "فشل في إضافة الترجمة",
+        "errorUpdating": "فشل في تحديث الترجمة",
+        "errorDeleting": "فشل في حذف الترجمة"
+      }
     },
     "expenses": {
       "title": "النفقات المتوقعة",
@@ -310,27 +349,26 @@
     "navigation": {
       "dashboard": "لوحة التحكم",
       "fiscalYears": "السنوات المالية",
-      "portfolios": "الحافظات",
+      "portfolios": "المحافظ",
       "programs": "البرامج",
       "actions": "الإجراءات",
       "operations": "العمليات",
-      "engagements": "الإلتزامات",
+      "engagements": "الالتزامات",
       "payments": "المدفوعات",
       "forecastedExpenses": "النفقات المتوقعة",
-      "previsionsCP": "توقعات الاعتمادات",
+      "previsionsCP": "توقعات اعتمادات الدفع",
       "reports": "التقارير",
-      "controlsAudits": "الرقابة والتدقيق",
-      "settings": "الإعدادات",
-      "parameters": "المعايير",
+      "controlsAudits": "المراقبة والتدقيق",
+      "chat": "المساعد الذكي",
       "profile": "الملف الشخصي",
-      "security": "الأمان",
-      "localization": "التعريب",
-      "basicData": "البيانات الأساسية",
-      "help": "المساعدة",
-      "logout": "تسجيل الخروج",
-      "modules": "الوحدات",
+      "security": "الأمن",
+      "localization": "التوطين",
+      "translation": "الترجمة",
       "users": "المستخدمين",
-      "roles": "الأدوار"
+      "roles": "الأدوار",
+      "basicData": "البيانات الأساسية",
+      "modules": "الوحدات",
+      "parameters": "المعلمات"
     }
   },
   "fiscalYears": {

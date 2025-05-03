@@ -18,9 +18,11 @@ import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
 import Profile from "./pages/settings/Profile";
 import Localization from "./pages/settings/Localization";
+import Translation from "./pages/settings/Translation";
 import Security from "./pages/settings/Security";
 import BasicData from "./pages/settings/BasicData";
 import Ministries from "./pages/settings/basic-data/Ministries";
+import Wilayas from "./pages/settings/basic-data/Wilayas";
 import Entreprises from "./pages/settings/basic-data/Enterprises";
 import BudgetTitles from "./pages/settings/basic-data/BudgetTitles";
 import Nomenclature from "./pages/settings/basic-data/Nomenclature";
@@ -121,8 +123,10 @@ const AppRoutes = () => {
         <Route path="/settings/profile" element={<Profile />} />
         <Route path="/settings/security" element={<Security />} />
         <Route path="/settings/localization" element={<Localization />} />
+        <Route path="/settings/translation" element={<Translation />} />
         <Route path="/settings/basic-data" element={<BasicData />} />
         <Route path="/settings/basic-data/ministries" element={<Ministries />} />
+        <Route path="/settings/basic-data/wilayas" element={<Wilayas />} />
         <Route path="/settings/basic-data/entreprises" element={<Entreprises />} />
         <Route path="/settings/basic-data/budget-titles" element={<BudgetTitles />} />
         <Route path="/settings/basic-data/nomenclature" element={<Nomenclature />} />

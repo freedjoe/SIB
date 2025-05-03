@@ -2,20 +2,20 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 import { Badge } from "@/components/ui/badge";
-import { Building, CheckCircle, XCircle } from "lucide-react";
-import { Ministry } from "@/types/database.types";
+import { MapPin, CheckCircle, XCircle } from "lucide-react";
+import { Wilaya } from "@/types/database.types";
 
-interface MinistryTableProps {
-  ministries: Ministry[];
+interface WilayaTableProps {
+  wilayas: Wilaya[];
   formatDate: (date: string) => string;
-  onView: (ministry: Ministry) => void;
-  onEdit: (ministry: Ministry) => void;
-  onDelete: (ministry: Ministry) => void;
+  onView: (wilaya: Wilaya) => void;
+  onEdit: (wilaya: Wilaya) => void;
+  onDelete: (wilaya: Wilaya) => void;
   onRefresh?: () => void;
 }
 
-export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete, onRefresh }: MinistryTableProps) {
-  const columns: ColumnDef<Ministry, unknown>[] = [
+export function WilayaTable({ wilayas, formatDate, onView, onEdit, onDelete, onRefresh }: WilayaTableProps) {
+  const columns: ColumnDef<Wilaya, unknown>[] = [
     {
       accessorKey: "code",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
@@ -27,7 +27,7 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nom" />,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-500" />
+          <MapPin className="h-4 w-4 text-gray-500" />
           <div className="space-y-1">
             <span className="font-medium">{row.getValue("name_fr")}</span>
             <div className="flex gap-2 text-sm text-muted-foreground">
@@ -70,7 +70,7 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
     },
   ];
 
-  const actionHandlers: ActionHandlers<Ministry> = {
+  const actionHandlers: ActionHandlers<Wilaya> = {
     onView,
     onEdit,
     onDelete,
@@ -79,11 +79,11 @@ export function MinistryTable({ ministries, formatDate, onView, onEdit, onDelete
   return (
     <ReusableDataTable
       columns={columns}
-      data={ministries}
+      data={wilayas}
       actionHandlers={actionHandlers}
       filterColumn="name_fr"
       onRefresh={onRefresh}
-      tableName="Institutions gouvernementales"
+      tableName="Wilayas"
     />
   );
 }

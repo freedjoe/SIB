@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS ministries (
     phone2 TEXT,
     fax TEXT,
     fax2 TEXT,
-    is_active BOOLEAN,
+    is_active BOOLEAN DEFAULT TRUE,
     parent_id UUID REFERENCES ministries(id),
     description TEXT
 );
@@ -103,7 +103,11 @@ CREATE TABLE IF NOT EXISTS actions (
 CREATE TABLE IF NOT EXISTS wilayas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(10),
-    name TEXT,
+    name_ar TEXT NOT NULL,
+    name_en TEXT,
+    name_fr TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    parent_id UUID REFERENCES wilayas(id),
     description TEXT
 );
 
@@ -145,7 +149,8 @@ CREATE TABLE IF NOT EXISTS operation_cps (
 -- 9. Budget Allocations (Dotations) - New table
 CREATE TABLE IF NOT EXISTS allocations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    operation_id UUID REFERENCES operations(id) ON DELETE CASCADE,
+    reference_type TEXT CHECK (reference_type IN ('portfolio', 'program', 'action', 'operation')),
+    reference_id UUID NOT NULL,
     budget_title_id UUID REFERENCES budget_titles(id),
     ae_amount NUMERIC,
     cp_amount NUMERIC,
@@ -656,8 +661,12 @@ BEGIN
 
             -- wilayas
             ('wilayas', 'code', 'VARCHAR(10)'),
-            ('wilayas', 'name', 'TEXT'),
+            ('wilayas', 'name_ar', 'TEXT'),
+            ('wilayas', 'name_en', 'TEXT'),
+            ('wilayas', 'name_fr', 'TEXT NOT NULL'),
             ('wilayas', 'description', 'TEXT'),
+            ('wilayas', 'parent_id', 'UUID REFERENCES wilayas(id)'),
+            ('wilayas', 'is_active', 'BOOLEAN'),
 
             -- operations
             ('operations', 'action_id', 'UUID REFERENCES actions(id) ON DELETE CASCADE'),
@@ -689,7 +698,8 @@ BEGIN
             ('operation_cps', 'montant_cp', 'NUMERIC'),
 
             -- allocations
-            ('allocations', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
+            ('allocations', 'reference_type', 'TEXT CHECK (reference_type IN (''portfolio'', ''program'', ''action'', ''operation''))'),
+            ('allocations', 'reference_id', 'UUID NOT NULL'),
             ('allocations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
             ('allocations', 'ae_amount', 'NUMERIC'),
             ('allocations', 'cp_amount', 'NUMERIC'),

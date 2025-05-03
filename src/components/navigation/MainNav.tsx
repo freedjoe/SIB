@@ -161,6 +161,12 @@ export function MainNav() {
       description: "Paramètres de localisation",
     },
     {
+      label: t("app.navigation.translation"),
+      href: "/settings/translation",
+      icon: FileText,
+      description: "Gestion des traductions",
+    },
+    {
       label: t("app.navigation.users"),
       href: "/settings/users",
       icon: Users2,

@@ -277,7 +277,45 @@
       "fiscalYear": "Année fiscale",
       "defaultCurrency": "Devise par défaut",
       "systemLogs": "Logs système",
-      "clearCache": "Vider le cache"
+      "clearCache": "Vider le cache",
+      "profile": {
+        "title": "Profil",
+        "description": "Gérez vos informations personnelles et préférences de compte"
+      },
+      "security": {
+        "title": "Sécurité",
+        "description": "Gérez les paramètres de sécurité de votre compte"
+      },
+      "localization": {
+        "title": "Localisation",
+        "description": "Configurez vos préférences de langue et régionales"
+      },
+      "translation": {
+        "title": "Gestion des traductions",
+        "description": "Gérez les traductions de l'application pour plusieurs langues",
+        "addNew": "Ajouter une traduction",
+        "saveChanges": "Enregistrer les modifications",
+        "addTranslation": "Ajouter une nouvelle traduction",
+        "editTranslation": "Modifier la traduction",
+        "deleteTranslation": "Supprimer la traduction",
+        "translationKey": "Clé de traduction",
+        "keyPlaceholder": "app.common.submit",
+        "keyHint": "Utilisez la notation à points pour les clés imbriquées (ex: \"app.common.submit\")",
+        "englishValue": "Valeur en anglais",
+        "frenchValue": "Valeur en français",
+        "arabicValue": "Valeur en arabe",
+        "searchPlaceholder": "Rechercher des traductions...",
+        "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer cette clé de traduction? Cette action ne peut pas être annulée.",
+        "addSuccess": "Traduction ajoutée avec succès",
+        "updateSuccess": "Traduction mise à jour avec succès",
+        "deleteSuccess": "Traduction supprimée avec succès",
+        "saveSuccess": "Traductions enregistrées avec succès",
+        "keyRequired": "La clé de traduction est requise",
+        "errorSaving": "Échec de l'enregistrement des traductions",
+        "errorAdding": "Échec de l'ajout de la traduction",
+        "errorUpdating": "Échec de la mise à jour de la traduction",
+        "errorDeleting": "Échec de la suppression de la traduction"
+      }
     },
     "expenses": {
       "title": "Prévisions des Dépenses",
@@ -356,7 +394,9 @@
       "modules": "Modules",
       "users": "Utilisateurs",
       "roles": "Rôles",
-      "fiscalYears": "Exercices Budgétaires"
+      "fiscalYears": "Exercices Budgétaires",
+      "chat": "Assistant IA",
+      "translation": "Traduction"
     }
   },
   "PrevisionsCP": {

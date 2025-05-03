@@ -1230,10 +1230,10 @@ export default function ProgramsPage() {
             {/* Actions section - Show actions that are part of this program */}
             <div className="border-t pt-5">
               <h3 className="text-lg font-semibold mb-3">Actions associées</h3>
-              <div className="overflow-auto max-h-[200px] rounded-md border">
-                <table className="w-full caption-bottom text-sm">
-                  <thead className="[&_tr]:border-b">
-                    <tr className="border-b transition-colors hover:bg-muted/50">
+              <div className="overflow-auto max-h-[200px] rounded-md border border-border">
+                <table className="w-full caption-bottom text-sm bg-background">
+                  <thead className="[&_tr]:border-b [&_tr]:border-border">
+                    <tr className="border-b border-border transition-colors hover:bg-muted/50">
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Code</th>
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Nom</th>
                       <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Budget AE</th>
@@ -1241,13 +1241,13 @@ export default function ProgramsPage() {
                       <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Progression</th>
                     </tr>
                   </thead>
-                  <tbody className="[&_tr:last-child]:border-0">
+                  <tbody className="[&_tr:last-child]:border-0 text-foreground">
                     {currentProgram && getProgramActions(currentProgram.id).length > 0 ? (
                       getProgramActions(currentProgram.id).map((action) => {
                         const actionFiscalYearData = getActionFiscalYearData(action.id, selectedFiscalYearView);
 
                         return (
-                          <tr key={action.id} className="border-b transition-colors hover:bg-muted/50">
+                          <tr key={action.id} className="border-b border-border transition-colors hover:bg-muted/50">
                             <td className="p-4 align-middle">{action.code}</td>
                             <td className="p-4 align-middle">{action.name}</td>
                             <td className="p-4 align-middle text-right">{formatCurrency(actionFiscalYearData.allocatedAE || 0)}</td>
@@ -1257,10 +1257,10 @@ export default function ProgramsPage() {
                                 className={cn(
                                   "text-sm font-medium",
                                   (actionFiscalYearData?.progress || 0) < 40
-                                    ? "text-red-600"
+                                    ? "text-red-600 dark:text-red-400"
                                     : (actionFiscalYearData?.progress || 0) < 70
-                                    ? "text-yellow-600"
-                                    : "text-green-600"
+                                    ? "text-yellow-600 dark:text-yellow-400"
+                                    : "text-green-600 dark:text-green-400"
                                 )}
                               >
                                 {actionFiscalYearData?.progress || 0}%
