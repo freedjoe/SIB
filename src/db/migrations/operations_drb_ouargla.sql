@@ -1,28 +1,34 @@
-CREATE TABLE "operations_drb_ouargla" (
+CREATE TABLE "operations" (
     "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "Intitulé Programme"	VARCHAR(512),
-    "Intitulé Sous programme"	VARCHAR(512),
-    "Numéro d'individualisation "	VARCHAR(512),
-    " Intitulé Opération"	VARCHAR(512),
-    "Année de notification"	INT,
-    "AE intiale"	INT,
-    "AE actuelle"	INT,
-    "AE Engageé cumule au 31/03/2025"	DOUBLE,
-    "AE non engagée"	VARCHAR(512),
-    "CP reportés"	VARCHAR(512),
-    "CP notifiés en 2025"	INT,
-    "Total CP"	VARCHAR(512),
-    "CP consommés en 2025"	VARCHAR(512),
-    "Dépanses Cumule 31/03/2025"	DOUBLE,
-    "Taux Physique"	VARCHAR(512),
+    "Province"	VARCHAR(512),
+    "Program_Type"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Program_Title"	VARCHAR(512),
+    "Subprogram_Title"	VARCHAR(512),
+    "Individualization_Number"	VARCHAR(512),
+    "Operation_Title"	VARCHAR(512),
+    "Notification_Year"	INT,
+    "Initial_AE"	INT,
+    "Current_AE"	INT,
+    "AE_Cumulative_Commitment_03312025"	DOUBLE,
+    "AE_Not_Committed"	VARCHAR(512),
+    "CP_Carried_Forward"	VARCHAR(512),
+    "CP_Notified_2025"	INT,
+    "Total_CP"	VARCHAR(512),
+    "CP_Used_2025"	VARCHAR(512),
+    "Cumulative_Expenses_03312025"	DOUBLE,
+    "Physical_Rate"	VARCHAR(512),
     "Observation"	VARCHAR(512),
-    "RAR Fin Mars 2025"	DOUBLE
+    "Remaining_Balance_March2025"	DOUBLE
 );
 
-INSERT INTO "operations_drb_ouargla" ("DRB", "wilaya", "Type programme", "Portefeuille de programme ", "Intitulé Programme", "Intitulé Sous programme", "Numéro d\'individualisation ", " Intitulé Opération", "Année de notification", "AE intiale", "AE actuelle", "AE Engageé cumule au 31/03/2025", "AE non engagée", "CP reportés", "CP notifiés en 2025", "Total CP", "CP consommés en 2025", "Dépanses Cumule 31/03/2025", "Taux Physique", "Observation", "RAR Fin Mars 2025") VALUES
+INSERT INTO "operations" 
+    ("DRB", "Province", "Program_Type", "Program_Portfolio", "Program_Title", 
+     "Subprogram_Title", "Individualization_Number", "Operation_Title", "Notification_Year", 
+     "Initial_AE", "Current_AE", "AE_Cumulative_Commitment_03312025", "AE_Not_Committed", 
+     "CP_Carried_Forward", "CP_Notified_2025", "Total_CP", "CP_Used_2025", 
+     "Cumulative_Expenses_03312025", "Physical_Rate", "Observation", "Remaining_Balance_March2025")
+VALUES
 	('Ouargla', '30-Ouargla', 'PSD', 'Portefuille: Intérieur, des collectivités locales et de l\'aménagement du territoire.', '', '', '', 'N.1.005.017.02.4830.000.030.21.001
 Etude et réalisation d\'un système de vidéosurveillance au Chef lieu de la wilaya', '2021', '1500000', '1700000', '1595608.823', '', '', '411671', '', '', '1069196.527', '0.9', 'réevaluée en 2025 Pou
 AE=205.000.000DA', '630803.4727'),

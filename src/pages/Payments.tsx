@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaymentTable } from "@/components/tables/PaymentTable";
@@ -25,6 +26,7 @@ import { PaymentRequestDialog } from "@/components/dialogs/PaymentRequestDialog"
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 
 const Payments = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("payments");
   const [activePaymentTab, setActivePaymentTab] = useState("all");
@@ -63,7 +65,7 @@ const Payments = () => {
 
   // Show loading spinner when any data is being fetched
   if (isLoadingPayments || isLoadingRequests || isLoadingEngagements) {
-    return <PageLoadingSpinner message="Chargement des paiements..." />;
+    return <PageLoadingSpinner message={t("payments.loading")} />;
   }
 
   const formatPayments = (payments: PaymentWithRelations[]): Payment[] => {
@@ -107,9 +109,9 @@ const Payments = () => {
   const totalRejectedAmount = payments.filter((p) => p.status === "rejected").reduce((sum, p) => sum + p.amount, 0);
 
   const paymentStatusData = [
-    { name: "Payé", value: totalPaidAmount, color: "#10b981" },
-    { name: "En attente", value: totalPendingAmount, color: "#f59e0b" },
-    { name: "Rejeté", value: totalRejectedAmount, color: "#ef4444" },
+    { name: t("payments.status.paid"), value: totalPaidAmount, color: "#10b981" },
+    { name: t("payments.status.pending"), value: totalPendingAmount, color: "#f59e0b" },
+    { name: t("payments.status.rejected"), value: totalRejectedAmount, color: "#ef4444" },
   ];
 
   const formatDate = (dateString: string | null) => {
@@ -182,8 +184,8 @@ const Payments = () => {
 
   const handleDeleteRequest = (request: PaymentRequest) => {
     toast({
-      title: "Demande supprimée",
-      description: "La demande de paiement a été supprimée avec succès",
+      title: t("requests.deleted.title"),
+      description: t("requests.deleted.description"),
       variant: "default",
     });
     refetchRequests();
@@ -191,8 +193,8 @@ const Payments = () => {
 
   const handleApproveRequest = (request: PaymentRequest) => {
     toast({
-      title: "Demande approuvée",
-      description: `La demande de paiement a été approuvée`,
+      title: t("requests.approved.title"),
+      description: t("requests.approved.description"),
       variant: "default",
     });
     refetchRequests();
@@ -200,8 +202,8 @@ const Payments = () => {
 
   const handleRejectRequest = (request: PaymentRequest) => {
     toast({
-      title: "Demande rejetée",
-      description: `La demande de paiement a été rejetée`,
+      title: t("requests.rejected.title"),
+      description: t("requests.rejected.description"),
       variant: "destructive",
     });
     refetchRequests();
@@ -211,18 +213,18 @@ const Payments = () => {
     try {
       if (paymentDialogType === "add") {
         toast({
-          title: "Paiement ajouté",
-          description: "Le paiement a été ajouté avec succès",
+          title: t("payments.added.title"),
+          description: t("payments.added.description"),
         });
       } else if (paymentDialogType === "edit") {
         toast({
-          title: "Paiement modifié",
-          description: "Le paiement a été modifié avec succès",
+          title: t("payments.edited.title"),
+          description: t("payments.edited.description"),
         });
       } else if (paymentDialogType === "delete" && selectedPayment) {
         toast({
-          title: "Paiement supprimé",
-          description: "Le paiement a été supprimé avec succès",
+          title: t("payments.deleted.title"),
+          description: t("payments.deleted.description"),
         });
       }
 
@@ -231,8 +233,8 @@ const Payments = () => {
     } catch (error) {
       console.error("Error saving payment:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'enregistrement du paiement",
+        title: t("common.error.title"),
+        description: t("common.error.description"),
         variant: "destructive",
       });
     }
@@ -242,13 +244,13 @@ const Payments = () => {
     try {
       if (requestDialogType === "add") {
         toast({
-          title: "Demande ajoutée",
-          description: "La demande de paiement a été ajoutée avec succès",
+          title: t("requests.added.title"),
+          description: t("requests.added.description"),
         });
       } else if (requestDialogType === "edit") {
         toast({
-          title: "Demande modifiée",
-          description: "La demande de paiement a été modifiée avec succès",
+          title: t("requests.edited.title"),
+          description: t("requests.edited.description"),
         });
       }
 
@@ -257,8 +259,8 @@ const Payments = () => {
     } catch (error) {
       console.error("Error saving payment request:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'enregistrement de la demande de paiement",
+        title: t("common.error.title"),
+        description: t("common.error.description"),
         variant: "destructive",
       });
     }
@@ -269,41 +271,41 @@ const Payments = () => {
       case "pending":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
-            En attente
+            {t("status.pending")}
           </Badge>
         );
       case "pending_officer":
         return (
           <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-400">
-            En attente (Officier)
+            {t("status.pendingOfficer")}
           </Badge>
         );
       case "pending_accountant":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
-            En attente (Comptable)
+            {t("status.pendingAccountant")}
           </Badge>
         );
       case "approved":
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">
-            Approuvé
+            {t("status.approved")}
           </Badge>
         );
       case "rejected":
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400">
-            Rejeté
+            {t("status.rejected")}
           </Badge>
         );
       case "paid":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400">
-            Payé
+            {t("status.paid")}
           </Badge>
         );
       default:
-        return <Badge variant="outline">Inconnu</Badge>;
+        return <Badge variant="outline">{t("status.unknown")}</Badge>;
     }
   };
 
@@ -327,42 +329,42 @@ const Payments = () => {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span className="ml-4 text-lg text-muted-foreground">Chargement des paiements...</span>
+        <span className="ml-4 text-lg text-muted-foreground">{t("payments.loading")}</span>
       </div>
     );
   }
 
   if (paymentsError || requestsError) {
-    return <div className="flex items-center justify-center h-screen">Erreur lors du chargement des données</div>;
+    return <div className="flex items-center justify-center h-screen">{t("common.error.loading")}</div>;
   }
 
   return (
     <Dashboard>
-      <DashboardHeader title="Gestion des Paiements" description="Suivez et gérez les crédits de paiement (CP) et les décaissements" />
+      <DashboardHeader title={t("payments.title")} description={t("payments.description")} />
       <DashboardSection>
         <DashboardGrid columns={4}>
           <StatCard
-            title="Total des Paiements"
+            title={t("payments.stats.total")}
             value={formatCurrency(totalPaidAmount + totalPendingAmount + totalRejectedAmount)}
-            description={`${totalPayments} transactions`}
+            description={t("payments.stats.transactions", { count: totalPayments })}
             icon={<ArrowRightLeft className="h-4 w-4" />}
           />
           <StatCard
-            title="Montant Payé"
+            title={t("payments.stats.amountPaid")}
             value={formatCurrency(totalPaidAmount)}
-            description="Paiements complétés"
+            description={t("payments.stats.completed")}
             icon={<CheckCircle className="h-4 w-4" />}
           />
           <StatCard
-            title="Montant en Attente"
+            title={t("payments.stats.amountPending")}
             value={formatCurrency(totalPendingAmount)}
-            description="Paiements en attente"
+            description={t("payments.stats.pending")}
             icon={<Clock className="h-4 w-4" />}
           />
           <StatCard
-            title="Montant Rejeté"
+            title={t("payments.stats.amountRejected")}
             value={formatCurrency(totalRejectedAmount)}
-            description="Paiements rejetés"
+            description={t("payments.stats.rejected")}
             icon={<X className="h-4 w-4" />}
           />
         </DashboardGrid>
@@ -373,11 +375,11 @@ const Payments = () => {
 
       <DashboardSection>
         <DashboardGrid columns={2}>
-          <BudgetChart title="Répartition des Paiements par Statut" data={paymentStatusData} className="h-full" />
+          <BudgetChart title={t("payments.chart.title")} data={paymentStatusData} className="h-full" />
           <Card className="budget-card h-full">
             <CardHeader>
-              <CardTitle className="text-base font-medium">Activité Récente</CardTitle>
-              <CardDescription>Dernières transactions de paiement</CardDescription>
+              <CardTitle className="text-base font-medium">{t("payments.recentActivity.title")}</CardTitle>
+              <CardDescription>{t("payments.recentActivity.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
@@ -389,10 +391,10 @@ const Payments = () => {
                         payment.status === "paid"
                           ? "bg-green-100 text-green-600"
                           : payment.status === "pending"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : payment.status === "approved"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-red-100 text-red-600"
+                            ? "bg-yellow-100 text-yellow-600"
+                            : payment.status === "approved"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-red-100 text-red-600"
                       )}
                     >
                       {payment.status === "paid" ? (
@@ -423,7 +425,7 @@ const Payments = () => {
             </CardContent>
             <CardFooter className="pt-0">
               <Button variant="ghost" size="sm" className="w-full justify-center">
-                Voir toutes les transactions
+                {t("payments.recentActivity.viewAll")}
               </Button>
             </CardFooter>
           </Card>
@@ -434,18 +436,18 @@ const Payments = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Paiements et Demandes</CardTitle>
-              <CardDescription>Gérez les paiements et les demandes de paiement.</CardDescription>
+              <CardTitle>{t("paymentsAndRequests.title")}</CardTitle>
+              <CardDescription>{t("paymentsAndRequests.description")}</CardDescription>
             </div>
             <div className="flex gap-2">
               {activeTab === "payments" && (
                 <Button onClick={handleAddNewPayment} size="sm">
-                  Ajouter un paiement
+                  {t("payments.add")}
                 </Button>
               )}
               {activeTab === "requests" && (
                 <Button onClick={handleAddNewRequest} size="sm">
-                  Soumettre une demande
+                  {t("requests.submit")}
                 </Button>
               )}
             </div>
@@ -453,11 +455,11 @@ const Payments = () => {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <Input placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-sm" />
+            <Input placeholder={t("common.search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="max-w-sm" />
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
               <TabsList className="grid grid-cols-2 w-[320px]">
-                <TabsTrigger value="payments">Paiements</TabsTrigger>
-                <TabsTrigger value="requests">Demandes</TabsTrigger>
+                <TabsTrigger value="payments">{t("payments.tab")}</TabsTrigger>
+                <TabsTrigger value="requests">{t("requests.tab")}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -467,11 +469,11 @@ const Payments = () => {
               <div className="flex justify-end mb-4">
                 <Tabs value={activePaymentTab} onValueChange={setActivePaymentTab} className="w-auto">
                   <TabsList>
-                    <TabsTrigger value="all">Tous</TabsTrigger>
-                    <TabsTrigger value="pending">En attente</TabsTrigger>
-                    <TabsTrigger value="approved">Approuvés</TabsTrigger>
-                    <TabsTrigger value="rejected">Rejetés</TabsTrigger>
-                    <TabsTrigger value="paid">Payés</TabsTrigger>
+                    <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
+                    <TabsTrigger value="pending">{t("status.pending")}</TabsTrigger>
+                    <TabsTrigger value="approved">{t("status.approved")}</TabsTrigger>
+                    <TabsTrigger value="rejected">{t("status.rejected")}</TabsTrigger>
+                    <TabsTrigger value="paid">{t("status.paid")}</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -485,7 +487,7 @@ const Payments = () => {
                 onDelete={handleDeletePayment}
               />
               <div className="mt-4 text-sm text-muted-foreground">
-                Affichage de {filteredPayments.length} paiements sur {payments.length}.
+                {t("payments.displaying", { count: filteredPayments.length, total: payments.length })}
               </div>
             </>
           )}
@@ -495,10 +497,10 @@ const Payments = () => {
               <div className="flex justify-end mb-4">
                 <Tabs value={activeRequestTab} onValueChange={setActiveRequestTab} className="w-auto">
                   <TabsList>
-                    <TabsTrigger value="all">Tous</TabsTrigger>
-                    <TabsTrigger value="pending">En attente</TabsTrigger>
-                    <TabsTrigger value="approved">Approuvés</TabsTrigger>
-                    <TabsTrigger value="rejected">Rejetés</TabsTrigger>
+                    <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
+                    <TabsTrigger value="pending">{t("status.pending")}</TabsTrigger>
+                    <TabsTrigger value="approved">{t("status.approved")}</TabsTrigger>
+                    <TabsTrigger value="rejected">{t("status.rejected")}</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -516,7 +518,7 @@ const Payments = () => {
                 onRefresh={refetchRequests}
               />
               <div className="mt-4 text-sm text-muted-foreground">
-                Affichage de {filteredRequests.length} demandes sur {paymentRequests.length}.
+                {t("requests.displaying", { count: filteredRequests.length, total: paymentRequests.length })}
               </div>
             </>
           )}

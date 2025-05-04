@@ -69,8 +69,8 @@ export default function Engagements() {
     onSuccess: () => {
       refetchEngagements();
       toast({
-        title: "Succès",
-        description: "L'opération a été effectuée avec succès",
+        title: t("common.success"),
+        description: t("engagements.operationSuccess"),
       });
     },
   });
@@ -150,8 +150,8 @@ export default function Engagements() {
   const handleAddEngagement = () => {
     if (!newEngagement.operation || !newEngagement.beneficiaire || !newEngagement.demande_par) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        title: t("common.error"),
+        description: t("engagements.fillRequiredFields"),
         variant: "destructive",
       });
       return;
@@ -183,8 +183,8 @@ export default function Engagements() {
 
     if (!newEngagement.operation || !newEngagement.beneficiaire || !newEngagement.demande_par) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
+        title: t("common.error"),
+        description: t("engagements.fillRequiredFields"),
         variant: "destructive",
       });
       return;
@@ -226,8 +226,8 @@ export default function Engagements() {
 
     if (isNaN(Number(amount))) {
       toast({
-        title: "Erreur",
-        description: "Veuillez entrer un montant valide.",
+        title: t("common.error"),
+        description: t("engagements.enterValidAmount"),
         variant: "destructive",
       });
       return;
@@ -258,8 +258,8 @@ export default function Engagements() {
     });
 
     toast({
-      title: "Engagement rejeté",
-      description: `L'engagement pour "${engagement.operation}" a été rejeté.`,
+      title: t("engagements.rejected"),
+      description: t("engagements.rejectedDescription", { operation: engagement.operation }),
     });
   };
 
@@ -275,11 +275,11 @@ export default function Engagements() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Approuvé":
-        return <Badge className="bg-green-500">Approuvé</Badge>;
+        return <Badge className="bg-green-500">{t("engagements.approved")}</Badge>;
       case "Rejeté":
-        return <Badge variant="destructive">Rejeté</Badge>;
+        return <Badge variant="destructive">{t("engagements.rejected")}</Badge>;
       case "En attente":
-        return <Badge variant="warning">En attente</Badge>;
+        return <Badge variant="warning">{t("engagements.pending")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -288,11 +288,11 @@ export default function Engagements() {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "Haute":
-        return <Badge className="bg-red-500">Haute</Badge>;
+        return <Badge className="bg-red-500">{t("engagements.high")}</Badge>;
       case "Moyenne":
-        return <Badge className="bg-yellow-500">Moyenne</Badge>;
+        return <Badge className="bg-yellow-500">{t("engagements.medium")}</Badge>;
       case "Basse":
-        return <Badge className="bg-blue-500">Basse</Badge>;
+        return <Badge className="bg-blue-500">{t("engagements.low")}</Badge>;
       default:
         return <Badge variant="secondary">{priority}</Badge>;
     }
@@ -302,8 +302,8 @@ export default function Engagements() {
     setIsReevaluationDialogOpen(false);
     setSelectedEngagementForReevaluation(null);
     toast({
-      title: "Réévaluation d'engagement",
-      description: "La demande de réévaluation a été soumise avec succès.",
+      title: t("engagements.reevaluationSuccess"),
+      description: t("engagements.reevaluationSubmitted"),
     });
 
     // Refresh the reevaluations list
@@ -317,7 +317,7 @@ export default function Engagements() {
   };
 
   if (isLoadingEngagements || isLoadingOperations || isLoadingMinistries) {
-    return <PageLoadingSpinner message="Chargement des engagements..." />;
+    return <PageLoadingSpinner message={t("engagements.loading")} />;
   }
 
   // Extract operation names from operationsData
@@ -338,20 +338,20 @@ export default function Engagements() {
 
   return (
     <Dashboard className="p-6">
-      <DashboardHeader title={t("app.navigation.engagements")} description="Gestion des engagements budgétaires" />
+      <DashboardHeader title={t("app.navigation.engagements")} description={t("engagements.description")} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="liste">Liste des Engagements</TabsTrigger>
+          <TabsTrigger value="liste">{t("engagements.list")}</TabsTrigger>
           <TabsTrigger value="approbations">
-            Approbations en Attente
+            {t("engagements.pendingApprovals")}
             {pendingApprovals.length > 0 && (
               <Badge variant="warning" className="ml-2">
                 {pendingApprovals.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="historique">Historique des réévaluations</TabsTrigger>
+          <TabsTrigger value="historique">{t("engagements.reevaluationHistory")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="liste" className="mt-6">
@@ -361,14 +361,14 @@ export default function Engagements() {
                 <div className="relative w-72">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher des engagements..."
+                    placeholder={t("engagements.searchPlaceholder")}
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
                 <Button onClick={handleOpenAddDialog}>
-                  <Plus className="mr-2 h-4 w-4" /> Ajouter un engagement
+                  <Plus className="mr-2 h-4 w-4" /> {t("engagements.addNew")}
                 </Button>
               </div>
 
@@ -385,8 +385,8 @@ export default function Engagements() {
                 onRefresh={() => {
                   refetchEngagements();
                   toast({
-                    title: "Données actualisées",
-                    description: "La liste des engagements a été actualisée",
+                    title: t("common.dataRefreshed"),
+                    description: t("engagements.listRefreshed"),
                   });
                 }}
                 onAddNew={handleOpenAddDialog}
@@ -398,25 +398,25 @@ export default function Engagements() {
         <TabsContent value="approbations" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Approbations en attente</CardTitle>
+              <CardTitle>{t("engagements.pendingApprovals")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Priorité</TableHead>
-                    <TableHead>Détail engagement</TableHead>
-                    <TableHead>Demandé par</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("engagements.priority")}</TableHead>
+                    <TableHead>{t("engagements.details")}</TableHead>
+                    <TableHead>{t("engagements.requestedBy")}</TableHead>
+                    <TableHead className="text-right">{t("engagements.amount")}</TableHead>
+                    <TableHead>{t("engagements.date")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingApprovals.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-4">
-                        Aucune approbation en attente
+                        {t("engagements.noPendingApprovals")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -437,7 +437,7 @@ export default function Engagements() {
                               className="text-green-600 border-green-600 hover:bg-green-50"
                               onClick={() => handleOpenApproveDialog(engagement)}
                             >
-                              <Check className="mr-1 h-4 w-4" /> Approuver
+                              <Check className="mr-1 h-4 w-4" /> {t("engagements.approve")}
                             </Button>
                             <Button
                               variant="outline"
@@ -445,7 +445,7 @@ export default function Engagements() {
                               className="text-red-600 border-red-600 hover:bg-red-50"
                               onClick={() => handleRejectEngagement(engagement)}
                             >
-                              <X className="mr-1 h-4 w-4" /> Rejeter
+                              <X className="mr-1 h-4 w-4" /> {t("engagements.reject")}
                             </Button>
                           </div>
                         </TableCell>
@@ -461,13 +461,13 @@ export default function Engagements() {
         <TabsContent value="historique" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Historique des réévaluations</CardTitle>
+              <CardTitle>{t("engagements.reevaluationHistory")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="relative w-72 mb-4">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par engagement..."
+                  placeholder={t("engagements.searchByEngagement")}
                   className="pl-8"
                   value={reevaluationSearchTerm}
                   onChange={(e) => setReevaluationSearchTerm(e.target.value)}
@@ -482,17 +482,17 @@ export default function Engagements() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Ajouter un nouvel engagement</DialogTitle>
-            <DialogDescription>Complétez le formulaire pour ajouter un nouvel engagement budgétaire.</DialogDescription>
+            <DialogTitle>{t("engagements.addNew")}</DialogTitle>
+            <DialogDescription>{t("engagements.addNewDescription")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="operation" className="text-right">
-                Opération
+                {t("engagements.operation")}
               </Label>
               <Select value={newEngagement.operation} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une opération" />
+                  <SelectValue placeholder={t("engagements.selectOperation")} />
                 </SelectTrigger>
                 <SelectContent>
                   {operations.map((operation) => (
@@ -505,11 +505,11 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="beneficiaire" className="text-right">
-                Bénéficiaire
+                {t("engagements.beneficiary")}
               </Label>
               <Select value={newEngagement.beneficiaire} onValueChange={(value) => setNewEngagement({ ...newEngagement, beneficiaire: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un bénéficiaire" />
+                  <SelectValue placeholder={t("engagements.selectBeneficiary")} />
                 </SelectTrigger>
                 <SelectContent>
                   {beneficiaires.map((beneficiaire) => (
@@ -522,7 +522,7 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="montant" className="text-right">
-                Montant demandé
+                {t("engagements.requestedAmount")}
               </Label>
               <Input
                 id="montant"
@@ -539,11 +539,11 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="demande_par" className="text-right">
-                Demandé par
+                {t("engagements.requestedBy")}
               </Label>
               <Select value={newEngagement.demande_par} onValueChange={(value) => setNewEngagement({ ...newEngagement, demande_par: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un département" />
+                  <SelectValue placeholder={t("engagements.selectDepartment")} />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((department) => (
@@ -556,7 +556,7 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="priorite" className="text-right">
-                Priorité
+                {t("engagements.priority")}
               </Label>
               <Select
                 value={newEngagement.priorite}
@@ -568,18 +568,18 @@ export default function Engagements() {
                 }
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une priorité" />
+                  <SelectValue placeholder={t("engagements.selectPriority")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Haute">Haute</SelectItem>
-                  <SelectItem value="Moyenne">Moyenne</SelectItem>
-                  <SelectItem value="Basse">Basse</SelectItem>
+                  <SelectItem value="Haute">{t("engagements.high")}</SelectItem>
+                  <SelectItem value="Moyenne">{t("engagements.medium")}</SelectItem>
+                  <SelectItem value="Basse">{t("engagements.low")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right">
-                Date
+                {t("engagements.date")}
               </Label>
               <Input
                 id="date"
@@ -592,9 +592,9 @@ export default function Engagements() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Annuler
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleAddEngagement}>Ajouter</Button>
+            <Button onClick={handleAddEngagement}>{t("common.add")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -602,17 +602,17 @@ export default function Engagements() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Modifier l'engagement</DialogTitle>
-            <DialogDescription>Modifiez les détails de l'engagement.</DialogDescription>
+            <DialogTitle>{t("engagements.edit")}</DialogTitle>
+            <DialogDescription>{t("engagements.editDescription")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-operation" className="text-right">
-                Opération
+                {t("engagements.operation")}
               </Label>
               <Select value={newEngagement.operation} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une opération" />
+                  <SelectValue placeholder={t("engagements.selectOperation")} />
                 </SelectTrigger>
                 <SelectContent>
                   {operations.map((operation) => (
@@ -625,11 +625,11 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-beneficiaire" className="text-right">
-                Bénéficiaire
+                {t("engagements.beneficiary")}
               </Label>
               <Select value={newEngagement.beneficiaire} onValueChange={(value) => setNewEngagement({ ...newEngagement, beneficiaire: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un bénéficiaire" />
+                  <SelectValue placeholder={t("engagements.selectBeneficiary")} />
                 </SelectTrigger>
                 <SelectContent>
                   {beneficiaires.map((beneficiaire) => (
@@ -642,7 +642,7 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-montant" className="text-right">
-                Montant demandé
+                {t("engagements.requestedAmount")}
               </Label>
               <Input
                 id="edit-montant"
@@ -659,11 +659,11 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-demande-par" className="text-right">
-                Demandé par
+                {t("engagements.requestedBy")}
               </Label>
               <Select value={newEngagement.demande_par} onValueChange={(value) => setNewEngagement({ ...newEngagement, demande_par: value })}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un département" />
+                  <SelectValue placeholder={t("engagements.selectDepartment")} />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((department) => (
@@ -676,7 +676,7 @@ export default function Engagements() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-priorite" className="text-right">
-                Priorité
+                {t("engagements.priority")}
               </Label>
               <Select
                 value={newEngagement.priorite}
@@ -688,18 +688,18 @@ export default function Engagements() {
                 }
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une priorité" />
+                  <SelectValue placeholder={t("engagements.selectPriority")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Haute">Haute</SelectItem>
-                  <SelectItem value="Moyenne">Moyenne</SelectItem>
-                  <SelectItem value="Basse">Basse</SelectItem>
+                  <SelectItem value="Haute">{t("engagements.high")}</SelectItem>
+                  <SelectItem value="Moyenne">{t("engagements.medium")}</SelectItem>
+                  <SelectItem value="Basse">{t("engagements.low")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-date" className="text-right">
-                Date
+                {t("engagements.date")}
               </Label>
               <Input
                 id="edit-date"
@@ -712,9 +712,9 @@ export default function Engagements() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Annuler
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleEditEngagement}>Enregistrer</Button>
+            <Button onClick={handleEditEngagement}>{t("common.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -722,8 +722,8 @@ export default function Engagements() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer cet engagement? Cette action est irréversible.</DialogDescription>
+            <DialogTitle>{t("engagements.confirmDelete")}</DialogTitle>
+            <DialogDescription>{t("engagements.deleteDescription")}</DialogDescription>
           </DialogHeader>
           {currentEngagement && (
             <div className="py-4">
@@ -731,22 +731,22 @@ export default function Engagements() {
                 <strong>ID:</strong> {currentEngagement.id}
               </p>
               <p>
-                <strong>Opération:</strong> {currentEngagement.operation}
+                <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation}
               </p>
               <p>
-                <strong>Bénéficiaire:</strong> {currentEngagement.beneficiaire}
+                <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.beneficiaire}
               </p>
               <p>
-                <strong>Montant demandé:</strong> {formatCurrency(currentEngagement.montant_demande)}
+                <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.montant_demande)}
               </p>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Annuler
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeleteEngagement}>
-              Supprimer
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -755,7 +755,7 @@ export default function Engagements() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Détails de l'engagement</DialogTitle>
+            <DialogTitle>{t("engagements.details")}</DialogTitle>
           </DialogHeader>
           {currentEngagement && (
             <div className="py-4 space-y-4">
@@ -764,41 +764,41 @@ export default function Engagements() {
                 <div>{currentEngagement.id}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Opération:</div>
+                <div className="font-semibold">{t("engagements.operation")}:</div>
                 <div>{currentEngagement.operation}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Bénéficiaire:</div>
+                <div className="font-semibold">{t("engagements.beneficiary")}:</div>
                 <div>{currentEngagement.beneficiaire}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Montant demandé:</div>
+                <div className="font-semibold">{t("engagements.requestedAmount")}:</div>
                 <div>{formatCurrency(currentEngagement.montant_demande)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Montant approuvé:</div>
+                <div className="font-semibold">{t("engagements.approvedAmount")}:</div>
                 <div>{formatCurrency(currentEngagement.montant_approuve)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Statut:</div>
+                <div className="font-semibold">{t("engagements.status")}:</div>
                 <div>{getStatusBadge(currentEngagement.statut)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Date:</div>
+                <div className="font-semibold">{t("engagements.date")}:</div>
                 <div>{formatDate(currentEngagement.date)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Priorité:</div>
+                <div className="font-semibold">{t("engagements.priority")}:</div>
                 <div>{getPriorityBadge(currentEngagement.priorite)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Demandé par:</div>
+                <div className="font-semibold">{t("engagements.requestedBy")}:</div>
                 <div>{currentEngagement.demande_par}</div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
+            <Button onClick={() => setIsViewDialogOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -806,25 +806,25 @@ export default function Engagements() {
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Approuver l'engagement</DialogTitle>
-            <DialogDescription>Confirmez le montant approuvé pour cet engagement.</DialogDescription>
+            <DialogTitle>{t("engagements.approve")}</DialogTitle>
+            <DialogDescription>{t("engagements.approveDescription")}</DialogDescription>
           </DialogHeader>
           {currentEngagement && (
             <div className="py-4 space-y-4">
               <div className="grid grid-cols-1 gap-2">
                 <p>
-                  <strong>Opération:</strong> {currentEngagement.operation}
+                  <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation}
                 </p>
                 <p>
-                  <strong>Bénéficiaire:</strong> {currentEngagement.beneficiaire}
+                  <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.beneficiaire}
                 </p>
                 <p>
-                  <strong>Montant demandé:</strong> {formatCurrency(currentEngagement.montant_demande)}
+                  <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.montant_demande)}
                 </p>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="approval-amount" className="text-right">
-                  Montant approuvé
+                  {t("engagements.approvedAmount")}
                 </Label>
                 <Input
                   id="approval-amount"
@@ -838,9 +838,9 @@ export default function Engagements() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
-              Annuler
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleApproveEngagement}>Approuver</Button>
+            <Button onClick={handleApproveEngagement}>{t("common.approve")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

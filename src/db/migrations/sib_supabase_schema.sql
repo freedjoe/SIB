@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS ministries (
     name_fr TEXT NOT NULL,
     address TEXT,
     email TEXT,
+    website TEXT,
     phone TEXT,
     phone2 TEXT,
     fax TEXT,
@@ -114,30 +115,76 @@ CREATE TABLE IF NOT EXISTS wilayas (
 -- 8. Operations
 CREATE TABLE IF NOT EXISTS operations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- Relationship fields
     action_id UUID REFERENCES actions(id) ON DELETE CASCADE,
-    name TEXT,
-    location TEXT,
-    beneficiary TEXT,
-    execution_mode TEXT CHECK (execution_mode IN ('state', 'delegation', 'PPP')),
-    start_year INTEGER,
-    end_year INTEGER,
-    description TEXT,
-    montant_ae NUMERIC,
+    program_id UUID REFERENCES programs(id),
     wilaya_id UUID REFERENCES wilayas(id),
-    code VARCHAR(20),
-    title TEXT,
-    inscription_date DATE,
     budget_title_id UUID REFERENCES budget_titles(id),
-    allocated_ae NUMERIC,
-    allocated_cp NUMERIC,
-    consumed_ae NUMERIC,
-    consumed_cp NUMERIC,
-    physical_rate NUMERIC,
-    financial_rate NUMERIC,
-    delay NUMERIC,
-    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft'
+    
+    -- Basic identification fields
+    code TEXT UNIQUE NOT NULL, -- e.g. "NK5.523.2.262.010.44"
+    name TEXT,
+    title TEXT,
+    description TEXT,
+    
+    -- Location and beneficiaries
+    province TEXT,               -- e.g. "16-Alger" (maps to wilaya)
+    municipality TEXT,           -- More specific location within province
+    location TEXT,                       -- General location description
+    beneficiary TEXT,                    -- Who benefits from this operation
+    regional_budget_directorate TEXT,
+    
+    -- Reference numbers and dates
+    individualization_number TEXT,
+    notification_year TEXT,
+    inscription_date DATE,               -- Official registration date
+    
+    -- Timeframe
+    start_year INTEGER,                  -- Year operation started
+    end_year INTEGER,                    -- Year operation is expected to end
+    start_order_date TEXT,       -- When work was ordered to begin
+    implementation_period TEXT,  -- e.g. "71 mois"
+    completion_date TEXT,        -- Expected or actual completion date
+    delay NUMERIC,                       -- Delay in days/months
+    
+    -- Budget amounts
+    initial_ae NUMERIC,                 -- Initial authorized budget
+    current_ae NUMERIC,                 -- Current authorized budget
+    montant_ae NUMERIC,                 -- Another representation of authorized budget
+    allocated_ae NUMERIC,               -- Allocated authorized engagement
+    allocated_cp NUMERIC,               -- Allocated payment credits
+     cp_notified NUMERIC,                             -- Payment credits notified
+    cp_used NUMERIC,                                 -- Payment credits used
+    
+    -- Consumption tracking
+    committed_ae NUMERIC,           -- Committed authorized engagement
+    consumed_ae NUMERIC,                -- Consumed authorized engagement
+    consumed_cp NUMERIC,                -- Consumed payment credits
+    cumulative_commitments NUMERIC,                  -- Total commitments to date
+    cumulative_payments NUMERIC,                     -- Total payments made
+    cumulative_expenses NUMERIC,    -- Cumulative payments
+    
+    -- Progress indicators
+    physical_rate NUMERIC,              -- Physical completion percentage (0-1)
+    financial_rate NUMERIC,             -- Financial completion percentage (0-1)
+    
+    -- Project management
+    execution_mode TEXT CHECK (execution_mode IN ('state', 'delegation', 'PPP')),
+    project_status TEXT CHECK (project_status IN ('completed', 'in_progress', 'on_hold', 'canceled', 'planned', 'suspended', 'delayed', 'not_started'));
+    observations TEXT,           -- Notes about the project
+    
+    -- Workflow status
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',  
 );
-
+/*'Project status/phase:
+- completed: Project is finished (equivalent to "Achevée")
+- in_progress: Work is currently ongoing (equivalent to "En cours")
+- on_hold: Temporarily stopped (equivalent to "à l''arrêt")
+- canceled: Project has been terminated before completion
+- planned: Project is approved but work has not started yet
+- suspended: Work stopped with no defined restart date
+- delayed: Behind schedule but still active
+- not_started: Project is registered but work has not begun';*/
 -- 8b. Operation CPs (Credit Payments) - New table
 CREATE TABLE IF NOT EXISTS operation_cps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -626,7 +673,7 @@ BEGIN
             ('programs', 'expected_results', 'TEXT[]'),
             ('programs', 'performance_indicators', 'JSONB'),
             ('programs', 'code', 'VARCHAR(20)'),
-            ('programs', 'type', 'VARCHAR(20) CHECK (type IN (''program'', ''subprogram'', ''dotation''))'),
+            ('programs', 'type', 'VARCHAR(20) CHECK (type IN (''program'', ''subprogram''))'),
             ('programs', 'parent_id', 'UUID REFERENCES programs(id)'),
             ('programs', 'allocated_ae', 'NUMERIC'),
             ('programs', 'allocated_cp', 'NUMERIC'),
@@ -670,26 +717,63 @@ BEGIN
 
             -- operations
             ('operations', 'action_id', 'UUID REFERENCES actions(id) ON DELETE CASCADE'),
+            ('operations', 'program_id', 'UUID REFERENCES programs(id)'),
+            ('operations', 'wilaya_id', 'UUID REFERENCES wilayas(id)'),
+            ('operations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
+            
+            -- Basic identification fields
+            ('operations', 'code', 'TEXT UNIQUE NOT NULL'),
             ('operations', 'name', 'TEXT'),
+            ('operations', 'title', 'TEXT'),
+            ('operations', 'description', 'TEXT'),
+            
+            -- Location and beneficiaries
+            ('operations', 'province', 'TEXT'),
+            ('operations', 'municipality', 'TEXT'),
             ('operations', 'location', 'TEXT'),
             ('operations', 'beneficiary', 'TEXT'),
-            ('operations', 'execution_mode', 'TEXT CHECK (execution_mode IN (''state'', ''delegation'', ''PPP''))'),
+            ('operations', 'regional_budget_directorate', 'TEXT'),
+            
+            -- Reference numbers and dates
+            ('operations', 'individualization_number', 'TEXT'),
+            ('operations', 'notification_year', 'TEXT'),
+            ('operations', 'inscription_date', 'DATE'),
+            
+            -- Timeframe
             ('operations', 'start_year', 'INTEGER'),
             ('operations', 'end_year', 'INTEGER'),
-            ('operations', 'description', 'TEXT'),
+            ('operations', 'start_order_date', 'TEXT'),
+            ('operations', 'implementation_period', 'TEXT'),
+            ('operations', 'completion_date', 'TEXT'),
+            ('operations', 'delay', 'NUMERIC'),
+            
+            -- Budget amounts
+            ('operations', 'initial_ae', 'NUMERIC'),
+            ('operations', 'current_ae', 'NUMERIC'),
             ('operations', 'montant_ae', 'NUMERIC'),
-            ('operations', 'wilaya_id', 'UUID REFERENCES wilayas(id)'),
-            ('operations', 'code', 'VARCHAR(20)'),
-            ('operations', 'title', 'TEXT'),
-            ('operations', 'inscription_date', 'DATE'),
-            ('operations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
             ('operations', 'allocated_ae', 'NUMERIC'),
             ('operations', 'allocated_cp', 'NUMERIC'),
+            ('operations', 'cp_notified', 'NUMERIC'),
+            ('operations', 'cp_used', 'NUMERIC'),
+            
+            -- Consumption tracking
+            ('operations', 'committed_ae', 'NUMERIC'),
             ('operations', 'consumed_ae', 'NUMERIC'),
             ('operations', 'consumed_cp', 'NUMERIC'),
+            ('operations', 'cumulative_commitments', 'NUMERIC'),
+            ('operations', 'cumulative_payments', 'NUMERIC'),
+            ('operations', 'cumulative_expenses', 'NUMERIC'),
+            
+            -- Progress indicators
             ('operations', 'physical_rate', 'NUMERIC'),
             ('operations', 'financial_rate', 'NUMERIC'),
-            ('operations', 'delay', 'NUMERIC'),
+            
+            -- Project management
+            ('operations', 'execution_mode', 'TEXT CHECK (execution_mode IN (''state'', ''delegation'', ''PPP''))'),
+            ('operations', 'project_status', 'TEXT CHECK (project_status IN (''completed'', ''in_progress'', ''on_hold'', ''canceled'', ''planned'', ''suspended'', ''delayed'', ''not_started''))'),
+            ('operations', 'observations', 'TEXT'),
+            
+            -- Workflow status
             ('operations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
 
             -- operation_cps

@@ -755,4 +755,19 @@ INSERT INTO ministries (
     null, 
     '+213', 
     null
+),
+('34f8bf2b-a020-469f-9351-841b32da7fd6', 
+    'Ministère des Relations avec le Parlement', 
+    'MRP', 
+    'Gestion des communications postales et électroniques.', 
+    null, 
+    '12 شارع علي بجاوي الابيار الجزائر', 
+    'info@mrp.gov.dz', 
+    '+213 23 05 32 84', 
+    'true', 
+    'وزارة العلاقات مع البرلمان', 
+    'Ministry of Relations with Parliament', 
+    null, 
+    '+213 23 05 32 85', 
+    null
 );

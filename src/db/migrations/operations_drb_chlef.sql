@@ -1,30 +1,24 @@
-CREATE TABLE "operations_drb_chlef" (
+CREATE TABLE "operations" (
     "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "Portefeuille de programmes"	VARCHAR(512),
-    "Programmes"	VARCHAR(512),
-    "Sous-Programme"	VARCHAR(512),
-    "Intitulé de l'opération"	VARCHAR(512),
-    "N° de l'opération"	VARCHAR(512),
-    "Année de notification"	VARCHAR(512),
-    "AE
-Initiale"	INT,
-    "AE
-Actuelle"	INT,
-    "Engagements
-cumulés"	DOUBLE,
-    "Cons.
-Cumulées"	DOUBLE,
-    "Taux
-Fin"	DOUBLE,
-    "Taux
-Phys"	VARCHAR(512),
-    "Etat du Projet"	VARCHAR(512),
+    "Province"	VARCHAR(512),
+    "Program_Type"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Programs"	VARCHAR(512),
+    "Subprogram"	VARCHAR(512),
+    "Operation_Title"	VARCHAR(512),
+    "Operation_Number"	VARCHAR(512),
+    "Notification_Year"	VARCHAR(512),
+    "Initial_AE"	INT,
+    "Current_AE"	INT,
+    "Cumulative_Commitments"	DOUBLE,
+    "Cumulative_Expenditures"	DOUBLE,
+    "Financial_Rate"	DOUBLE,
+    "Physical_Rate"	VARCHAR(512),
+    "Project_Status"	VARCHAR(512),
     "Observations"	VARCHAR(512),
-    "Date             d' individua."	VARCHAR(512),
-    "Nbre d'op. "	VARCHAR(512),
-    "Localité"	VARCHAR(512),
+    "Individualization_Date"	VARCHAR(512),
+    "Number_Of_Operations"	VARCHAR(512),
+    "Location"	VARCHAR(512),
     "PEC"	DOUBLE,
     "Column22"	VARCHAR(512),
     "Column23"	VARCHAR(512),
@@ -32,13 +26,14 @@ Phys"	VARCHAR(512),
     "Column25"	VARCHAR(512)
 );
 
-INSERT INTO "operations_drb_chlef" ("DRB", "wilaya", "Type programme", "Portefeuille de programmes", "Programmes", "Sous-Programme", "Intitulé de l\'opération", "N° de l\'opération", "Année de notification", "AE
-Initiale", "AE
-Actuelle", "Engagements
-cumulés", "Cons.
-Cumulées", "Taux
-Fin", "Taux
-Phys", "Etat du Projet", "Observations", "Date             d\' individua.", "Nbre d\'op. ", "Localité", "PEC", "Column22", "Column23", "Column24", "Column25") VALUES
+INSERT INTO "operations" (
+    "DRB", "Province", "Program_Type", "Program_Portfolio", "Programs", 
+    "Subprogram", "Operation_Title", "Operation_Number", "Notification_Year", 
+    "Initial_AE", "Current_AE", "Cumulative_Commitments", "Cumulative_Expenditures", 
+    "Financial_Rate", "Physical_Rate", "Project_Status", "Observations", 
+    "Individualization_Date", "Number_Of_Operations", "Location", "PEC", 
+    "Column22", "Column23", "Column24", "Column25") 
+VALUES
 	('CHLEF', '02-Chlef', 'Ex-PSD 31/12/2022', '011- Education nationale', '044- Enseignement', '01- Enseignement préparatoire et primaire', 'Etude, construction et équipement de.70 groupes scolaires (16A1,16B1,17C1,21D1)+ 70 LOGTS ET 105 salles de classes en extension (remplacement du préfa) (programme de reconstruction).', 'NF562342621020605', '', '1652810', '2592705', '2563875.019', '2546429.974', '0.982151835', '1', '', '*Travaux achevés
 *Opération à clôturer', '', '', '', '46275.026', '', '', '', ''),
 	('CHLEF', '02-Chlef', 'Ex-PSD 31/12/2022', '011- Education nationale', '044- Enseignement', '02- Enseignement moyen normal et spécifique et a distance', 'Etude, réalisation et équipement de 10 EF 8B6+ 2B5 ', 'NF562322621020603', '', '760000', '1404648', '1370803.495', '1369168.704', '0.974741504', '1', '', 'Dossier de clôture au niveau Trésor', '', '', '', '35479.29567', '', '', '', ''),

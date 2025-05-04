@@ -141,7 +141,7 @@ export default function Auth() {
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Chargement..." : t("app.auth.loginButton")}
+                    {isLoading ? t("common.loading") : t("app.auth.loginButton")}
                   </Button>
                 </CardFooter>
               </form>
@@ -188,7 +188,7 @@ export default function Auth() {
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Création..." : t("app.auth.signupButton")}
+                    {isLoading ? t("common.loading") : t("app.auth.signupButton")}
                   </Button>
                 </CardFooter>
               </form>

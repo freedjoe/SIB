@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ColumnDef, Table, Header, Column } from "@tanstack/react-table";
 import { Eye, FileEdit, Trash2, Check, X, File, Download, Printer, RefreshCw, Plus } from "lucide-react";
 import ExcelJS from "exceljs";
+import { useTranslation } from "react-i18next";
 
 export interface ActionHandlers<T> {
   onView?: (data: T) => void;
@@ -53,16 +54,28 @@ export function ReusableDataTable<T>({
   onRowSelectionChange,
   onRefresh,
   onAddNew,
-  addNewLabel = "Ajouter",
+  addNewLabel,
   noCardWrapper = false,
   className,
   emptyMessage,
   enablePrint = true,
   enableExport = true,
-  tableName = "Données",
+  tableName,
 }: ReusableDataTableProps<T>) {
+  const { t } = useTranslation();
+
   // Add the actions column if any action handlers are provided
   const hasActions = actionHandlers || (customActions && customActions.length > 0);
+
+  // Use translation or default if not provided
+  const defaultAddNewLabel = t("common.addNew");
+  const defaultTableName = t("common.data");
+  const defaultEmptyMessage = t("common.noData");
+
+  // Use provided values or defaults with translation
+  const translatedAddNewLabel = addNewLabel || defaultAddNewLabel;
+  const translatedTableName = tableName || defaultTableName;
+  const translatedEmptyMessage = emptyMessage || defaultEmptyMessage;
 
   const columnsWithActions = React.useMemo(() => {
     if (!hasActions) return columns;
@@ -71,26 +84,26 @@ export function ReusableDataTable<T>({
       ...columns,
       {
         id: "actions",
-        header: "Actions",
+        header: t("common.actions"),
         cell: ({ row }) => {
           const data = row.original;
 
           return (
             <div className="flex justify-end gap-2">
               {actionHandlers?.onView && (
-                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onView?.(data)} title="Voir les détails">
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onView?.(data)} title={t("common.viewDetails")}>
                   <Eye className="h-4 w-4" />
                 </Button>
               )}
 
               {actionHandlers?.onEdit && (
-                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onEdit?.(data)} title="Modifier">
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onEdit?.(data)} title={t("common.edit")}>
                   <FileEdit className="h-4 w-4" />
                 </Button>
               )}
 
               {actionHandlers?.onDelete && (
-                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onDelete?.(data)} title="Supprimer">
+                <Button variant="ghost" size="icon" onClick={() => actionHandlers.onDelete?.(data)} title={t("common.delete")}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
@@ -100,7 +113,7 @@ export function ReusableDataTable<T>({
                   variant="ghost"
                   size="icon"
                   onClick={() => actionHandlers.onApprove?.(data)}
-                  title="Approuver"
+                  title={t("common.approve")}
                   className="text-green-600 hover:text-green-700"
                 >
                   <Check className="h-4 w-4" />
@@ -112,7 +125,7 @@ export function ReusableDataTable<T>({
                   variant="ghost"
                   size="icon"
                   onClick={() => actionHandlers.onReject?.(data)}
-                  title="Rejeter"
+                  title={t("common.reject")}
                   className="text-red-600 hover:text-red-700"
                 >
                   <X className="h-4 w-4" />
@@ -139,7 +152,7 @@ export function ReusableDataTable<T>({
         },
       },
     ];
-  }, [columns, actionHandlers, customActions, hasActions]);
+  }, [columns, actionHandlers, customActions, hasActions, t]);
 
   const handleExportToExcel = async () => {
     const flattenObject = (obj: Record<string, unknown>, prefix = ""): Record<string, unknown> => {
@@ -226,7 +239,7 @@ export function ReusableDataTable<T>({
 
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(tableName);
+    const worksheet = workbook.addWorksheet(translatedTableName);
 
     // Add headers
     const headers = Object.keys(formattedData[0] || {});
@@ -246,7 +259,7 @@ export function ReusableDataTable<T>({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${tableName}_export_${new Date().toISOString().split("T")[0]}.xlsx`;
+    a.download = `${translatedTableName}_${t("common.export")}_${new Date().toISOString().split("T")[0]}.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -266,7 +279,7 @@ export function ReusableDataTable<T>({
       filterColumn={filterColumn}
       rowSelection={enableRowSelection}
       onRowSelectionChange={onRowSelectionChange}
-      emptyMessage={emptyMessage}
+      emptyMessage={translatedEmptyMessage}
       toolbarExtra={toolbarExtra}
       className={className}
       onRefresh={onRefresh}

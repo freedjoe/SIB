@@ -1,4 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +15,12 @@ interface BudgetTitlesTableProps {
 }
 
 export function BudgetTitlesTable({ budgetItems, onView, onEdit, onDelete, onRefresh }: BudgetTitlesTableProps) {
+  const { t } = useTranslation();
+
   const columns: ColumnDef<BudgetTitle, unknown>[] = [
     {
       accessorKey: "code",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.code", "Code")} />,
       cell: ({ row }) => (
         <Badge variant="outline" className="font-mono">
           {row.getValue("code")}
@@ -27,7 +30,7 @@ export function BudgetTitlesTable({ budgetItems, onView, onEdit, onDelete, onRef
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Nom" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.name", "Nom")} />,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Banknote className="h-4 w-4 text-gray-500" />
@@ -38,10 +41,10 @@ export function BudgetTitlesTable({ budgetItems, onView, onEdit, onDelete, onRef
     },
     {
       accessorKey: "description",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.description", "Description")} />,
       cell: ({ row }) => {
         const description = row.getValue("description") as string | undefined;
-        return description ? description : "N/A";
+        return description ? description : t("app.common.notAvailable", "N/A");
       },
       filterFn: "includesString",
     },
@@ -60,7 +63,7 @@ export function BudgetTitlesTable({ budgetItems, onView, onEdit, onDelete, onRef
       actionHandlers={actionHandlers}
       filterColumn="name"
       onRefresh={onRefresh}
-      tableName="Catalogue Budgétaire"
+      tableName={t("budgets.catalogTitle", "Catalogue Budgétaire")}
     />
   );
 }

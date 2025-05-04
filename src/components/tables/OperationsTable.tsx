@@ -4,6 +4,7 @@ import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export interface Operation {
   id: string;
@@ -41,46 +42,48 @@ interface OperationsTableProps {
 }
 
 export function OperationsTable({ operations, formatCurrency, onView, onEdit, onDelete, onRefresh, onAddNew }: OperationsTableProps) {
+  const { t } = useTranslation();
+
   const getStatusBadge = (status: Operation["status"]) => {
     switch (status) {
       case "planned":
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-            Planifiée
+            {t("operations.status.planned")}
           </Badge>
         );
       case "in_progress":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-            En cours
+            {t("operations.status.in_progress")}
           </Badge>
         );
       case "completed":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-            Terminée
+            {t("operations.status.completed")}
           </Badge>
         );
       case "en_pause":
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-            En pause
+            {t("operations.status.paused")}
           </Badge>
         );
       case "arreter":
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
-            Arrêté
+            {t("operations.status.stopped")}
           </Badge>
         );
       case "draft":
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">
-            Brouillon
+            {t("operations.status.draft")}
           </Badge>
         );
       default:
-        return <Badge variant="outline">Inconnu</Badge>;
+        return <Badge variant="outline">{t("operations.status.unknown")}</Badge>;
     }
   };
 
@@ -97,19 +100,19 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
   };
 
   const formatTitreBudgetaire = (titre: number) => {
-    return `Titre ${titre}`;
+    return `${t("budget.title")} ${titre}`;
   };
 
   const columns: ColumnDef<Operation, unknown>[] = [
     {
       accessorKey: "code_operation",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.code")} />,
       cell: ({ row }) => <div className="font-medium">{row.getValue("code_operation")}</div>,
       filterFn: "includesString",
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Nom de l'opération" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.name")} />,
       cell: ({ row }) => (
         <div className="max-w-[300px] truncate" title={row.getValue("name")}>
           {row.getValue("name")}
@@ -119,7 +122,7 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
     },
     {
       accessorKey: "programName",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Programme/Action" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.programAction")} />,
       cell: ({ row }) => (
         <div className="max-w-[200px]">
           <div className="truncate" title={row.getValue("programName")}>
@@ -134,19 +137,19 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
     },
     {
       accessorKey: "wilaya",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Wilaya" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.wilaya")} />,
       cell: ({ row }) => row.getValue("wilaya"),
       filterFn: "includesString",
     },
     {
       accessorKey: "allocatedAmount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Allocated AE" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.allocatedAE")} />,
       cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue("allocatedAmount"))}</div>,
       filterFn: "includesString",
     },
     {
       accessorKey: "progress",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Progression" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.progress")} />,
       cell: ({ row }) => {
         const progress = row.getValue("progress") as number;
         return (
@@ -160,13 +163,13 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
     },
     {
       accessorKey: "status",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.status.label")} />,
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
       filterFn: "includesString",
     },
     {
       accessorKey: "start_date",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date début" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.startDate")} />,
       cell: ({ row }) => {
         const date = row.getValue("start_date") as string;
         return <div>{new Date(date).toLocaleDateString()}</div>;
@@ -189,8 +192,8 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
       filterColumn="name"
       onRefresh={onRefresh}
       onAddNew={onAddNew}
-      addNewLabel="Ajouter une opération"
-      tableName="Opérations"
+      addNewLabel={t("operations.addNew")}
+      tableName={t("operations.tableName")}
     />
   );
 }

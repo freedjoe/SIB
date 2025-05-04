@@ -513,24 +513,31 @@ export default function PortfoliosPage() {
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg">{portfolio.name}</CardTitle>
-                          <span className="text-sm text-muted-foreground">({portfolio.code})</span>
+                          <CardTitle className="text-lg line-clamp-2">{portfolio.name}</CardTitle>
                         </div>
                         <CardDescription className="mt-1 line-clamp-2">{portfolio.description}</CardDescription>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "whitespace-nowrap",
-                          portfolio.status === "active"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
-                            : portfolio.status === "archived"
-                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
-                        )}
-                      >
-                        {portfolio.status === "active" ? "Actif" : portfolio.status === "archived" ? "Archivé" : "Brouillon"}
-                      </Badge>
+                      <div className="flex flex-col gap-2 flex-shrink-0 items-center">
+                        <Badge
+                          variant="outline"
+                          className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap"
+                        >
+                          {portfolio.code}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "whitespace-nowrap",
+                            portfolio.status === "active"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
+                              : portfolio.status === "archived"
+                                ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                          )}
+                        >
+                          {portfolio.status === "active" ? "Actif" : portfolio.status === "archived" ? "Archivé" : "Brouillon"}
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-4 flex-grow">
@@ -992,8 +999,8 @@ export default function PortfoliosPage() {
                   currentPortfolio?.status === "active"
                     ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400"
                     : currentPortfolio?.status === "archived"
-                    ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
+                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400"
                 )}
               >
                 {currentPortfolio?.status === "active" ? "Actif" : currentPortfolio?.status === "archived" ? "Archivé" : "Brouillon"}

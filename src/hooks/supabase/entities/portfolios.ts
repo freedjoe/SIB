@@ -1,3 +1,5 @@
+// filepath: c:\Projects\SIB\src\hooks\supabase\entities\portfolios.ts
+// ENTITY LEVEL 2: Portfolios (Child of Ministry)
 import { useSupabaseData } from "../core/useSupabaseData";
 import { useSupabaseMutation, MutationOptions } from "../core/useSupabaseMutation";
 import { QueryOptions } from "../core/useSupabaseQuery";
@@ -12,7 +14,7 @@ export function usePortfolios(options: QueryOptions = {}) {
     realtime: true, // Enable realtime updates
     ...options,
     select: options.select || "*, ministry:ministry_id(*)",
-    sort: options.sort || { column: "name", ascending: true },
+    sort: options.sort || { column: "code", ascending: true },
   });
 }
 

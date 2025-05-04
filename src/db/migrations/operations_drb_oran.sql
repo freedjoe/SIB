@@ -1,25 +1,30 @@
-CREATE TABLE "operations_drb_oran" (
+CREATE TABLE "operations" (
     "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "Intitulé Programme"	VARCHAR(512),
-    "Intitulé Sous programme"	VARCHAR(512),
-    "Numéro d'individualisation "	VARCHAR(512),
-    " Intitulé Opération"	VARCHAR(512),
-    "Année de notification"	VARCHAR(512),
-    "AE intiale"	VARCHAR(512),
-    "AE actuelle"	INT,
-    "AE Engageé cumule"	VARCHAR(512),
-    "Paiements cumulés "	VARCHAR(512),
-    "CP 2025"	VARCHAR(512),
-    "RAR Fin Mars 2025"	VARCHAR(512),
-    "Taux Physique"	VARCHAR(512),
+    "Province"	VARCHAR(512),
+    "Program_Type"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Program_Title"	VARCHAR(512),
+    "Subprogram_Title"	VARCHAR(512),
+    "Individualization_Number"	VARCHAR(512),
+    "Operation_Title"	VARCHAR(512),
+    "Notification_Year"	VARCHAR(512),
+    "Initial_AE"	VARCHAR(512),
+    "Current_AE"	INT,
+    "AE_Cumulative_Commitment"	VARCHAR(512),
+    "Cumulative_Payments"	VARCHAR(512),
+    "CP_2025"	VARCHAR(512),
+    "Remaining_Balance_March2025"	VARCHAR(512),
+    "Physical_Rate"	VARCHAR(512),
     "Observation"	VARCHAR(512),
-    "Réév 2025"	VARCHAR(512)
+    "Reevaluation_2025"	VARCHAR(512)
 );
 
-INSERT INTO "operations_drb_oran" ("DRB", "wilaya", "Type programme", "Portefeuille de programme ", "Intitulé Programme", "Intitulé Sous programme", "Numéro d\'individualisation ", " Intitulé Opération", "Année de notification", "AE intiale", "AE actuelle", "AE Engageé cumule", "Paiements cumulés ", "CP 2025", "RAR Fin Mars 2025", "Taux Physique", "Observation", "Réév 2025") VALUES
+INSERT INTO "operations" (
+    "DRB", "Province", "Program_Type", "Program_Portfolio", "Program_Title", 
+    "Subprogram_Title", "Individualization_Number", "Operation_Title", "Notification_Year", 
+    "Initial_AE", "Current_AE", "AE_Cumulative_Commitment", "Cumulative_Payments", 
+    "CP_2025", "Remaining_Balance_March2025", "Physical_Rate", "Observation", "Reevaluation_2025"
+) VALUES
 	('Oran', '27-Mostaganem', 'PSD', 'Portfeuille 024. Travaux publics et des infrastructures de base', '', '', 'NK5.523.2.262.010.44
 ', 'réalisation de la ligne ferroviaire reliant Hassi Mefsoukh et Mostaganem
 N° de l’opération', '', '', '28662460245', '', '', '', '', '', '', ''),

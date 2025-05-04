@@ -1,25 +1,24 @@
-CREATE TABLE "operations_drb" (
-    "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "Intitulé Programme"	VARCHAR(512),
-    "Intitulé Sous programme"	VARCHAR(512),
-    "Numéro d'individualisation "	VARCHAR(512),
-    " Intitulé Opération"	VARCHAR(512),
-    "Année de notification"	VARCHAR(512),
-    "AE initiale"	INT,
-    "AE actuelle"	INT,
-    "AE Engagée"	VARCHAR(512),
-    "Dépenses cumulées"	VARCHAR(512),
-    "Taux FIN %"	VARCHAR(512),
-    "Taux phys %"	VARCHAR(512),
-    "Etat du Projet"	VARCHAR(512),
-    "Observations"	VARCHAR(512)
+CREATE TABLE "operations" (
+    "DRB"                      VARCHAR(512),
+    "province"                 VARCHAR(512),
+    "program_type"             VARCHAR(512),
+    "program_portfolio"        VARCHAR(512),
+    "program_title"            VARCHAR(512),
+    "sub_program_title"        VARCHAR(512),
+    "individualization_number" VARCHAR(512),
+    "operation_title"          VARCHAR(512),
+    "notification_year"        VARCHAR(512),
+    "initial_ae"               INT,
+    "current_ae"               INT,
+    "committed_ae"             VARCHAR(512),
+    "cumulative_expenses"      VARCHAR(512),
+    "financial_rate_percent"   VARCHAR(512),
+    "physical_rate_percent"    VARCHAR(512),
+    "project_status"           VARCHAR(512),
+    "observations"             VARCHAR(512)
 );
 
-INSERT INTO "operations_drb" ("DRB", "wilaya", "Type programme", "Portefeuille de programme ", "Intitulé Programme", "Intitulé Sous programme", "Numéro d\'individualisation ", " Intitulé Opération", "Année de notification", "AE initiale", "AE actuelle", "AE Engagée", "Dépenses cumulées", "Taux FIN %", "Taux phys %", "Etat du Projet", "Observations") VALUES
-	('Alger', '16-Alger', '', '012:Enseignement Supérieur et  Recherche Scientifique', '051:Vie Estudiantine', '', '', 'Étude et réalisation de nouvelles résidences universitaires 18 000 lits: (4000 lits à Ouled Fayet II; 4000 lits à El Alia; 4000 lits à El Djorf; 3000 lits à Said Hamdine; 3000 lits à Ziania) avec dépendances', '', '', '10789000', '10468489.87', '10270308.71', '0.951924063', '1', 'Achevée', 'Travaux achevés'),
+INSERT INTO "operations" ("DRB", "province", "program_type", "program_portfolio", "program_title", "sub_program_title", "individualization_number", "operation_title", "notification_year", "initial_ae", "current_ae", "committed_ae", "cumulative_expenses", "financial_rate_percent", "physical_rate_percent", "project_status", "observations") VALUES
 	('Alger', '16-Alger', '', '024:Travaux Publics et Infrastructures de Base', '090:Infrastructures Routières et autoroutières', '', '', 'Radiale Oued Ouchaiah-liaison RN 38 -Benghazi', '', '', '13400000', '13258054.14', '12588559.16', '0.939444714', '0.99', 'En cours', 'projet achevé , reste aménagement des accès limitrophes .'),
 	('Alger', '16-Alger', '', '012:Enseignement Supérieur et  Recherche Scientifique', '051:Vie Estudiantine', '', '', 'Étude et réalisation résidences universitaires de 11.000 lits à Sidi Abdallah avec dépendances à sidi abdellah', '', '', '15920000', '15903704.17', '14384685.09', '0.903560621', '1', 'Achevée', 'Travaux achevés, Projet réceptionné le 19-06-2023'),
 	('Alger', '16-Alger', '', '005:Intérieur, Collectivités Locales et Aménagement du Territoire', '017:Sûreté Nationale', '', '', 'Sécurité publique au niveau de la capitale et réhabilitation du système de la vidéo surveillance', '', '', '16108000', '15142080.71', '10670180.7', '0.662414992', '0.57', 'En cours', 'Travaux en cours, pour la mise à niveau de 1736 caméras, reste la 2ème tranche : travaux de mats, électricité et fibre optique en cours. Conformément à l\'envoi émanant du MICLAT n° 11970 du 04/11/2024, un accord préalable pour réévaluer l\'opération d\'un montant de 1,5 milliard de DA au titre de l\'exercice 2025, alors que la demande d\'inscription de la nouvelle opération de vidéosurveillance d\'un montant de 7,5 milliards DA na pas abouti pour 2025 avec possibilité d\'étude de la demande dans le cadre des projets des lois de finances des années à venir ).'),

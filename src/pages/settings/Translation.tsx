@@ -170,10 +170,6 @@ export default function Translation() {
     try {
       setLoading(true);
 
-      // In a real implementation, we would write the translation files to disk
-      // Since we can't directly write to disk from the browser, we'll use a
-      // simulated implementation that updates the i18n instance in memory
-
       // Convert translations to JSON strings
       const enJSON = JSON.stringify(translations.en, null, 2);
       const frJSON = JSON.stringify(translations.fr, null, 2);
@@ -192,13 +188,13 @@ export default function Translation() {
 
       toast({
         title: t("settings.translation.saveSuccess"),
-        description: t("settings.translation.saveSuccess"),
+        description: t("settings.translation.saveSuccessDescription", "All translations have been successfully updated and applied."),
       });
     } catch (error) {
       console.error("Error saving translations:", error);
       toast({
         title: t("settings.translation.errorSaving"),
-        description: t("settings.translation.errorSaving"),
+        description: t("settings.translation.errorSavingDescription", "There was an error saving the translations. Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -353,11 +349,15 @@ export default function Translation() {
       const value = getNestedValue(translations[activeLanguage], pathParts) as string;
 
       return (
-        <div key={path} className="flex items-center justify-between py-2 px-4 hover:bg-gray-50 rounded-md" style={{ marginLeft: `${depth * 20}px` }}>
+        <div
+          key={path}
+          className="flex items-center justify-between py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+          style={{ marginLeft: `${depth * 20}px` }}
+        >
           <div className="flex items-center space-x-2 flex-grow">
             <div className="w-4" />
             <span className="font-medium">{nodeName}:</span>
-            <span className="text-gray-700 flex-grow">{value}</span>
+            <span className="text-gray-700 dark:text-gray-300 flex-grow">{value}</span>
           </div>
           <div className="flex space-x-2">
             <Button variant="ghost" size="sm" onClick={() => startEditTranslation(pathParts)} className="h-8 w-8 p-0">
@@ -368,7 +368,7 @@ export default function Translation() {
               variant="ghost"
               size="sm"
               onClick={() => confirmDeleteTranslation(pathParts)}
-              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950"
             >
               <Trash2 className="h-4 w-4" />
               <span className="sr-only">Delete</span>
@@ -382,7 +382,7 @@ export default function Translation() {
     return (
       <div key={path}>
         <div
-          className="flex items-center py-2 px-2 hover:bg-gray-50 rounded-md cursor-pointer"
+          className="flex items-center py-2 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md cursor-pointer"
           style={{ marginLeft: `${depth * 20}px` }}
           onClick={() => toggleExpand(path)}
         >
@@ -397,10 +397,10 @@ export default function Translation() {
   // Render a flat list of filtered translations
   const renderSearchResults = () => {
     return filteredTranslations.map((item) => (
-      <div key={item.key} className="flex items-center justify-between py-2 px-4 hover:bg-gray-50 rounded-md">
+      <div key={item.key} className="flex items-center justify-between py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md">
         <div className="flex flex-col flex-grow">
-          <span className="font-medium text-sm text-gray-500">{item.key}</span>
-          <span className="text-gray-700">{item.value}</span>
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{item.key}</span>
+          <span className="text-gray-700 dark:text-gray-300">{item.value}</span>
         </div>
         <div className="flex space-x-2">
           <Button variant="ghost" size="sm" onClick={() => startEditTranslation(item.path)} className="h-8 w-8 p-0">
@@ -411,7 +411,7 @@ export default function Translation() {
             variant="ghost"
             size="sm"
             onClick={() => confirmDeleteTranslation(item.path)}
-            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950"
           >
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Delete</span>

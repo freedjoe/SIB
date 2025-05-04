@@ -1,38 +1,38 @@
-CREATE TABLE "operations_drb_annaba" (
+CREATE TABLE "operations" (
     "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "N"	VARCHAR(512),
-    "Identication du projet"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "Communes
-bénéficiaires"	VARCHAR(512),
-    "Montant
-(AP 103)
-DA"	INT,
-    "Engagement cumulées "	VARCHAR(512),
-    "Paiements cumulés"	VARCHAR(512),
-    "Maitre d'ouvrage"	VARCHAR(512),
-    "PROJET PAR LOT"	VARCHAR(512),
-    "Entreprise(s) chargée(s) de réalisation"	VARCHAR(512),
-    "Impacts du projet"	VARCHAR(512),
-    "Taux d'avancement physique"	VARCHAR(512),
-    "Taux financier"	VARCHAR(512),
-    "Délais de réalisation"	VARCHAR(512),
-    "Date livraison 
-(prévisionnelle)"	VARCHAR(512),
-    "Emplois directs prévus"	VARCHAR(512),
-    "Emplois indirects prévus"	VARCHAR(512),
-    "Contraintes rencontrés"	VARCHAR(512),
-    "Mesures proposées par la wilaya pour lever les contraintes"	VARCHAR(512),
-    "OBS"	VARCHAR(512)
+    "Province"	VARCHAR(512),
+    "Program_Type"	VARCHAR(512),
+    "Number"	VARCHAR(512),
+    "Project_Identification"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Beneficiary_Municipalities"	VARCHAR(512),
+    "Amount_AP_103_DA"	INT,
+    "Cumulative_Commitments"	VARCHAR(512),
+    "Cumulative_Payments"	VARCHAR(512),
+    "Project_Owner"	VARCHAR(512),
+    "Project_By_Lot"	VARCHAR(512),
+    "Companies_In_Charge"	VARCHAR(512),
+    "Project_Impacts"	VARCHAR(512),
+    "Physical_Progress_Rate"	VARCHAR(512),
+    "Financial_Rate"	VARCHAR(512),
+    "Implementation_Period"	VARCHAR(512),
+    "Expected_Delivery_Date"	VARCHAR(512),
+    "Direct_Jobs_Expected"	VARCHAR(512),
+    "Indirect_Jobs_Expected"	VARCHAR(512),
+    "Constraints_Encountered"	VARCHAR(512),
+    "Proposed_Solutions"	VARCHAR(512),
+    "Observations"	VARCHAR(512)
 );
 
-INSERT INTO "operations_drb_annaba" ("DRB", "wilaya", "Type programme", "N", "Identication du projet", "Portefeuille de programme ", "Communes
-bénéficiaires", "Montant
-(AP 103)
-DA", "Engagement cumulées ", "Paiements cumulés", "Maitre d\'ouvrage", "PROJET PAR LOT", "Entreprise(s) chargée(s) de réalisation", "Impacts du projet", "Taux d\'avancement physique", "Taux financier", "Délais de réalisation", "Date livraison 
-(prévisionnelle)", "Emplois directs prévus", "Emplois indirects prévus", "Contraintes rencontrés", "Mesures proposées par la wilaya pour lever les contraintes", "OBS") VALUES
+INSERT INTO "operations" (
+    "DRB", "Province", "Program_Type", "Number", "Project_Identification", 
+    "Program_Portfolio", "Beneficiary_Municipalities", "Amount_AP_103_DA", 
+    "Cumulative_Commitments", "Cumulative_Payments", "Project_Owner", 
+    "Project_By_Lot", "Companies_In_Charge", "Project_Impacts", 
+    "Physical_Progress_Rate", "Financial_Rate", "Implementation_Period", 
+    "Expected_Delivery_Date", "Direct_Jobs_Expected", "Indirect_Jobs_Expected", 
+    "Constraints_Encountered", "Proposed_Solutions", "Observations"
+) VALUES
 	('Annaba', '23-Annaba', 'PSD', '1', 'N1 005 017 02 4823 000 023 11 008
 Etude et réalisation d\'un système de vidéosurveillance de la wilaya de Annaba', '5', 'W.ANNABA', '6700000', '', '4182054.487', 'DEP', '1- les zone du système de vidéosurveillance
 2- Extension du système de vidéosurveillance

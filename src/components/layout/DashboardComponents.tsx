@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useAppTranslation } from "@/utils/translation";
 
 interface DashboardProps {
   children: ReactNode;
@@ -12,18 +13,29 @@ function Dashboard({ children, className }: DashboardProps) {
 
 interface DashboardHeaderProps {
   title: string;
+  titleKey?: string;
   description?: string;
+  descriptionKey?: string;
+  module?: string;
   children?: ReactNode;
   className?: string;
 }
 
-function DashboardHeader({ title, description, children, className }: DashboardHeaderProps) {
+function DashboardHeader({ title, titleKey, description, descriptionKey, module, children, className }: DashboardHeaderProps) {
+  const { t } = useAppTranslation();
+
+  // Determine the title to display with translations
+  const displayTitle = titleKey ? (module ? t(`${module}.${titleKey}`) : t(titleKey)) : title;
+
+  // Determine the description to display with translations
+  const displayDescription = descriptionKey ? (module ? t(`${module}.${descriptionKey}`) : t(descriptionKey)) : description;
+
   return (
     <div className={cn("mb-8 flex flex-col gap-2", className)}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          {description && <p className="text-muted-foreground mt-1 text-balance">{description}</p>}
+          <h1 className="text-3xl font-bold tracking-tight">{displayTitle}</h1>
+          {displayDescription && <p className="text-muted-foreground mt-1 text-balance">{displayDescription}</p>}
         </div>
         {children && <div>{children}</div>}
       </div>
@@ -50,18 +62,29 @@ function DashboardGrid({ children, columns = 3, className }: DashboardGridProps)
 
 interface DashboardSectionProps {
   title?: string;
+  titleKey?: string;
   description?: string;
+  descriptionKey?: string;
+  module?: string;
   children: ReactNode;
   className?: string;
 }
 
-function DashboardSection({ title, description, children, className }: DashboardSectionProps) {
+function DashboardSection({ title, titleKey, description, descriptionKey, module, children, className }: DashboardSectionProps) {
+  const { t } = useAppTranslation();
+
+  // Determine the title to display with translations
+  const displayTitle = titleKey ? (module ? t(`${module}.${titleKey}`) : t(titleKey)) : title;
+
+  // Determine the description to display with translations
+  const displayDescription = descriptionKey ? (module ? t(`${module}.${descriptionKey}`) : t(descriptionKey)) : description;
+
   return (
     <div className={cn("mb-8", className)}>
-      {(title || description) && (
+      {(displayTitle || displayDescription) && (
         <div className="mb-4">
-          {title && <h2 className="text-xl font-semibold">{title}</h2>}
-          {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
+          {displayTitle && <h2 className="text-xl font-semibold">{displayTitle}</h2>}
+          {displayDescription && <p className="text-muted-foreground text-sm mt-1">{displayDescription}</p>}
         </div>
       )}
       {children}

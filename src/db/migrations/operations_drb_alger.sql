@@ -1,23 +1,28 @@
-CREATE TABLE "operations_drb_alger" (
-    "wilaya"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "programme "	VARCHAR(512),
-    "Libellé de l'opération / Numéro d'individualisation "	VARCHAR(512),
-    "Commune"	VARCHAR(512),
-    "Date d'inscription"	VARCHAR(512),
-    "Date d’ODS"	VARCHAR(512),
-    "Délais de réalis"	VARCHAR(512),
-    "Date d'achèvement"	VARCHAR(512),
-    "AE ACTUELLE"	INT,
-    "Engagements cumulés"	VARCHAR(512),
-    "Paiement cumulés"	VARCHAR(512),
-    "Taux FIN %"	DOUBLE,
-    "Taux phys %"	VARCHAR(512),
-    "Etat du Projet"	VARCHAR(512),
+CREATE TABLE "operations" (
+    "Province"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Program"	VARCHAR(512),
+    "Operation_Title_Individualization_Number"	VARCHAR(512),
+    "Municipality"	VARCHAR(512),
+    "Registration_Date"	VARCHAR(512),
+    "Start_Order_Date"	VARCHAR(512),
+    "Implementation_Period"	VARCHAR(512),
+    "Completion_Date"	VARCHAR(512),
+    "Current_AE"	INT,
+    "Cumulative_Commitments"	VARCHAR(512),
+    "Cumulative_Payments"	VARCHAR(512),
+    "Financial_Rate"	DOUBLE,
+    "Physical_Rate"	VARCHAR(512),
+    "Project_Status"	VARCHAR(512),
     "Observations"	VARCHAR(512)
 );
 
-INSERT INTO "operations_drb_alger" ("wilaya", "Portefeuille de programme ", "programme ", "Libellé de l\'opération / Numéro d\'individualisation ", "Commune", "Date d\'inscription", "Date d’ODS", "Délais de réalis", "Date d\'achèvement", "AE ACTUELLE", "Engagements cumulés", "Paiement cumulés", "Taux FIN %", "Taux phys %", "Etat du Projet", "Observations") VALUES
+INSERT INTO "operations" (
+    "Province", "Program_Portfolio", "Program", "Operation_Title_Individualization_Number", 
+    "Municipality", "Registration_Date", "Start_Order_Date", "Implementation_Period", 
+    "Completion_Date", "Current_AE", "Cumulative_Commitments", "Cumulative_Payments", 
+    "Financial_Rate", "Physical_Rate", "Project_Status", "Observations"
+) VALUES
 	('16-Alger', '012: Enseignement Supérieur et Recherche Scientifique ', '051:Vie Estudiantine', 'Étude et réalisation de nouvelles résidences universitaires 18 000 lits: (4000 lits à Ouled Fayet II; 4000 lits à El Alia; 4000 lits à El Djorf; 3000 lits à Said Hamdine; 3000 lits à Ziania) avec dépendances', 'Ouled Fayet,El Djorf,Said Hamdine, Benknoun', '12/31/05', '40422', '', '', '10789000', '10468489.87', '10270308.71', '0.951924063', '1', 'Achevée', 'Travaux achevés'),
 	('16-Alger', '024: Travaux Publics et des Infrastructures de Base', '090:Infrastructures Routières et autoroutières', 'Radiale Oued Ouchaiah-liaison RN 38 -Benghazi', 'Baraki- Gué de constantine', '7/3/11', '40993', '71 mois', '2ème tri 2024', '13400000', '13258054.14', '12588559.16', '0.939444714', '0.99', 'En cours', 'projet achevé , reste aménagement des accès limitrophes .'),
 	('16-Alger', '012: Enseignement Supérieur et Recherche Scientifique ', '051:Vie Estudiantine', 'Étude et réalisation résidences universitaires de 11.000 lits à Sidi Abdallah avec dépendances à sidi abdellah', 'Sidi Abdallah', '7/21/14', 'DEC 2014', '', '', '15920000', '15903704.17', '14384685.09', '0.903560621', '1', 'Achevée', 'Travaux achevés, Projet réceptionné le 19-06-2023'),

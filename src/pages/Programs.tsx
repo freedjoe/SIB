@@ -284,6 +284,28 @@ export default function ProgramsPage() {
     }
   };
 
+  const getProgramTypeBadge = (type: Program["type"]) => {
+    switch (type) {
+      case "program":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400 whitespace-nowrap">
+            Programme
+          </Badge>
+        );
+      case "subprogram":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400 whitespace-nowrap"
+          >
+            Sous-Programme
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   const getPortfolioName = (portfolioId: string) => {
     return portfolios.find((p) => p.id === portfolioId)?.name || "N/A";
   };
@@ -564,18 +586,24 @@ export default function ProgramsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      {/* Ensure title/desc don't overflow */}
-                      <CardTitle className="text-lg flex items-center gap-2 truncate">
-                        <span className="truncate">{program.name}</span>
-                        <span className="text-sm font-normal text-muted-foreground flex-shrink-0">({program.code})</span>
+                      {/* Changed to remove code from next to name */}
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <span className="line-clamp-2">{program.name}</span>
                       </CardTitle>
                       <CardDescription className="mt-1 line-clamp-2">{program.description}</CardDescription>
-                      <div className="text-xs text-muted-foreground mt-1 truncate">
-                        <span>{getProgramTypeLabel(program.type)}</span>
-                        {parentName && <span> / Parent: {parentName}</span>}
-                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 truncate">{parentName && <span>Parent: {parentName}</span>}</div>
                     </div>
-                    <div className="flex-shrink-0">{getStatusBadge(program.status)}</div>
+                    <div className="flex flex-col gap-2 flex-shrink-0 items-center">
+                      {getProgramTypeBadge(program.type)}
+                      <Badge
+                        variant="outline"
+                        className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap"
+                      >
+                        {program.code}
+                      </Badge>
+
+                      {getStatusBadge(program.status)}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pb-4 flex-grow">
@@ -612,11 +640,9 @@ export default function ProgramsPage() {
 
                     {/* Portfolio Info */}
                     <div className="grid grid-cols-1 gap-1">
-                      {" "}
-                      {/* Single column for portfolio */}
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Portefeuille</p>
-                        <p className="font-medium truncate">{portfolioName}</p> {/* Added truncate */}
+                        <p className="font-medium line-clamp-2">{portfolioName}</p> {/* Changed from truncate to line-clamp-2 */}
                       </div>
                       {/* Add other info like CP if needed */}
                     </div>
@@ -1215,8 +1241,8 @@ export default function ProgramsPage() {
                           (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 40
                             ? "text-red-600"
                             : (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 70
-                            ? "text-yellow-600"
-                            : "text-green-600"
+                              ? "text-yellow-600"
+                              : "text-green-600"
                         )}
                       >
                         {getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0}%
@@ -1259,8 +1285,8 @@ export default function ProgramsPage() {
                                   (actionFiscalYearData?.progress || 0) < 40
                                     ? "text-red-600 dark:text-red-400"
                                     : (actionFiscalYearData?.progress || 0) < 70
-                                    ? "text-yellow-600 dark:text-yellow-400"
-                                    : "text-green-600 dark:text-green-400"
+                                      ? "text-yellow-600 dark:text-yellow-400"
+                                      : "text-green-600 dark:text-green-400"
                                 )}
                               >
                                 {actionFiscalYearData?.progress || 0}%

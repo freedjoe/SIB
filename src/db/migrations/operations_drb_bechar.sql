@@ -1,29 +1,32 @@
-CREATE TABLE "operations_drb_bechar" (
+CREATE TABLE "operations" (
     "DRB"	VARCHAR(512),
-    "wilaya"	VARCHAR(512),
-    "Type programme"	VARCHAR(512),
-    "Portefeuille de programme "	VARCHAR(512),
-    "Intitulé Programme"	VARCHAR(512),
-    "Intitulé Sous programme"	VARCHAR(512),
-    "Numéro d'individualisation "	VARCHAR(512),
-    " Intitulé Opération"	VARCHAR(512),
-    "AE initiale"	INT,
-    "AE actuelle"	INT,
-    "AE Engagée"	DOUBLE,
-    "AE non engagée"	INT,
-    "CP reportés"	VARCHAR(512),
-    "CP notifiés en 2025"	VARCHAR(512),
-    "Total CP"	VARCHAR(512),
-    "CP consommés en 2025"	VARCHAR(512),
-    "Déponses cumulée"	VARCHAR(512),
-    "Tx phys (%)"	DOUBLE,
-    "Observations"	VARCHAR(512),
-    "Column20"	VARCHAR(512),
-    "Column21"	VARCHAR(512),
-    "Column22"	VARCHAR(512)
+    "Province"	VARCHAR(512),
+    "Program_Type"	VARCHAR(512),
+    "Program_Portfolio"	VARCHAR(512),
+    "Program_Title"	VARCHAR(512),
+    "Subprogram_Title"	VARCHAR(512),
+    "Individualization_Number"	VARCHAR(512),
+    "Operation_Title"	VARCHAR(512),
+    "Initial_AE"	INT,
+    "Current_AE"	INT,
+    "Committed_AE"	DOUBLE,
+    "Uncommitted_AE"	INT,
+    "Carried_Forward_CP"	VARCHAR(512),
+    "CP_Notified_2025"	VARCHAR(512),
+    "Total_CP"	VARCHAR(512),
+    "CP_Used_2025"	VARCHAR(512),
+    "Cumulative_Expenditures"	VARCHAR(512),
+    "Physical_Rate"	DOUBLE,
+    "Observations"	VARCHAR(512)
 );
 
-INSERT INTO "operations_drb_bechar" ("DRB", "wilaya", "Type programme", "Portefeuille de programme ", "Intitulé Programme", "Intitulé Sous programme", "Numéro d\'individualisation ", " Intitulé Opération", "AE initiale", "AE actuelle", "AE Engagée", "AE non engagée", "CP reportés", "CP notifiés en 2025", "Total CP", "CP consommés en 2025", "Déponses cumulée", "Tx phys (%)", "Observations", "Column20", "Column21", "Column22") VALUES
+INSERT INTO "operations" (
+    "DRB", "Province", "Program_Type", "Program_Portfolio", "Program_Title", 
+    "Subprogram_Title", "Individualization_Number", "Operation_Title", 
+    "Initial_AE", "Current_AE", "Committed_AE", "Uncommitted_AE", 
+    "Carried_Forward_CP", "CP_Notified_2025", "Total_CP", 
+    "CP_Used_2025", "Cumulative_Expenditures", "Physical_Rate", "Observations"
+) VALUES
 	('béchar', '37-Tindouf', 'PSD', 'Portefeuille de programme 006 : Justice', '', '', 'N1.006.022.04.4837.000.037.07.004', '', '500000', '2350000', '2064650.014', '285349.9857', '120681.7449', '10000', '130681.7449', '79244.91316', '1435907', '0.75', 'En cours', '', '', ''),
 	('béchar', '37-Tindouf', 'PSD', 'Portefeuille de programme 019 : Industrie et de la production pharmaceutique', '', '', 'N1.019.074.01.4837.000.037.11.001', '', '72702', '1134702', '387110.5606', '747591.4394', '162952.2888', '0', '162952.2888', '2206.43493', '180273', '0.2', 'Travaux en cours', '', '', ''),
 	('béchar', '37-Tindouf', 'PSD', 'Portefeuille de programme 021 : Habitat, de l\'urbanisme et de la Ville', '', '', 'S1.021.080.02.4837.000.037.18.013', '', '2500000', '2500000', '1218477.323', '1281522.677', '2384541.57', '0', '2384541.57', '0', '115458', '0.4', 'Travaux En cours', '', '', ''),

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getBudgetAllocations, getFinancialOperations, getMinistries } from "@/integrations/supabase/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +31,7 @@ const BlurLoader = ({ isLoading, children, className }: BlurLoaderProps) => {
 };
 
 export default function BudgetDashboard() {
+  const { t } = useTranslation();
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [allocations, setAllocations] = useState<BudgetAllocation[]>([]);
   const [operations, setOperations] = useState<FinancialOperation[]>([]);
@@ -70,11 +72,11 @@ export default function BudgetDashboard() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Budget Dashboard</h1>
+        <h1 className="text-3xl font-bold">{t("dashboard.title")}</h1>
         <div className="flex gap-4">
           <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select year" />
+              <SelectValue placeholder={t("fiscalYears.fiscalYear")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="2025">2025</SelectItem>
@@ -84,10 +86,10 @@ export default function BudgetDashboard() {
 
           <Select value={selectedMinistry} onValueChange={setSelectedMinistry}>
             <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="All Ministries" />
+              <SelectValue placeholder={t("app.operations.allMinistries")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Ministries</SelectItem>
+              <SelectItem value="">{t("app.operations.allMinistries")}</SelectItem>
               {ministries.map((ministry) => (
                 <SelectItem key={ministry.id} value={ministry.id}>
                   {ministry.name}
@@ -111,8 +113,8 @@ export default function BudgetDashboard() {
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             <Card>
               <CardHeader>
-                <CardTitle>Total Budget</CardTitle>
-                <CardDescription>Initial Allocations</CardDescription>
+                <CardTitle>{t("dashboard.totalBudget")}</CardTitle>
+                <CardDescription>{t("budgets.initialAllocations", "Initial Allocations")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{formatAmount(allocations.reduce((sum, a) => sum + (a.initial_amount || 0), 0))}</p>
@@ -120,8 +122,8 @@ export default function BudgetDashboard() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Revised Budget</CardTitle>
-                <CardDescription>After Modifications</CardDescription>
+                <CardTitle>{t("budgets.revisedBudget", "Revised Budget")}</CardTitle>
+                <CardDescription>{t("budgets.afterModifications", "After Modifications")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
@@ -131,8 +133,8 @@ export default function BudgetDashboard() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Actual Spending</CardTitle>
-                <CardDescription>Current Usage</CardDescription>
+                <CardTitle>{t("budgets.actualSpending", "Actual Spending")}</CardTitle>
+                <CardDescription>{t("budgets.currentUsage", "Current Usage")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{formatAmount(allocations.reduce((sum, a) => sum + (a.actual_amount || 0), 0))}</p>
@@ -142,26 +144,26 @@ export default function BudgetDashboard() {
 
           <Tabs defaultValue="allocations">
             <TabsList>
-              <TabsTrigger value="allocations">Budget Allocations</TabsTrigger>
-              <TabsTrigger value="operations">Financial Operations</TabsTrigger>
+              <TabsTrigger value="allocations">{t("budgets.budgetAllocations", "Budget Allocations")}</TabsTrigger>
+              <TabsTrigger value="operations">{t("operations.financialOperations", "Financial Operations")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="allocations">
               <Card>
                 <CardHeader>
-                  <CardTitle>Budget Allocations</CardTitle>
-                  <CardDescription>Overview of budget allocations by ministry</CardDescription>
+                  <CardTitle>{t("budgets.budgetAllocations", "Budget Allocations")}</CardTitle>
+                  <CardDescription>{t("budgets.allocationsByMinistry", "Overview of budget allocations by ministry")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Ministry</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-right">Initial Amount</TableHead>
-                        <TableHead className="text-right">Revised Amount</TableHead>
-                        <TableHead className="text-right">Actual Amount</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>{t("app.operations.ministry")}</TableHead>
+                        <TableHead>{t("app.common.category", "Category")}</TableHead>
+                        <TableHead className="text-right">{t("budgets.initialAmount", "Initial Amount")}</TableHead>
+                        <TableHead className="text-right">{t("budgets.revisedAmount", "Revised Amount")}</TableHead>
+                        <TableHead className="text-right">{t("budgets.actualAmount", "Actual Amount")}</TableHead>
+                        <TableHead>{t("app.common.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -184,19 +186,19 @@ export default function BudgetDashboard() {
             <TabsContent value="operations">
               <Card>
                 <CardHeader>
-                  <CardTitle>Financial Operations</CardTitle>
-                  <CardDescription>Recent financial operations and transactions</CardDescription>
+                  <CardTitle>{t("operations.financialOperations", "Financial Operations")}</CardTitle>
+                  <CardDescription>{t("operations.recentTransactions", "Recent financial operations and transactions")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Ministry</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>{t("app.common.date")}</TableHead>
+                        <TableHead>{t("app.operations.ministry")}</TableHead>
+                        <TableHead>{t("app.common.category", "Category")}</TableHead>
+                        <TableHead>{t("app.common.type")}</TableHead>
+                        <TableHead className="text-right">{t("app.common.amount")}</TableHead>
+                        <TableHead>{t("app.common.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

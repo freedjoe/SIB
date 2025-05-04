@@ -1,3 +1,5 @@
+// filepath: c:\Projects\SIB\src\hooks\supabase\entities\ministries.ts
+// ENTITY LEVEL 1: Ministries (Top level entity)
 import { useSupabaseData } from "../core/useSupabaseData";
 import { useSupabaseMutation, MutationOptions } from "../core/useSupabaseMutation";
 import { QueryOptions } from "../core/useSupabaseQuery";
@@ -11,7 +13,7 @@ export function useMinistries(options: QueryOptions = {}) {
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
     ...options,
-    sort: options.sort || { column: "name_fr", ascending: true },
+    sort: options.sort || { column: "code", ascending: true },
   });
 }
 
