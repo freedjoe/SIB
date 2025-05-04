@@ -115,68 +115,59 @@ CREATE TABLE IF NOT EXISTS wilayas (
 -- 8. Operations
 CREATE TABLE IF NOT EXISTS operations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- Relationship fields
-    action_id UUID REFERENCES actions(id) ON DELETE CASCADE,
-    program_id UUID REFERENCES programs(id),
+
+    -- Liens relationnels
+    action_id UUID REFERENCES actions(id),
+    program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
     wilaya_id UUID REFERENCES wilayas(id),
     budget_title_id UUID REFERENCES budget_titles(id),
-    
-    -- Basic identification fields
-    code TEXT UNIQUE NOT NULL, -- e.g. "NK5.523.2.262.010.44"
+
+    -- Informations générales
+    code TEXT UNIQUE NOT NULL,
     name TEXT,
-    title TEXT,
     description TEXT,
-    
-    -- Location and beneficiaries
-    province TEXT,               -- e.g. "16-Alger" (maps to wilaya)
-    municipality TEXT,           -- More specific location within province
-    location TEXT,                       -- General location description
-    beneficiary TEXT,                    -- Who benefits from this operation
+    province TEXT,
+    municipality TEXT,
+    location TEXT,
+    beneficiary TEXT,
+    project_owner TEXT,
     regional_budget_directorate TEXT,
-    
-    -- Reference numbers and dates
     individualization_number TEXT,
     notification_year TEXT,
-    inscription_date DATE,               -- Official registration date
-    
-    -- Timeframe
-    start_year INTEGER,                  -- Year operation started
-    end_year INTEGER,                    -- Year operation is expected to end
-    start_order_date TEXT,       -- When work was ordered to begin
-    implementation_period TEXT,  -- e.g. "71 mois"
-    completion_date TEXT,        -- Expected or actual completion date
-    delay NUMERIC,                       -- Delay in days/months
-    
-    -- Budget amounts
-    initial_ae NUMERIC,                 -- Initial authorized budget
-    current_ae NUMERIC,                 -- Current authorized budget
-    montant_ae NUMERIC,                 -- Another representation of authorized budget
-    allocated_ae NUMERIC,               -- Allocated authorized engagement
-    allocated_cp NUMERIC,               -- Allocated payment credits
-     cp_notified NUMERIC,                             -- Payment credits notified
-    cp_used NUMERIC,                                 -- Payment credits used
-    
-    -- Consumption tracking
-    committed_ae NUMERIC,           -- Committed authorized engagement
-    consumed_ae NUMERIC,                -- Consumed authorized engagement
-    consumed_cp NUMERIC,                -- Consumed payment credits
-    cumulative_commitments NUMERIC,                  -- Total commitments to date
-    cumulative_payments NUMERIC,                     -- Total payments made
-    cumulative_expenses NUMERIC,    -- Cumulative payments
-    
-    -- Progress indicators
-    physical_rate NUMERIC,              -- Physical completion percentage (0-1)
-    financial_rate NUMERIC,             -- Financial completion percentage (0-1)
-    
-    -- Project management
+    inscription_date DATE,
+
+    -- Durée du projet
+    start_year INTEGER,
+    end_year INTEGER,
+    start_order_date TEXT,
+    completion_date TEXT,
+    delay NUMERIC,
+
+    -- Données financières
+    initial_ae NUMERIC,
+    current_ae NUMERIC,
+    allocated_ae NUMERIC,
+    committed_ae NUMERIC,
+    consumed_ae NUMERIC,
+    allocated_cp NUMERIC,
+    notified_cp NUMERIC,
+    consumed_cp NUMERIC,
+    cumulative_commitments NUMERIC,
+    cumulative_payments NUMERIC,
+
+
+    -- Suivi de l'exécution
+    physical_rate NUMERIC,     -- Taux d’avancement physique (%)
+    financial_rate NUMERIC,    -- Taux de consommation financière (%)
+    recent_photos TEXT[],      -- Liste des URLs ou chemins d’accès
+    observations TEXT,         -- Contraintes, remarques, etc.
+
+    -- Suivi du projet
     execution_mode TEXT CHECK (execution_mode IN ('state', 'delegation', 'PPP')),
-    project_status TEXT CHECK (project_status IN ('completed', 'in_progress', 'on_hold', 'canceled', 'planned', 'suspended', 'delayed', 'not_started'));
-    observations TEXT,           -- Notes about the project
-    
-    -- Workflow status
-    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',  
-);
-/*'Project status/phase:
+    project_status TEXT CHECK (project_status IN (
+        'not_started', 'planned', 'in_progress', 'completed', 'on_hold',
+        'suspended', 'delayed', 'canceled', 'completely_frozen', 'partially_frozen'
+    )),/*'Project status/phase:
 - completed: Project is finished (equivalent to "Achevée")
 - in_progress: Work is currently ongoing (equivalent to "En cours")
 - on_hold: Temporarily stopped (equivalent to "à l''arrêt")
@@ -185,25 +176,44 @@ CREATE TABLE IF NOT EXISTS operations (
 - suspended: Work stopped with no defined restart date
 - delayed: Behind schedule but still active
 - not_started: Project is registered but work has not begun';*/
--- 8b. Operation CPs (Credit Payments) - New table
+
+    -- Suivi de validation
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft'
+);
+
+-- 8b. Operation CPs (Credit Payments) - Les prévisions de crédits de paiement (CP)
 CREATE TABLE IF NOT EXISTS operation_cps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     operation_id UUID REFERENCES operations(id) ON DELETE CASCADE,
     fiscal_year_id UUID REFERENCES fiscal_years(id),
-    montant_cp NUMERIC
+    month INTEGER CHECK (month BETWEEN 1 AND 12),
+    montant_cp NUMERIC NOT NULL CHECK (montant_cp >= 0),
+    used_cp NUMERIC DEFAULT 0,
+    notified BOOLEAN DEFAULT FALSE,
+    UNIQUE(operation_id, fiscal_year_id, month)
 );
 
--- 9. Budget Allocations (Dotations) - New table
+
+-- 9. Budget Allocations (Dotations) - Permet de suivre les dotations initiales ou révisées en AE/CP par niveau de hiérarchie budgétaire (portefeuille, programme, action ou opération).
 CREATE TABLE IF NOT EXISTS allocations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reference_type TEXT CHECK (reference_type IN ('portfolio', 'program', 'action', 'operation')),
     reference_id UUID NOT NULL,
     budget_title_id UUID REFERENCES budget_titles(id),
-    ae_amount NUMERIC,
-    cp_amount NUMERIC,
+    ae_amount NUMERIC DEFAULT 0,
+    cp_amount NUMERIC DEFAULT 0,
     state TEXT CHECK (state IN ('initial', 'revised')),
-    source TEXT -- General budget, special allocation, donation, etc.
+    source TEXT CHECK (source IN (
+        'budget_general',            -- Budget général de l’État
+        'cas_302_145',               -- Compte d’affectation spéciale 302-145
+        'external_funding',          -- Financement extérieur (emprunts, dons, etc.)
+        'donation',                  -- Dons spécifiques
+        'interministeriel_transfer', -- Virements interportefeuilles
+        'reallocation',              -- Réaffectation interne
+        'revaluation'                -- Dotation suite à revalorisation
+    ))
 );
+
 
 -- 10. Budget Modifications - New table
 CREATE TABLE IF NOT EXISTS budget_modifications (
@@ -244,7 +254,7 @@ CREATE TABLE IF NOT EXISTS revaluations (
     revaluation_date DATE DEFAULT CURRENT_DATE
 );
 
--- 13. Credit Payments
+-- 13. Credit Payments - Représente les ordonnancements ou paiements réels effectués pour une opération donnée, généralement à la suite d’un engagement.
 CREATE TABLE IF NOT EXISTS credit_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(20),
@@ -716,79 +726,73 @@ BEGIN
             ('wilayas', 'is_active', 'BOOLEAN'),
 
             -- operations
-            ('operations', 'action_id', 'UUID REFERENCES actions(id) ON DELETE CASCADE'),
-            ('operations', 'program_id', 'UUID REFERENCES programs(id)'),
+            ('operations', 'action_id', 'UUID REFERENCES actions(id)'),
+            ('operations', 'program_id', 'UUID REFERENCES programs(id) ON DELETE CASCADE'),
             ('operations', 'wilaya_id', 'UUID REFERENCES wilayas(id)'),
             ('operations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
             
-            -- Basic identification fields
+            -- Informations générales
             ('operations', 'code', 'TEXT UNIQUE NOT NULL'),
             ('operations', 'name', 'TEXT'),
-            ('operations', 'title', 'TEXT'),
             ('operations', 'description', 'TEXT'),
-            
-            -- Location and beneficiaries
             ('operations', 'province', 'TEXT'),
             ('operations', 'municipality', 'TEXT'),
             ('operations', 'location', 'TEXT'),
             ('operations', 'beneficiary', 'TEXT'),
+            ('operations', 'project_owner', 'TEXT'),
             ('operations', 'regional_budget_directorate', 'TEXT'),
-            
-            -- Reference numbers and dates
             ('operations', 'individualization_number', 'TEXT'),
             ('operations', 'notification_year', 'TEXT'),
             ('operations', 'inscription_date', 'DATE'),
             
-            -- Timeframe
+            -- Durée du projet
             ('operations', 'start_year', 'INTEGER'),
             ('operations', 'end_year', 'INTEGER'),
             ('operations', 'start_order_date', 'TEXT'),
-            ('operations', 'implementation_period', 'TEXT'),
             ('operations', 'completion_date', 'TEXT'),
             ('operations', 'delay', 'NUMERIC'),
             
-            -- Budget amounts
+            -- Données financières
             ('operations', 'initial_ae', 'NUMERIC'),
             ('operations', 'current_ae', 'NUMERIC'),
-            ('operations', 'montant_ae', 'NUMERIC'),
             ('operations', 'allocated_ae', 'NUMERIC'),
-            ('operations', 'allocated_cp', 'NUMERIC'),
-            ('operations', 'cp_notified', 'NUMERIC'),
-            ('operations', 'cp_used', 'NUMERIC'),
-            
-            -- Consumption tracking
             ('operations', 'committed_ae', 'NUMERIC'),
             ('operations', 'consumed_ae', 'NUMERIC'),
+            ('operations', 'allocated_cp', 'NUMERIC'),
+            ('operations', 'notified_cp', 'NUMERIC'),
             ('operations', 'consumed_cp', 'NUMERIC'),
             ('operations', 'cumulative_commitments', 'NUMERIC'),
             ('operations', 'cumulative_payments', 'NUMERIC'),
-            ('operations', 'cumulative_expenses', 'NUMERIC'),
             
-            -- Progress indicators
+            -- Suivi de l'exécution
             ('operations', 'physical_rate', 'NUMERIC'),
             ('operations', 'financial_rate', 'NUMERIC'),
-            
-            -- Project management
-            ('operations', 'execution_mode', 'TEXT CHECK (execution_mode IN (''state'', ''delegation'', ''PPP''))'),
-            ('operations', 'project_status', 'TEXT CHECK (project_status IN (''completed'', ''in_progress'', ''on_hold'', ''canceled'', ''planned'', ''suspended'', ''delayed'', ''not_started''))'),
+            ('operations', 'recent_photos', 'TEXT[]'),
             ('operations', 'observations', 'TEXT'),
             
-            -- Workflow status
+            -- Suivi du projet
+            ('operations', 'execution_mode', 'TEXT CHECK (execution_mode IN (''state'', ''delegation'', ''PPP''))'),
+            ('operations', 'project_status', 'TEXT CHECK (project_status IN (''not_started'', ''planned'', ''in_progress'', ''completed'', ''on_hold'', ''suspended'', ''delayed'', ''canceled'', ''completely_frozen'', ''partially_frozen''))'),
+            
+            -- Suivi de validation
             ('operations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
 
             -- operation_cps
             ('operation_cps', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
             ('operation_cps', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
-            ('operation_cps', 'montant_cp', 'NUMERIC'),
+            ('operation_cps', 'month', 'INTEGER CHECK (month BETWEEN 1 AND 12)'),
+            ('operation_cps', 'montant_cp', 'NUMERIC NOT NULL CHECK (montant_cp >= 0)'),
+            ('operation_cps', 'used_cp', 'NUMERIC DEFAULT 0'),
+            ('operation_cps', 'notified', 'BOOLEAN DEFAULT FALSE'),
 
             -- allocations
             ('allocations', 'reference_type', 'TEXT CHECK (reference_type IN (''portfolio'', ''program'', ''action'', ''operation''))'),
             ('allocations', 'reference_id', 'UUID NOT NULL'),
             ('allocations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
-            ('allocations', 'ae_amount', 'NUMERIC'),
-            ('allocations', 'cp_amount', 'NUMERIC'),
+            ('allocations', 'ae_amount', 'NUMERIC DEFAULT 0'),
+            ('allocations', 'cp_amount', 'NUMERIC DEFAULT 0'),
             ('allocations', 'state', 'TEXT CHECK (state IN (''initial'', ''revised''))'),
-            ('allocations', 'source', 'TEXT'),
+            ('allocations', 'source', 'TEXT CHECK (source IN (''budget_general'', ''cas_302_145'', ''external_funding'', ''donation'', ''interministeriel_transfer'', ''reallocation'', ''revaluation''))'),
 
             -- budget_modifications
             ('budget_modifications', 'action_id', 'UUID REFERENCES actions(id)'),
@@ -898,9 +902,202 @@ BEGIN
             ('cp_alerts', 'alert_level', 'VARCHAR(20)'),
             ('cp_alerts', 'message', 'TEXT'),
             ('cp_alerts', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
-            ('cp_alerts', 'alert_date', 'DATE DEFAULT CURRENT_DATE')
+            ('cp_alerts', 'alert_date', 'DATE DEFAULT CURRENT_DATE'),
 
-            -- (remaining entries from the original upgrade section continue here)
+            -- Extra engagements
+            ('extra_engagements', 'operation_id', 'UUID REFERENCES operations(id)'),
+            ('extra_engagements', 'requested_amount', 'NUMERIC'),
+            ('extra_engagements', 'request_date', 'DATE'),
+            ('extra_engagements', 'justification', 'TEXT'),
+            ('extra_engagements', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
+            ('extra_engagements', 'engagement_date', 'DATE DEFAULT CURRENT_DATE'),
+
+            -- Tax revenues
+            ('tax_revenues', 'tax_name', 'TEXT'),
+            ('tax_revenues', 'beneficiary', 'TEXT'),
+            ('tax_revenues', 'allocation_percent', 'NUMERIC'),
+            ('tax_revenues', 'amount', 'NUMERIC'),
+            ('tax_revenues', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
+
+            -- Special funds
+            ('special_funds', 'account_number', 'VARCHAR(20)'),
+            ('special_funds', 'name', 'TEXT'),
+            ('special_funds', 'description', 'TEXT'),
+            ('special_funds', 'category', 'TEXT'),
+            ('special_funds', 'balance_2023', 'NUMERIC'),
+
+            -- Roles
+            ('roles', 'name', 'TEXT NOT NULL UNIQUE'),
+            ('roles', 'description', 'TEXT'),
+
+            -- Users
+            ('users', 'email', 'TEXT UNIQUE NOT NULL'),
+            ('users', 'password', 'TEXT NOT NULL'),
+            ('users', 'full_name', 'TEXT'),
+            ('users', 'role_id', 'UUID REFERENCES roles(id)'),
+            ('users', 'organization', 'TEXT'),
+            ('users', 'phone', 'TEXT'),
+            ('users', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- User profiles
+            ('user_profiles', 'user_id', 'UUID REFERENCES users(id)'),
+            ('user_profiles', 'position', 'TEXT'),
+            ('user_profiles', 'structure', 'TEXT'),
+            ('user_profiles', 'wilaya_id', 'UUID REFERENCES wilayas(id)'),
+            ('user_profiles', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- Enterprises
+            ('enterprises', 'name', 'TEXT NOT NULL'),
+            ('enterprises', 'nif', 'TEXT'),
+            ('enterprises', 'rc', 'TEXT'),
+            ('enterprises', 'address', 'TEXT'),
+            ('enterprises', 'phone', 'TEXT'),
+            ('enterprises', 'phone2', 'TEXT'),
+            ('enterprises', 'fax', 'TEXT'),
+            ('enterprises', 'fax2', 'TEXT'),
+            ('enterprises', 'email', 'TEXT'),
+            ('enterprises', 'website', 'TEXT'),
+            ('enterprises', 'description', 'TEXT'),
+
+            -- Report types
+            ('report_types', 'name', 'TEXT NOT NULL'),
+            ('report_types', 'description', 'TEXT'),
+
+            -- Statuses
+            ('statuses', 'name', 'TEXT NOT NULL'),
+            ('statuses', 'description', 'TEXT'),
+
+            -- Requests
+            ('requests', 'ministry_id', 'UUID REFERENCES ministries(id) ON DELETE CASCADE'),
+            ('requests', 'fiscal_year_id', 'UUID REFERENCES fiscal_years(id)'),
+            ('requests', 'title', 'TEXT'),
+            ('requests', 'ref', 'TEXT'),
+            ('requests', 'date_submitted', 'DATE DEFAULT CURRENT_DATE'),
+            ('requests', 'cp_amount', 'DECIMAL(18,2) NOT NULL'),
+            ('requests', 'ae_amount', 'DECIMAL(18,2) NOT NULL'),
+            ('requests', 'type', 'TEXT CHECK (type IN (''New registration'', ''Revaluation'', ''Payment credit'', ''Allocation'', ''Reallocation'', ''Transfer'', ''Additional request'', ''Previous commitments'', ''Balance to regularize'', ''Other''))'),
+            ('requests', 'priority', 'TEXT CHECK (priority IN (''low'', ''medium'', ''high'')) DEFAULT ''medium'''),
+            ('requests', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
+            ('requests', 'comments', 'TEXT'),
+            ('requests', 'description', 'TEXT'),
+
+            -- Deals
+            ('deals', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
+            ('deals', 'entreprise_name', 'TEXT NOT NULL'),
+            ('deals', 'amount', 'DECIMAL(18,2)'),
+            ('deals', 'date_signed', 'DATE'),
+            ('deals', 'physical_rate', 'NUMERIC'),
+            ('deals', 'financial_rate', 'NUMERIC'),
+            ('deals', 'delay', 'NUMERIC'),
+            ('deals', 'description', 'TEXT'),
+
+            -- Activity logs
+            ('activity_logs', 'user_id', 'UUID REFERENCES users(id)'),
+            ('activity_logs', 'action_type', 'TEXT NOT NULL'),
+            ('activity_logs', 'entity_type', 'TEXT NOT NULL'),
+            ('activity_logs', 'entity_id', 'UUID'),
+            ('activity_logs', 'details', 'JSONB'),
+            ('activity_logs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('activity_logs', 'ip_address', 'TEXT'),
+
+            -- Notifications
+            ('notifications', 'user_id', 'UUID REFERENCES users(id)'),
+            ('notifications', 'title', 'TEXT NOT NULL'),
+            ('notifications', 'message', 'TEXT NOT NULL'),
+            ('notifications', 'entity_type', 'TEXT'),
+            ('notifications', 'entity_id', 'UUID'),
+            ('notifications', 'is_read', 'BOOLEAN DEFAULT false'),
+            ('notifications', 'priority', 'TEXT CHECK (priority IN (''low'', ''medium'', ''high'')) DEFAULT ''medium'''),
+            ('notifications', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('notifications', 'action_url', 'TEXT'),
+
+            -- Comments
+            ('comments', 'user_id', 'UUID REFERENCES users(id)'),
+            ('comments', 'entity_type', 'TEXT NOT NULL'),
+            ('comments', 'entity_id', 'UUID NOT NULL'),
+            ('comments', 'content', 'TEXT NOT NULL'),
+            ('comments', 'parent_id', 'UUID REFERENCES comments(id)'),
+            ('comments', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('comments', 'updated_at', 'TIMESTAMP'),
+            ('comments', 'is_deleted', 'BOOLEAN DEFAULT false'),
+
+            -- Documents
+            ('documents', 'user_id', 'UUID REFERENCES users(id)'),
+            ('documents', 'entity_type', 'TEXT NOT NULL'),
+            ('documents', 'entity_id', 'UUID NOT NULL'),
+            ('documents', 'file_name', 'TEXT NOT NULL'),
+            ('documents', 'file_path', 'TEXT NOT NULL'),
+            ('documents', 'file_size', 'INTEGER'),
+            ('documents', 'file_type', 'TEXT'),
+            ('documents', 'title', 'TEXT'),
+            ('documents', 'description', 'TEXT'),
+            ('documents', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('documents', 'updated_at', 'TIMESTAMP'),
+            ('documents', 'access_level', 'TEXT CHECK (access_level IN (''public'', ''private'', ''restricted'')) DEFAULT ''private'''),
+
+            -- Settings
+            ('settings', 'key', 'TEXT NOT NULL UNIQUE'),
+            ('settings', 'value', 'TEXT'),
+            ('settings', 'value_type', 'TEXT CHECK (value_type IN (''string'', ''number'', ''boolean'', ''json'')) DEFAULT ''string'''),
+            ('settings', 'description', 'TEXT'),
+            ('settings', 'category', 'TEXT'),
+            ('settings', 'is_system', 'BOOLEAN DEFAULT false'),
+            ('settings', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('settings', 'updated_at', 'TIMESTAMP'),
+
+            -- Permissions
+            ('permissions', 'role_id', 'UUID REFERENCES roles(id)'),
+            ('permissions', 'resource', 'TEXT NOT NULL'),
+            ('permissions', 'action', 'TEXT NOT NULL'),
+            ('permissions', 'conditions', 'JSONB'),
+            ('permissions', 'description', 'TEXT'),
+            ('permissions', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- Tags
+            ('tags', 'name', 'TEXT NOT NULL UNIQUE'),
+            ('tags', 'color', 'TEXT'),
+            ('tags', 'description', 'TEXT'),
+            ('tags', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- Tag associations
+            ('tag_associations', 'tag_id', 'UUID REFERENCES tags(id) ON DELETE CASCADE'),
+            ('tag_associations', 'entity_type', 'TEXT NOT NULL'),
+            ('tag_associations', 'entity_id', 'UUID NOT NULL'),
+            ('tag_associations', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+
+            -- Milestones
+            ('milestones', 'operation_id', 'UUID REFERENCES operations(id) ON DELETE CASCADE'),
+            ('milestones', 'title', 'TEXT NOT NULL'),
+            ('milestones', 'description', 'TEXT'),
+            ('milestones', 'due_date', 'DATE'),
+            ('milestones', 'completion_date', 'DATE'),
+            ('milestones', 'status', 'TEXT CHECK (status IN (''pending'', ''in_progress'', ''completed'', ''delayed'', ''cancelled'')) DEFAULT ''pending'''),
+            ('milestones', 'progress', 'NUMERIC CHECK (progress >= 0 AND progress <= 100) DEFAULT 0'),
+            ('milestones', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('milestones', 'updated_at', 'TIMESTAMP'),
+
+            -- Attachments
+            ('attachments', 'user_id', 'UUID REFERENCES users(id)'),
+            ('attachments', 'entity_type', 'TEXT NOT NULL'),
+            ('attachments', 'entity_id', 'UUID NOT NULL'),
+            ('attachments', 'file_name', 'TEXT NOT NULL'),
+            ('attachments', 'file_path', 'TEXT NOT NULL'),
+            ('attachments', 'file_size', 'INTEGER'),
+            ('attachments', 'file_type', 'TEXT'),
+            ('attachments', 'description', 'TEXT'),
+            ('attachments', 'uploaded_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('attachments', 'is_public', 'BOOLEAN DEFAULT false'),
+
+            -- Audits
+            ('audits', 'user_id', 'UUID REFERENCES users(id)'),
+            ('audits', 'entity_type', 'TEXT NOT NULL'),
+            ('audits', 'entity_id', 'UUID'),
+            ('audits', 'action', 'TEXT NOT NULL'),
+            ('audits', 'old_values', 'JSONB'),
+            ('audits', 'new_values', 'JSONB'),
+            ('audits', 'timestamp', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+            ('audits', 'ip_address', 'TEXT'),
+            ('audits', 'user_agent', 'TEXT')
         ) AS columns(table_name, column_name, column_type)
     LOOP
         IF NOT EXISTS (
