@@ -5,6 +5,7 @@ import { EngagementReevaluationWithRelations } from "@/services/engagementReeval
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
 import { ReusableDataTable, ActionHandlers } from "./ReusableDataTable";
+import { useTranslation } from "react-i18next";
 
 interface Engagement {
   reference: string;
@@ -32,16 +33,18 @@ export function ReevaluationsTable({
   onRefresh,
   showActions = false,
 }: ReevaluationsTableProps) {
+  const { t } = useTranslation();
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approuvee":
-        return <Badge className="bg-green-500">Approuvée</Badge>;
+        return <Badge className="bg-green-500">{t("engagements.reevaluation.status.approved")}</Badge>;
       case "rejetee":
-        return <Badge variant="destructive">Rejetée</Badge>;
+        return <Badge variant="destructive">{t("engagements.reevaluation.status.rejected")}</Badge>;
       case "en_attente":
-        return <Badge variant="warning">En attente</Badge>;
+        return <Badge variant="warning">{t("engagements.reevaluation.status.pending")}</Badge>;
       case "modifiee":
-        return <Badge variant="secondary">Modifiée</Badge>;
+        return <Badge variant="secondary">{t("engagements.reevaluation.status.modified")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -50,13 +53,13 @@ export function ReevaluationsTable({
   const columns: ColumnDef<EngagementReevaluationWithRelations>[] = [
     {
       accessorKey: "date_reevaluation",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("common.date")} />,
       cell: ({ row }) => formatDate(row.getValue("date_reevaluation")),
       filterFn: "includesString",
     },
     {
       accessorKey: "engagement",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Engagement" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("engagements.engagement")} />,
       cell: ({ row }) => {
         const engagement = row.getValue("engagement") as Engagement | undefined;
         return `${engagement?.reference || "-"} - ${engagement?.operation?.name || "-"}`;
@@ -65,31 +68,31 @@ export function ReevaluationsTable({
     },
     {
       accessorKey: "montant_initial",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant initial" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("engagements.initialAmount")} />,
       cell: ({ row }) => formatCurrency(row.getValue("montant_initial")),
       filterFn: "includesString",
     },
     {
       accessorKey: "montant_reevalue",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant réévalué" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("engagements.reevaluation.newAmount")} />,
       cell: ({ row }) => formatCurrency(row.getValue("montant_reevalue")),
       filterFn: "includesString",
     },
     {
       accessorKey: "motif_reevaluation",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Motif" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("engagements.reevaluation.reason")} />,
       cell: ({ row }) => row.getValue("motif_reevaluation"),
       filterFn: "includesString",
     },
     {
       accessorKey: "statut_reevaluation",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("common.status")} />,
       cell: ({ row }) => getStatusBadge(row.getValue("statut_reevaluation")),
       filterFn: "includesString",
     },
     {
       accessorKey: "valide_par",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Validé par" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("engagements.reevaluation.validatedBy")} />,
       cell: ({ row }) => row.getValue("valide_par") || "-",
       filterFn: "includesString",
     },
@@ -118,7 +121,7 @@ export function ReevaluationsTable({
       actionHandlers={actionHandlers}
       filterColumn="engagement"
       onRefresh={onRefresh}
-      tableName="Réévaluations d'engagements"
+      tableName={t("engagements.reevaluation.tableTitle")}
     />
   );
 }

@@ -32,8 +32,8 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
   const handleSubmit = async () => {
     if (!user) {
       toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour effectuer cette action",
+        title: t("common.error"),
+        description: t("engagements.reevaluation.loginRequired"),
         variant: "destructive",
       });
       return;
@@ -41,8 +41,8 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
 
     if (!reason.trim()) {
       toast({
-        title: "Erreur",
-        description: "Veuillez fournir un motif pour la réévaluation",
+        title: t("common.error"),
+        description: t("engagements.reevaluation.reasonRequired"),
         variant: "destructive",
       });
       return;
@@ -50,8 +50,8 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
 
     if (proposedAmount <= 0) {
       toast({
-        title: "Erreur",
-        description: "Le montant proposé doit être supérieur à 0",
+        title: t("common.error"),
+        description: t("engagements.reevaluation.invalidAmount"),
         variant: "destructive",
       });
       return;
@@ -69,8 +69,8 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
       });
 
       toast({
-        title: "Succès",
-        description: "La demande de réévaluation a été créée avec succès",
+        title: t("common.success"),
+        description: t("engagements.reevaluation.success"),
       });
 
       onSuccess?.();
@@ -78,8 +78,8 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
     } catch (error) {
       console.error("Error creating revaluation:", error);
       toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création de la demande de réévaluation",
+        title: t("common.error"),
+        description: t("engagements.reevaluation.error"),
         variant: "destructive",
       });
     } finally {
@@ -91,35 +91,35 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Demande de réévaluation</DialogTitle>
-          <DialogDescription>Formuler une demande de réévaluation pour l'engagement {engagement.reference}</DialogDescription>
+          <DialogTitle>{t("engagements.reevaluation.requestTitle")}</DialogTitle>
+          <DialogDescription>{t("engagements.reevaluation.requestDescription", { reference: engagement.reference })}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="reference" className="text-right">
-              Référence
+              {t("engagements.reference")}
             </Label>
             <div className="col-span-3 font-medium">{engagement.reference}</div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="beneficiary" className="text-right">
-              Bénéficiaire
+              {t("engagements.beneficiary")}
             </Label>
             <div className="col-span-3">{engagement.beneficiary}</div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="initial_amount" className="text-right">
-              Montant initial
+              {t("engagements.initialAmount")}
             </Label>
             <div className="col-span-3">{formatCurrency(engagement.initial_amount)}</div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="proposed_amount" className="text-right">
-              Montant proposé
+              {t("engagements.reevaluation.newAmount")}
             </Label>
             <Input
               id="proposed_amount"
@@ -132,24 +132,24 @@ export function RequestRevaluationDialog({ isOpen, onClose, engagement, onSucces
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="reason" className="text-right">
-              Motif
+              {t("engagements.reevaluation.reason")}
             </Label>
             <Textarea
               id="reason"
               className="col-span-3"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Expliquez les raisons de la réévaluation..."
+              placeholder={t("engagements.reevaluation.reasonPlaceholder")}
             />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Envoi en cours..." : "Soumettre la demande"}
+            {isSubmitting ? t("common.submitting") : t("common.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
