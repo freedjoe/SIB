@@ -13,7 +13,7 @@ export function useActions(options: QueryOptions = {}) {
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
     ...options,
-    select: options.select || "*, program:program_id(*)",
+    select: options.select || "*",
     sort: options.sort || { column: "code", ascending: true },
   });
 }
@@ -25,7 +25,7 @@ export function useAction(id: string | null, options: QueryOptions = {}) {
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
     ...options,
-    select: options.select || "*, program:program_id(*)",
+    select: options.select || "*",
     filter: (query) => query.eq("id", id),
     enabled: !!id && options.enabled !== false,
   });

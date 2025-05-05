@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS fiscal_years (
 -- 2. Ministries
 CREATE TABLE IF NOT EXISTS ministries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(10),
+    code VARCHAR(20),
     name_ar TEXT NOT NULL,
     name_en TEXT,
     name_fr TEXT NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS actions (
 -- 7. Wilayas
 CREATE TABLE IF NOT EXISTS wilayas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(10),
+    code VARCHAR(20),
     name_ar TEXT NOT NULL,
     name_en TEXT,
     name_fr TEXT NOT NULL,
@@ -121,9 +121,10 @@ CREATE TABLE IF NOT EXISTS operations (
     program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
     wilaya_id UUID REFERENCES wilayas(id),
     budget_title_id UUID REFERENCES budget_titles(id),
-
+    portfolio_program TEXT,
+	program_type TEXT,
     -- Informations générales
-    code TEXT UNIQUE NOT NULL,
+    code TEXT,
     name TEXT,
     description TEXT,
     province TEXT,
@@ -492,8 +493,8 @@ CREATE TABLE IF NOT EXISTS deals (
 CREATE TABLE IF NOT EXISTS activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
-    action_type TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
+    action_type TEXT,
+    entity_type TEXT,
     entity_id UUID,
     details JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -518,9 +519,9 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TABLE IF NOT EXISTS comments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
-    entity_type TEXT NOT NULL,
+    entity_type TEXT,
     entity_id UUID NOT NULL,
-    content TEXT NOT NULL,
+    content TEXT,
     parent_id UUID REFERENCES comments(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
@@ -531,7 +532,7 @@ CREATE TABLE IF NOT EXISTS comments (
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
-    entity_type TEXT NOT NULL,
+    entity_type TEXT,
     entity_id UUID NOT NULL,
     file_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
@@ -561,8 +562,8 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     role_id UUID REFERENCES roles(id),
-    resource TEXT NOT NULL,
-    action TEXT NOT NULL,
+    resource TEXT,
+    action TEXT,
     conditions JSONB,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -582,7 +583,7 @@ CREATE TABLE IF NOT EXISTS tags (
 CREATE TABLE IF NOT EXISTS tag_associations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
-    entity_type TEXT NOT NULL,
+    entity_type TEXT,
     entity_id UUID NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(tag_id, entity_type, entity_id)
@@ -606,7 +607,7 @@ CREATE TABLE IF NOT EXISTS milestones (
 CREATE TABLE IF NOT EXISTS attachments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
-    entity_type TEXT NOT NULL,
+    entity_type TEXT,
     entity_id UUID NOT NULL,
     file_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
@@ -621,9 +622,9 @@ CREATE TABLE IF NOT EXISTS attachments (
 CREATE TABLE IF NOT EXISTS audits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id),
-    entity_type TEXT NOT NULL,
+    entity_type TEXT,
     entity_id UUID,
-    action TEXT NOT NULL,
+    action TEXT,
     old_values JSONB,
     new_values JSONB,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -730,9 +731,9 @@ BEGIN
             ('operations', 'program_id', 'UUID REFERENCES programs(id) ON DELETE CASCADE'),
             ('operations', 'wilaya_id', 'UUID REFERENCES wilayas(id)'),
             ('operations', 'budget_title_id', 'UUID REFERENCES budget_titles(id)'),
-            
-            -- Informations générales
-            ('operations', 'code', 'TEXT UNIQUE NOT NULL'),
+            ('operations', 'portfolio_program', 'TEXT'),
+            ('operations', 'program_type', 'TEXT'),
+            ('operations', 'code', 'TEXT'),
             ('operations', 'name', 'TEXT'),
             ('operations', 'description', 'TEXT'),
             ('operations', 'province', 'TEXT'),
@@ -744,15 +745,11 @@ BEGIN
             ('operations', 'individualization_number', 'TEXT'),
             ('operations', 'notification_year', 'TEXT'),
             ('operations', 'inscription_date', 'DATE'),
-            
-            -- Durée du projet
             ('operations', 'start_year', 'INTEGER'),
             ('operations', 'end_year', 'INTEGER'),
             ('operations', 'start_order_date', 'TEXT'),
             ('operations', 'completion_date', 'TEXT'),
             ('operations', 'delay', 'NUMERIC'),
-            
-            -- Données financières
             ('operations', 'initial_ae', 'NUMERIC'),
             ('operations', 'current_ae', 'NUMERIC'),
             ('operations', 'allocated_ae', 'NUMERIC'),
@@ -763,18 +760,12 @@ BEGIN
             ('operations', 'consumed_cp', 'NUMERIC'),
             ('operations', 'cumulative_commitments', 'NUMERIC'),
             ('operations', 'cumulative_payments', 'NUMERIC'),
-            
-            -- Suivi de l'exécution
             ('operations', 'physical_rate', 'NUMERIC'),
             ('operations', 'financial_rate', 'NUMERIC'),
             ('operations', 'recent_photos', 'TEXT[]'),
             ('operations', 'observations', 'TEXT'),
-            
-            -- Suivi du projet
             ('operations', 'execution_mode', 'TEXT CHECK (execution_mode IN (''state'', ''delegation'', ''PPP''))'),
             ('operations', 'project_status', 'TEXT CHECK (project_status IN (''not_started'', ''planned'', ''in_progress'', ''completed'', ''on_hold'', ''suspended'', ''delayed'', ''canceled'', ''completely_frozen'', ''partially_frozen''))'),
-            
-            -- Suivi de validation
             ('operations', 'status', 'TEXT CHECK (status IN (''draft'', ''submitted'', ''reviewed'', ''approved'', ''rejected'')) DEFAULT ''draft'''),
 
             -- operation_cps
@@ -993,8 +984,8 @@ BEGIN
 
             -- Activity logs
             ('activity_logs', 'user_id', 'UUID REFERENCES users(id)'),
-            ('activity_logs', 'action_type', 'TEXT NOT NULL'),
-            ('activity_logs', 'entity_type', 'TEXT NOT NULL'),
+            ('activity_logs', 'action_type', 'TEXT'),
+            ('activity_logs', 'entity_type', 'TEXT'),
             ('activity_logs', 'entity_id', 'UUID'),
             ('activity_logs', 'details', 'JSONB'),
             ('activity_logs', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
@@ -1013,9 +1004,9 @@ BEGIN
 
             -- Comments
             ('comments', 'user_id', 'UUID REFERENCES users(id)'),
-            ('comments', 'entity_type', 'TEXT NOT NULL'),
+            ('comments', 'entity_type', 'TEXT'),
             ('comments', 'entity_id', 'UUID NOT NULL'),
-            ('comments', 'content', 'TEXT NOT NULL'),
+            ('comments', 'content', 'TEXT'),
             ('comments', 'parent_id', 'UUID REFERENCES comments(id)'),
             ('comments', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
             ('comments', 'updated_at', 'TIMESTAMP'),
@@ -1023,7 +1014,7 @@ BEGIN
 
             -- Documents
             ('documents', 'user_id', 'UUID REFERENCES users(id)'),
-            ('documents', 'entity_type', 'TEXT NOT NULL'),
+            ('documents', 'entity_type', 'TEXT'),
             ('documents', 'entity_id', 'UUID NOT NULL'),
             ('documents', 'file_name', 'TEXT NOT NULL'),
             ('documents', 'file_path', 'TEXT NOT NULL'),
@@ -1047,8 +1038,8 @@ BEGIN
 
             -- Permissions
             ('permissions', 'role_id', 'UUID REFERENCES roles(id)'),
-            ('permissions', 'resource', 'TEXT NOT NULL'),
-            ('permissions', 'action', 'TEXT NOT NULL'),
+            ('permissions', 'resource', 'TEXT'),
+            ('permissions', 'action', 'TEXT'),
             ('permissions', 'conditions', 'JSONB'),
             ('permissions', 'description', 'TEXT'),
             ('permissions', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
@@ -1061,7 +1052,7 @@ BEGIN
 
             -- Tag associations
             ('tag_associations', 'tag_id', 'UUID REFERENCES tags(id) ON DELETE CASCADE'),
-            ('tag_associations', 'entity_type', 'TEXT NOT NULL'),
+            ('tag_associations', 'entity_type', 'TEXT'),
             ('tag_associations', 'entity_id', 'UUID NOT NULL'),
             ('tag_associations', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
 
@@ -1078,7 +1069,7 @@ BEGIN
 
             -- Attachments
             ('attachments', 'user_id', 'UUID REFERENCES users(id)'),
-            ('attachments', 'entity_type', 'TEXT NOT NULL'),
+            ('attachments', 'entity_type', 'TEXTL'),
             ('attachments', 'entity_id', 'UUID NOT NULL'),
             ('attachments', 'file_name', 'TEXT NOT NULL'),
             ('attachments', 'file_path', 'TEXT NOT NULL'),
@@ -1090,9 +1081,9 @@ BEGIN
 
             -- Audits
             ('audits', 'user_id', 'UUID REFERENCES users(id)'),
-            ('audits', 'entity_type', 'TEXT NOT NULL'),
+            ('audits', 'entity_type', 'TEXT'),
             ('audits', 'entity_id', 'UUID'),
-            ('audits', 'action', 'TEXT NOT NULL'),
+            ('audits', 'action', 'TEXT'),
             ('audits', 'old_values', 'JSONB'),
             ('audits', 'new_values', 'JSONB'),
             ('audits', 'timestamp', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),

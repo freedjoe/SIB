@@ -5,31 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-
-export interface Operation {
-  id: string;
-  name: string;
-  description: string;
-  actionId: string;
-  actionName: string;
-  programId: string;
-  programName: string;
-  code_operation: string;
-  wilaya: string;
-  titre_budgetaire: number;
-  origine_financement: "budget_national" | "financement_exterieur";
-  allocatedAmount: number;
-  usedAmount: number;
-  montant_consomme: number;
-  progress: number;
-  taux_physique: number;
-  taux_financier: number;
-  engagements: number;
-  payments: number;
-  status: "in_progress" | "completed" | "planned" | "en_pause" | "arreter" | "draft";
-  start_date: string;
-  end_date: string;
-}
+import { Operation } from "@/types/database.types";
 
 interface OperationsTableProps {
   operations: Operation[];
@@ -46,40 +22,34 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
 
   const getStatusBadge = (status: Operation["status"]) => {
     switch (status) {
-      case "planned":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-            {t("operations.status.planned")}
-          </Badge>
-        );
-      case "in_progress":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-            {t("operations.status.in_progress")}
-          </Badge>
-        );
-      case "completed":
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-            {t("operations.status.completed")}
-          </Badge>
-        );
-      case "en_pause":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-            {t("operations.status.paused")}
-          </Badge>
-        );
-      case "arreter":
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
-            {t("operations.status.stopped")}
-          </Badge>
-        );
       case "draft":
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">
             {t("operations.status.draft")}
+          </Badge>
+        );
+      case "submitted":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+            {t("operations.status.submitted")}
+          </Badge>
+        );
+      case "reviewed":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+            {t("operations.status.reviewed")}
+          </Badge>
+        );
+      case "approved":
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+            {t("operations.status.approved")}
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+            {t("operations.status.rejected")}
           </Badge>
         );
       default:
@@ -105,53 +75,100 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
 
   const columns: ColumnDef<Operation, unknown>[] = [
     {
-      accessorKey: "code_operation",
+      accessorKey: "regional_budget_directorate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.regionalBudgetDirectorate")} />,
+      cell: ({ row }) => <div>{row.getValue("regional_budget_directorate") || "-"}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "province",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.province")} />,
+      cell: ({ row }) => <div>{row.getValue("province") || "-"}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "municipality",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.municipality")} />,
+      cell: ({ row }) => <div>{row.getValue("municipality") || "-"}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "program_type",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.programType")} />,
+      cell: ({ row }) => <div>{row.getValue("program_type") || "-"}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "portfolio_program",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.portfolioProgram")} />,
+      cell: ({ row }) => <div>{row.getValue("portfolio_program") || "-"}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "code",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.code")} />,
-      cell: ({ row }) => <div className="font-medium">{row.getValue("code_operation")}</div>,
+      cell: ({ row }) => <div className="font-medium">{row.getValue("code") || "-"}</div>,
       filterFn: "includesString",
     },
     {
       accessorKey: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.name")} />,
       cell: ({ row }) => (
-        <div className="max-w-[300px] truncate" title={row.getValue("name")}>
-          {row.getValue("name")}
+        <div className="max-w-[300px] truncate" title={row.getValue("name") as string}>
+          {row.getValue("name") || "-"}
         </div>
       ),
       filterFn: "includesString",
     },
     {
-      accessorKey: "programName",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.programAction")} />,
-      cell: ({ row }) => (
-        <div className="max-w-[200px]">
-          <div className="truncate" title={row.getValue("programName")}>
-            {row.getValue("programName")}
-          </div>
-          <div className="text-xs text-gray-500 truncate" title={row.original.actionName}>
-            {row.original.actionName}
-          </div>
-        </div>
-      ),
+      accessorKey: "notification_year",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.notificationYear")} />,
+      cell: ({ row }) => <div>{row.getValue("notification_year") || "-"}</div>,
       filterFn: "includesString",
     },
     {
-      accessorKey: "wilaya",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.wilaya")} />,
-      cell: ({ row }) => row.getValue("wilaya"),
+      accessorKey: "initial_ae",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.initialAE")} />,
+      cell: ({ row }) => <div className="text-right">{formatCurrency((row.getValue("initial_ae") as number) || 0)}</div>,
       filterFn: "includesString",
     },
     {
-      accessorKey: "allocatedAmount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.allocatedAE")} />,
-      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue("allocatedAmount"))}</div>,
+      accessorKey: "current_ae",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.currentAE")} />,
+      cell: ({ row }) => <div className="text-right">{formatCurrency((row.getValue("current_ae") as number) || 0)}</div>,
       filterFn: "includesString",
     },
     {
-      accessorKey: "progress",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.progress")} />,
+      accessorKey: "committed_ae",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.committedAE")} />,
+      cell: ({ row }) => <div className="text-right">{formatCurrency((row.getValue("committed_ae") as number) || 0)}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "cumulative_payments",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.cumulativePayments")} />,
+      cell: ({ row }) => <div className="text-right">{formatCurrency((row.getValue("cumulative_payments") as number) || 0)}</div>,
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "financial_rate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.financialRate")} />,
       cell: ({ row }) => {
-        const progress = row.getValue("progress") as number;
+        const rate = (row.getValue("financial_rate") as number) || 0;
+        return (
+          <div className="w-full flex items-center gap-2">
+            <Progress value={rate} className="h-2" />
+            <span className={cn("text-xs font-medium", getProgressTextColor(rate))}>{rate}%</span>
+          </div>
+        );
+      },
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "physical_rate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.physicalRate")} />,
+      cell: ({ row }) => {
+        const progress = (row.getValue("physical_rate") as number) || 0;
         return (
           <div className="w-full flex items-center gap-2">
             <Progress value={progress} className="h-2" />
@@ -162,18 +179,25 @@ export function OperationsTable({ operations, formatCurrency, onView, onEdit, on
       filterFn: "includesString",
     },
     {
-      accessorKey: "status",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.status.label")} />,
-      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      accessorKey: "project_status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.projectStatus")} />,
+      cell: ({ row }) => <div>{row.getValue("project_status") || "-"}</div>,
       filterFn: "includesString",
     },
     {
-      accessorKey: "start_date",
-      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.startDate")} />,
-      cell: ({ row }) => {
-        const date = row.getValue("start_date") as string;
-        return <div>{new Date(date).toLocaleDateString()}</div>;
-      },
+      accessorKey: "observations",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.observations")} />,
+      cell: ({ row }) => (
+        <div className="max-w-[200px] truncate" title={(row.getValue("observations") as string) || ""}>
+          {row.getValue("observations") || "-"}
+        </div>
+      ),
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("operations.status.label")} />,
+      cell: ({ row }) => getStatusBadge(row.getValue("status") as Operation["status"]),
       filterFn: "includesString",
     },
   ];

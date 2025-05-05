@@ -259,7 +259,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         <SelectContent>
                           {wilayasData.map((wilaya) => (
                             <SelectItem key={wilaya.id} value={wilaya.id}>
-                              {wilaya.name}
+                              {wilaya.code} - {wilaya.name_fr}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -676,7 +676,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         <SelectContent>
                           {wilayasData.map((wilaya) => (
                             <SelectItem key={wilaya.id} value={wilaya.id}>
-                              {wilaya.name}
+                              {wilaya.code} - {wilaya.name_fr}
                             </SelectItem>
                           ))}
                         </SelectContent>

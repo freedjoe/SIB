@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { OperationsTable } from "@/components/tables/OperationsTable";
 import { Operation } from "@/types/database.types";
-import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions } from "@/hooks/supabase";
+import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions, useBudgetTitles } from "@/hooks/supabase";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
 import { filterOperations } from "@/components/operations/OperationsUtils";
 import { OperationsFilter } from "@/components/operations/OperationsFilter";
@@ -28,11 +28,14 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
   const completionRate = operations.length > 0 ? Math.round(operations.reduce((sum, op) => sum + (op.physical_rate || 0), 0) / operations.length) : 0;
 
   // Count operations by status
-  const statusCounts = operations.reduce((acc, op) => {
-    const status = op.status || "unknown";
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const statusCounts = operations.reduce(
+    (acc, op) => {
+      const status = op.status || "unknown";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   // Prepare status distribution data for visualization
   const statusDistribution = [
@@ -213,22 +216,27 @@ export default function OperationsPage() {
     isLoading: operationsLoading,
     refetch: refetchOperations,
   } = useOperations({
-    select: "*, action:action_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*), ministry:ministry_id(*)",
+    select: "*",
   });
 
   // Fetch wilayas data
   const { data: wilayasData = [] } = useWilayas({
-    sort: { column: "name", ascending: true },
+    sort: { column: "code", ascending: true },
   });
 
   // Fetch programs data
   const { data: programsData = [] } = usePrograms({
-    sort: { column: "name", ascending: true },
+    sort: { column: "code", ascending: true },
   });
 
   // Fetch actions data
   const { data: actionsData = [] } = useActions({
-    sort: { column: "name", ascending: true },
+    sort: { column: "code", ascending: true },
+  });
+
+  // Fetch budget titles data
+  const { data: budgetTitlesData = [] } = useBudgetTitles({
+    sort: { column: "code", ascending: true },
   });
 
   // Setup mutation for operations
@@ -251,19 +259,44 @@ export default function OperationsPage() {
   const [newOperation, setNewOperation] = useState<Partial<Operation>>({
     name: "",
     description: "",
-    action_id: "",
     code: "",
+    program_id: "",
+    action_id: "",
     wilaya_id: "",
-    titre_budgetaire: 1,
-    origine_financement: "budget_national",
+    budget_title_id: "",
+    portfolio_program: "",
+    program_type: "",
+    province: "",
+    municipality: "",
+    location: "",
+    beneficiary: "",
+    project_owner: "",
+    regional_budget_directorate: "",
+    individualization_number: "",
+    notification_year: "",
+    inscription_date: new Date().toISOString(),
+    start_year: new Date().getFullYear(),
+    end_year: new Date().getFullYear() + 3,
+    start_order_date: "",
+    completion_date: "",
+    delay: 0,
+    initial_ae: 0,
+    current_ae: 0,
     allocated_ae: 0,
-    allocated_cp: 0,
+    committed_ae: 0,
     consumed_ae: 0,
+    allocated_cp: 0,
+    notified_cp: 0,
     consumed_cp: 0,
+    cumulative_commitments: 0,
+    cumulative_payments: 0,
     physical_rate: 0,
     financial_rate: 0,
-    status: "planned",
-    inscription_date: new Date().toISOString(),
+    recent_photos: [],
+    observations: "",
+    execution_mode: "state",
+    project_status: "not_started",
+    status: "draft",
   });
 
   // Filter operations based on search and filter criteria
@@ -282,19 +315,44 @@ export default function OperationsPage() {
     setNewOperation({
       name: "",
       description: "",
-      action_id: "",
       code: "",
+      program_id: "",
+      action_id: "",
       wilaya_id: "",
-      titre_budgetaire: 1,
-      origine_financement: "budget_national",
+      budget_title_id: "",
+      portfolio_program: "",
+      program_type: "",
+      province: "",
+      municipality: "",
+      location: "",
+      beneficiary: "",
+      project_owner: "",
+      regional_budget_directorate: "",
+      individualization_number: "",
+      notification_year: "",
+      inscription_date: new Date().toISOString(),
+      start_year: new Date().getFullYear(),
+      end_year: new Date().getFullYear() + 3,
+      start_order_date: "",
+      completion_date: "",
+      delay: 0,
+      initial_ae: 0,
+      current_ae: 0,
       allocated_ae: 0,
-      allocated_cp: 0,
+      committed_ae: 0,
       consumed_ae: 0,
+      allocated_cp: 0,
+      notified_cp: 0,
       consumed_cp: 0,
+      cumulative_commitments: 0,
+      cumulative_payments: 0,
       physical_rate: 0,
       financial_rate: 0,
-      status: "planned",
-      inscription_date: new Date().toISOString(),
+      recent_photos: [],
+      observations: "",
+      execution_mode: "state",
+      project_status: "not_started",
+      status: "draft",
     });
     setIsAddDialogOpen(true);
   };
@@ -457,6 +515,7 @@ export default function OperationsPage() {
               setOrigineFinancementFilter={setOrigineFinancementFilter}
               programsData={programsData}
               wilayasData={wilayasData}
+              budgetTitlesData={budgetTitlesData}
             />
 
             <Card className="budget-card">

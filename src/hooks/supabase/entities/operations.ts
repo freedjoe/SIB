@@ -10,8 +10,9 @@ export function useOperations(options: QueryOptions = {}) {
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force a fresh fetch when component mounts
     ...options,
-    select: options.select || "*, action:action_id(*)",
+    select: options.select || "*",
     sort: options.sort || { column: "name", ascending: true },
   });
 }
@@ -22,8 +23,9 @@ export function useOperation(id: string | null, options: QueryOptions = {}) {
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force a fresh fetch when component mounts
     ...options,
-    select: options.select || "*, action:action_id(*)",
+    select: options.select || "*",
     filter: (query) => query.eq("id", id),
     enabled: !!id && options.enabled !== false,
   });
@@ -35,10 +37,25 @@ export function useOperationsByAction(actionId: string | null, options: QueryOpt
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force a fresh fetch when component mounts
     ...options,
-    select: options.select || "*, action:action_id(*)",
+    select: options.select || "*, action:action_id(*), program:program_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*)",
     filter: (query) => query.eq("action_id", actionId),
     enabled: !!actionId && options.enabled !== false,
+  });
+}
+
+export function useOperationsByProgram(programId: string | null, options: QueryOptions = {}) {
+  return useSupabaseData("operations", ["by_program", programId], {
+    staleTime: Infinity,
+    cacheTime: Infinity,
+    refetchOnWindowFocus: false,
+    realtime: true,
+    forceRefresh: true,
+    ...options,
+    select: options.select || "*, program:program_id(*), action:action_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*)",
+    filter: (query) => query.eq("program_id", programId),
+    enabled: !!programId && options.enabled !== false,
   });
 }
 
@@ -56,6 +73,11 @@ export function useOperationMutation(options: MutationOptions = {}) {
       if (data?.id) {
         queryClient.invalidateQueries({ queryKey: ["operations", data.id] });
         queryClient.invalidateQueries({ queryKey: ["operations", "by_action", data.action_id] });
+
+        // Also invalidate by program queries if program_id exists
+        if (data.program_id) {
+          queryClient.invalidateQueries({ queryKey: ["operations", "by_program", data.program_id] });
+        }
       }
 
       // Call the original onSuccess if provided

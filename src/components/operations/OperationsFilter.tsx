@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useMemo, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchIcon } from "lucide-react";
-import { titresBudgetaires } from "./OperationsUtils";
-import { Wilaya, Program } from "@/types/database.types";
+import { Wilaya, Program, BudgetTitle } from "@/types/database.types";
 
 interface OperationsFilterProps {
   searchTerm: string;
@@ -21,6 +20,7 @@ interface OperationsFilterProps {
   setOrigineFinancementFilter: (value: string) => void;
   programsData: Program[];
   wilayasData: Wilaya[];
+  budgetTitlesData?: BudgetTitle[];
 }
 
 export const OperationsFilter: React.FC<OperationsFilterProps> = ({
@@ -38,7 +38,52 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   setOrigineFinancementFilter,
   programsData,
   wilayasData,
+  budgetTitlesData = [],
 }) => {
+  // Debug: Log the wilayasData to see what we're getting
+  useEffect(() => {
+    console.log("OperationsFilter received wilayasData:", wilayasData);
+  }, [wilayasData]);
+
+  // Memoize option lists to prevent unnecessary re-renders
+  const programOptions = useMemo(() => {
+    return programsData?.length > 0
+      ? programsData.map((program) => (
+          <SelectItem key={program.id} value={program.id}>
+            {program.code} - {program.name}
+          </SelectItem>
+        ))
+      : [];
+  }, [programsData]);
+
+  const wilayaOptions = useMemo(() => {
+    if (!wilayasData || wilayasData.length === 0) {
+      console.log("No wilayas data available");
+      return [];
+    }
+
+    // Check the structure of the first wilaya to help debug
+    if (wilayasData.length > 0) {
+      console.log("First wilaya object structure:", wilayasData[0]);
+    }
+
+    return wilayasData.map((wilaya) => (
+      <SelectItem key={wilaya.id} value={wilaya.id}>
+        {wilaya.code} - {wilaya.name_fr || "(Nom inconnu)"}
+      </SelectItem>
+    ));
+  }, [wilayasData]);
+
+  const budgetTitleOptions = useMemo(() => {
+    return budgetTitlesData?.length > 0
+      ? budgetTitlesData.map((title) => (
+          <SelectItem key={title.id} value={title.id}>
+            {title.code} - {title.name}
+          </SelectItem>
+        ))
+      : [];
+  }, [budgetTitlesData]);
+
   return (
     <Card className="budget-card mb-6">
       <CardHeader>
@@ -62,26 +107,18 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filtrer par programme" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 <SelectItem value="all">Tous les programmes</SelectItem>
-                {programsData.map((program) => (
-                  <SelectItem key={program.id} value={program.id}>
-                    {program.name}
-                  </SelectItem>
-                ))}
+                {programOptions}
               </SelectContent>
             </Select>
             <Select value={wilayaFilter} onValueChange={setWilayaFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filtrer par wilaya" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 <SelectItem value="all">Toutes les wilayas</SelectItem>
-                {wilayasData.map((wilaya) => (
-                  <SelectItem key={wilaya.id} value={wilaya.id}>
-                    {wilaya.name}
-                  </SelectItem>
-                ))}
+                {wilayaOptions}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -102,13 +139,9 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filtrer par titre budgétaire" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 <SelectItem value="all">Tous les titres</SelectItem>
-                {titresBudgetaires.map((titre) => (
-                  <SelectItem key={titre.id} value={titre.id.toString()}>
-                    {titre.shortLabel} - {titre.name}
-                  </SelectItem>
-                ))}
+                {budgetTitleOptions}
               </SelectContent>
             </Select>
             <Select value={origineFinancementFilter} onValueChange={setOrigineFinancementFilter}>

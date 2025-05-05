@@ -304,77 +304,164 @@ export interface Database {
       operations: {
         Row: {
           id: string;
-          action_id: string;
+          action_id: string | null;
+          program_id: string | null;
+          wilaya_id: string | null;
+          budget_title_id: string | null;
+          portfolio_program: string | null;
+          program_type: string | null;
+          code: string | null;
           name: string | null;
+          description: string | null;
+          province: string | null;
+          municipality: string | null;
           location: string | null;
           beneficiary: string | null;
-          execution_mode: "state" | "delegation" | "PPP" | null;
+          project_owner: string | null;
+          regional_budget_directorate: string | null;
+          individualization_number: string | null;
+          notification_year: string | null;
+          inscription_date: string | null;
           start_year: number | null;
           end_year: number | null;
-          description: string | null;
-          montant_ae: number | null;
-          wilaya_id: string | null;
-          code: string | null;
-          title: string | null;
-          inscription_date: string | null;
-          budget_title_id: string | null;
+          start_order_date: string | null;
+          completion_date: string | null;
+          delay: number | null;
+          initial_ae: number | null;
+          current_ae: number | null;
           allocated_ae: number | null;
-          allocated_cp: number | null;
+          committed_ae: number | null;
           consumed_ae: number | null;
+          allocated_cp: number | null;
+          notified_cp: number | null;
           consumed_cp: number | null;
+          cumulative_commitments: number | null;
+          cumulative_payments: number | null;
           physical_rate: number | null;
           financial_rate: number | null;
-          delay: number | null;
+          recent_photos: string[] | null;
+          observations: string | null;
+          execution_mode: "state" | "delegation" | "PPP" | null;
+          project_status:
+            | "not_started"
+            | "planned"
+            | "in_progress"
+            | "completed"
+            | "on_hold"
+            | "suspended"
+            | "delayed"
+            | "canceled"
+            | "completely_frozen"
+            | "partially_frozen"
+            | null;
           status: "draft" | "submitted" | "reviewed" | "approved" | "rejected";
         };
         Insert: {
           id?: string;
-          action_id: string;
+          action_id: string | null;
+          program_id?: string | null;
+          wilaya_id?: string | null;
+          budget_title_id?: string | null;
+          portfolio_program?: string | null;
+          program_type?: string | null;
+          code?: string | null;
           name?: string | null;
+          description?: string | null;
+          province?: string | null;
+          municipality?: string | null;
           location?: string | null;
           beneficiary?: string | null;
-          execution_mode?: "state" | "delegation" | "PPP" | null;
+          project_owner?: string | null;
+          regional_budget_directorate?: string | null;
+          individualization_number?: string | null;
+          notification_year?: string | null;
+          inscription_date?: string | null;
           start_year?: number | null;
           end_year?: number | null;
-          description?: string | null;
-          montant_ae?: number | null;
-          wilaya_id?: string | null;
-          code?: string | null;
-          title?: string | null;
-          inscription_date?: string | null;
-          budget_title_id?: string | null;
+          start_order_date?: string | null;
+          completion_date?: string | null;
+          delay?: number | null;
+          initial_ae?: number | null;
+          current_ae?: number | null;
           allocated_ae?: number | null;
-          allocated_cp?: number | null;
+          committed_ae?: number | null;
           consumed_ae?: number | null;
+          allocated_cp?: number | null;
+          notified_cp?: number | null;
           consumed_cp?: number | null;
+          cumulative_commitments?: number | null;
+          cumulative_payments?: number | null;
           physical_rate?: number | null;
           financial_rate?: number | null;
-          delay?: number | null;
+          recent_photos?: string[] | null;
+          observations?: string | null;
+          execution_mode?: "state" | "delegation" | "PPP" | null;
+          project_status?:
+            | "not_started"
+            | "planned"
+            | "in_progress"
+            | "completed"
+            | "on_hold"
+            | "suspended"
+            | "delayed"
+            | "canceled"
+            | "completely_frozen"
+            | "partially_frozen"
+            | null;
           status?: "draft" | "submitted" | "reviewed" | "approved" | "rejected";
         };
         Update: {
           id?: string;
-          action_id?: string;
+          action_id?: string | null;
+          program_id?: string | null;
+          wilaya_id?: string | null;
+          budget_title_id?: string | null;
+          portfolio_program?: string | null;
+          program_type?: string | null;
+          code?: string | null;
           name?: string | null;
+          description?: string | null;
+          province?: string | null;
+          municipality?: string | null;
           location?: string | null;
           beneficiary?: string | null;
-          execution_mode?: "state" | "delegation" | "PPP" | null;
+          project_owner?: string | null;
+          regional_budget_directorate?: string | null;
+          individualization_number?: string | null;
+          notification_year?: string | null;
+          inscription_date?: string | null;
           start_year?: number | null;
           end_year?: number | null;
-          description?: string | null;
-          montant_ae?: number | null;
-          wilaya_id?: string | null;
-          code?: string | null;
-          title?: string | null;
-          inscription_date?: string | null;
-          budget_title_id?: string | null;
+          start_order_date?: string | null;
+          completion_date?: string | null;
+          delay?: number | null;
+          initial_ae?: number | null;
+          current_ae?: number | null;
           allocated_ae?: number | null;
-          allocated_cp?: number | null;
+          committed_ae?: number | null;
           consumed_ae?: number | null;
+          allocated_cp?: number | null;
+          notified_cp?: number | null;
           consumed_cp?: number | null;
+          cumulative_commitments?: number | null;
+          cumulative_payments?: number | null;
           physical_rate?: number | null;
           financial_rate?: number | null;
-          delay?: number | null;
+          recent_photos?: string[] | null;
+          observations?: string | null;
+          execution_mode?: "state" | "delegation" | "PPP" | null;
+          project_status?:
+            | "not_started"
+            | "planned"
+            | "in_progress"
+            | "completed"
+            | "on_hold"
+            | "suspended"
+            | "delayed"
+            | "canceled"
+            | "completely_frozen"
+            | "partially_frozen"
+            | null;
           status?: "draft" | "submitted" | "reviewed" | "approved" | "rejected";
         };
       };
@@ -1628,6 +1715,7 @@ export type StatusOptions = "draft" | "submitted" | "reviewed" | "approved" | "r
 
 // Define join types with related tables for common queries
 export interface OperationWithRelations extends Operation {
+  program?: Program;
   action?: Action;
   wilaya?: Wilaya;
   budget_title?: BudgetTitle;
