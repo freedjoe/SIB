@@ -10,6 +10,7 @@ export function useWilayas(options: QueryOptions = {}) {
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force refresh on mount
     ...options,
     sort: options.sort || { column: "code", ascending: true },
   });
@@ -21,6 +22,7 @@ export function useWilaya(id: string | null, options: QueryOptions = {}) {
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force refresh on mount
     ...options,
     filter: (query) => query.eq("id", id),
     enabled: !!id && options.enabled !== false,
@@ -33,6 +35,7 @@ export function useWilayaByCode(code: string | null, options: QueryOptions = {})
     cacheTime: Infinity, // Keep the data cached forever
     refetchOnWindowFocus: false,
     realtime: true, // Enable realtime updates
+    forceRefresh: true, // Force refresh on mount
     ...options,
     filter: (query) => query.eq("code", code),
     enabled: !!code && options.enabled !== false,

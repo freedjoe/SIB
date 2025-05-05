@@ -9,21 +9,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Pencil,
+  Upload,
   X,
   CheckCircle,
-  FileText,
-  Upload,
-  ChevronRight,
-  ChevronLeft,
-  Save,
   ClipboardList,
   FileSpreadsheet,
   FileText as FileIcon,
-  Pencil,
+  Save,
 } from "lucide-react";
-import { Operation, Action, Wilaya, BudgetTitle } from "@/types/database.types";
+import { Operation, Action, Wilaya, BudgetTitle, Portfolio, Program } from "@/types/database.types";
 import { useBudgetTitles } from "@/hooks/supabase";
 import { cn } from "@/lib/utils";
+import { DocumentsAndPhotosTab } from "./DocumentsAndPhotosTab";
 
 interface OperationFormDialogsProps {
   isAddDialogOpen: boolean;
@@ -43,6 +44,8 @@ interface OperationFormDialogsProps {
 
   actionsData: Action[];
   wilayasData: Wilaya[];
+  portfoliosData?: Portfolio[];
+  programsData?: Program[];
 }
 
 // Custom Step Indicator Component
@@ -168,6 +171,8 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
   handleDeleteOperation,
   actionsData,
   wilayasData,
+  portfoliosData = [],
+  programsData = [],
 }) => {
   const { data } = useBudgetTitles();
   const budgetTitles = (data as BudgetTitle[]) || [];
@@ -179,9 +184,57 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
     { id: "details", label: "Operation Details", icon: <ClipboardList className="w-5 h-5" /> },
     { id: "financial", label: "Financial Information", icon: <FileSpreadsheet className="w-5 h-5" /> },
     { id: "implementation", label: "Implementation Details", icon: <CheckCircle className="w-5 h-5" /> },
+    { id: "project", label: "Project Details", icon: <FileSpreadsheet className="w-5 h-5" /> },
     { id: "documents", label: "Documents", icon: <FileIcon className="w-5 h-5" /> },
     { id: "notes", label: "Observations", icon: <Pencil className="w-5 h-5" /> },
   ];
+
+  const handleAddDocument = async (file: File, type: "document" | "photo", title: string, description?: string) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+      formData.append("title", title);
+      if (description) {
+        formData.append("description", description);
+      }
+
+      // TODO: Implement your file upload logic here
+      // const response = await uploadFile(formData)
+      // const newDoc = await attachDocumentToOperation(operationId, response.fileUrl)
+
+      toast({
+        title: `${type === "document" ? "Document" : "Photo"} uploaded successfully`,
+        description: `${title} has been added to the operation.`,
+      });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Error",
+        description: `Failed to upload ${type}. Please try again.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveDocument = async (documentId: string) => {
+    try {
+      // TODO: Implement your document removal logic here
+      // await removeDocumentFromOperation(operationId, documentId)
+
+      toast({
+        title: "Document removed",
+        description: "The document has been removed from the operation.",
+      });
+    } catch (error) {
+      console.error("Error removing document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <>
@@ -205,21 +258,21 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Operation Name</Label>
-                      <Input
-                        id="name"
-                        value={newOperation.name || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
-                        placeholder="Operation name"
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="code">Operation Code</Label>
                       <Input
                         id="code"
                         value={newOperation.code || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, code: e.target.value })}
                         placeholder="Operation code"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Operation Name</Label>
+                      <Input
+                        id="name"
+                        value={newOperation.name || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
+                        placeholder="Operation name"
                       />
                     </div>
                   </div>
@@ -236,6 +289,45 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="portfolio">Portfolio</Label>
+                      <Select
+                        value={newOperation.portfolio_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, portfolio_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a portfolio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {portfoliosData.map((portfolio) => (
+                            <SelectItem key={portfolio.id} value={portfolio.id}>
+                              {portfolio.code ? `${portfolio.code} - ${portfolio.name}` : portfolio.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="program">Program</Label>
+                      <Select
+                        value={newOperation.program_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, program_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a program" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {programsData.map((program) => (
+                            <SelectItem key={program.id} value={program.id}>
+                              {program.code ? `${program.code} - ${program.name}` : program.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label htmlFor="action">Action</Label>
                       <Select value={newOperation.action_id || ""} onValueChange={(value) => setNewOperation({ ...newOperation, action_id: value })}>
                         <SelectTrigger>
@@ -244,7 +336,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         <SelectContent>
                           {actionsData.map((action) => (
                             <SelectItem key={action.id} value={action.id}>
-                              {action.name}
+                              {action.code ? `${action.code} - ${action.name}` : action.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -288,7 +380,49 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="inscription_date">Registration Date</Label>
+                      <Label htmlFor="portfolio_program">Portfolio Program</Label>
+                      <Input
+                        id="portfolio_program"
+                        value={newOperation.portfolio_program || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, portfolio_program: e.target.value })}
+                        placeholder="Portfolio program"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="program_type">Program Type</Label>
+                      <Input
+                        id="program_type"
+                        value={newOperation.program_type || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, program_type: e.target.value })}
+                        placeholder="Program type"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="regional_budget_directorate">Regional Budget Directorate</Label>
+                      <Input
+                        id="regional_budget_directorate"
+                        value={newOperation.regional_budget_directorate || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, regional_budget_directorate: e.target.value })}
+                        placeholder="Regional budget directorate"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="notification_year">Notification Year</Label>
+                      <Input
+                        id="notification_year"
+                        value={newOperation.notification_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, notification_year: e.target.value })}
+                        placeholder="Notification year"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inscription_date">Inscription Date</Label>
                       <Input
                         id="inscription_date"
                         type="date"
@@ -296,6 +430,30 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      value={newOperation.status || "draft"}
+                      onValueChange={(value) =>
+                        setNewOperation({
+                          ...newOperation,
+                          status: value as "draft" | "submitted" | "reviewed" | "approved" | "rejected",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="submitted">Submitted</SelectItem>
+                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
@@ -315,48 +473,87 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   <CardDescription>Enter financial details about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="funding_source">Funding Source</Label>
-                    <Select
-                      value={newOperation.origine_financement || "budget_national"}
-                      onValueChange={(value) =>
-                        setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select funding source" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="budget_national">National Budget</SelectItem>
-                        <SelectItem value="financement_exterieur">External Funding</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="border-b pb-4">
-                    <h3 className="text-sm font-medium mb-3">Commitment Authorizations (AE)</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="allocated_ae">Allocated AE</Label>
-                        <Input
-                          id="allocated_ae"
-                          type="number"
-                          value={newOperation.allocated_ae || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, allocated_ae: parseFloat(e.target.value) })}
-                          placeholder="Allocated AE"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="consumed_ae">Consumed AE</Label>
-                        <Input
-                          id="consumed_ae"
-                          type="number"
-                          value={newOperation.consumed_ae || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
-                          placeholder="Consumed AE"
-                        />
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="initial_ae">Initial AE</Label>
+                      <Input
+                        id="initial_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.initial_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, initial_ae: value });
+                          }
+                        }}
+                        placeholder="Initial AE"
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="current_ae">Current AE</Label>
+                      <Input
+                        id="current_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.current_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, current_ae: value });
+                          }
+                        }}
+                        placeholder="Current AE"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="allocated_ae">Allocated AE</Label>
+                      <Input
+                        id="allocated_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.allocated_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, allocated_ae: value });
+                          }
+                        }}
+                        placeholder="Allocated AE"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="committed_ae">Committed AE</Label>
+                      <Input
+                        id="committed_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.committed_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, committed_ae: value });
+                          }
+                        }}
+                        placeholder="Committed AE"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="consumed_ae">Consumed AE</Label>
+                    <Input
+                      id="consumed_ae"
+                      type="number"
+                      value={newOperation.consumed_ae || 0}
+                      onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
+                      placeholder="Consumed AE"
+                    />
                   </div>
 
                   <div className="border-b pb-4">
@@ -373,41 +570,49 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="consumed_cp">Consumed CP</Label>
+                        <Label htmlFor="notified_cp">Notified CP</Label>
                         <Input
-                          id="consumed_cp"
+                          id="notified_cp"
                           type="number"
-                          value={newOperation.consumed_cp || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
-                          placeholder="Consumed CP"
+                          value={newOperation.notified_cp || 0}
+                          onChange={(e) => setNewOperation({ ...newOperation, notified_cp: parseFloat(e.target.value) })}
+                          placeholder="Notified CP"
                         />
                       </div>
                     </div>
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="consumed_cp">Consumed CP</Label>
+                      <Input
+                        id="consumed_cp"
+                        type="number"
+                        value={newOperation.consumed_cp || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
+                        placeholder="Consumed CP"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={newOperation.status || "planned"}
-                      onValueChange={(value) =>
-                        setNewOperation({
-                          ...newOperation,
-                          status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="en_pause">On Hold</SelectItem>
-                        <SelectItem value="arreter">Stopped</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cumulative_commitments">Cumulative Commitments</Label>
+                      <Input
+                        id="cumulative_commitments"
+                        type="number"
+                        value={newOperation.cumulative_commitments || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, cumulative_commitments: parseFloat(e.target.value) })}
+                        placeholder="Cumulative commitments"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cumulative_payments">Cumulative Payments</Label>
+                      <Input
+                        id="cumulative_payments"
+                        type="number"
+                        value={newOperation.cumulative_payments || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, cumulative_payments: parseFloat(e.target.value) })}
+                        placeholder="Cumulative payments"
+                      />
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -433,25 +638,133 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="start_date">Start Date</Label>
+                      <Label htmlFor="start_year">Start Year</Label>
                       <Input
-                        id="start_date"
-                        type="date"
-                        value={newOperation.start_date || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, start_date: e.target.value })}
+                        id="start_year"
+                        type="number"
+                        value={newOperation.start_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, start_year: parseInt(e.target.value) })}
+                        placeholder="Start year"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="end_date">End Date</Label>
+                      <Label htmlFor="end_year">End Year</Label>
                       <Input
-                        id="end_date"
-                        type="date"
-                        value={newOperation.end_date || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, end_date: e.target.value })}
+                        id="end_year"
+                        type="number"
+                        value={newOperation.end_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, end_year: parseInt(e.target.value) })}
+                        placeholder="End year"
                       />
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="start_order_date">Start Order Date</Label>
+                      <Input
+                        id="start_order_date"
+                        type="date"
+                        value={newOperation.start_order_date || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, start_order_date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="completion_date">Completion Date</Label>
+                      <Input
+                        id="completion_date"
+                        type="date"
+                        value={newOperation.completion_date || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, completion_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="delay">Delay (in days)</Label>
+                      <Input
+                        id="delay"
+                        type="number"
+                        value={newOperation.delay || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, delay: parseFloat(e.target.value) })}
+                        placeholder="Delay in days"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="province">Province</Label>
+                      <Input
+                        id="province"
+                        value={newOperation.province || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, province: e.target.value })}
+                        placeholder="Province"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="municipality">Municipality</Label>
+                      <Input
+                        id="municipality"
+                        value={newOperation.municipality || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, municipality: e.target.value })}
+                        placeholder="Municipality"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={newOperation.location || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, location: e.target.value })}
+                        placeholder="Location"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="beneficiary">Beneficiary</Label>
+                      <Input
+                        id="beneficiary"
+                        value={newOperation.beneficiary || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, beneficiary: e.target.value })}
+                        placeholder="Beneficiary"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="project_owner">Project Owner</Label>
+                      <Input
+                        id="project_owner"
+                        value={newOperation.project_owner || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, project_owner: e.target.value })}
+                        placeholder="Project owner"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline" onClick={() => setAddTab("financial")}>
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button onClick={() => setAddTab("project")}>
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* Step 4: Project Details */}
+            <TabsContent value="project">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Details</CardTitle>
+                  <CardDescription>Enter project-specific details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="physical_rate">Physical Rate (%)</Label>
@@ -480,28 +793,67 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contractor">Contractor</Label>
-                    <Input
-                      id="contractor"
-                      value={newOperation.contractor || ""}
-                      onChange={(e) => setNewOperation({ ...newOperation, contractor: e.target.value })}
-                      placeholder="Contractor name"
-                    />
+                    <Label htmlFor="execution_mode">Execution Mode</Label>
+                    <Select
+                      value={newOperation.execution_mode || "state"}
+                      onValueChange={(value) =>
+                        setNewOperation({
+                          ...newOperation,
+                          execution_mode: value as "state" | "delegation" | "PPP",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select execution mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="state">State</SelectItem>
+                        <SelectItem value="delegation">Delegation</SelectItem>
+                        <SelectItem value="PPP">PPP</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="implementation_notes">Implementation Notes</Label>
-                    <Textarea
-                      id="implementation_notes"
-                      value={newOperation.implementation_notes || ""}
-                      onChange={(e) => setNewOperation({ ...newOperation, implementation_notes: e.target.value })}
-                      placeholder="Add any relevant notes about the implementation"
-                      rows={3}
-                    />
+                    <Label htmlFor="project_status">Project Status</Label>
+                    <Select
+                      value={newOperation.project_status || "not_started"}
+                      onValueChange={(value) =>
+                        setNewOperation({
+                          ...newOperation,
+                          project_status: value as
+                            | "not_started"
+                            | "planned"
+                            | "in_progress"
+                            | "completed"
+                            | "on_hold"
+                            | "suspended"
+                            | "delayed"
+                            | "canceled"
+                            | "completely_frozen"
+                            | "partially_frozen",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_started">Not Started</SelectItem>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="on_hold">On Hold</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                        <SelectItem value="delayed">Delayed</SelectItem>
+                        <SelectItem value="canceled">Canceled</SelectItem>
+                        <SelectItem value="completely_frozen">Completely Frozen</SelectItem>
+                        <SelectItem value="partially_frozen">Partially Frozen</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => setAddTab("financial")}>
+                  <Button variant="outline" onClick={() => setAddTab("implementation")}>
                     <ChevronLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
@@ -515,45 +867,13 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
             {/* Step 4: Operation Documents */}
             <TabsContent value="documents">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Operation Documents</CardTitle>
-                  <CardDescription>Add related documents to the operation</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <div className="flex flex-col items-center">
-                      <Upload className="h-10 w-10 text-gray-400 mb-3" />
-                      <p className="text-sm font-medium">Drag and drop files here</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF, Word, Excel files</p>
-                      <Button variant="outline" className="mt-4" size="sm">
-                        Browse Files
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <h3 className="text-sm font-medium mb-2">Document types to include:</h3>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                      <li>Technical specifications</li>
-                      <li>Funding agreements</li>
-                      <li>Contract documents</li>
-                      <li>Progress reports</li>
-                      <li>Technical diagrams</li>
-                    </ul>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => setAddTab("implementation")}>
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button onClick={() => setAddTab("notes")}>
-                    Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
+              <DocumentsAndPhotosTab
+                documents={currentOperation?.documents || []}
+                onAddDocument={handleAddDocument}
+                onRemoveDocument={handleRemoveDocument}
+                onPrevious={() => setAddTab("project")}
+                onNext={() => setAddTab("notes")}
+              />
             </TabsContent>
 
             {/* Step 5: Observations & Notes */}
@@ -661,7 +981,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         <SelectContent>
                           {actionsData.map((action) => (
                             <SelectItem key={action.id} value={action.id}>
-                              {action.name}
+                              {action.code ? `${action.code} - ${action.name}` : action.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -714,6 +1034,45 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-portfolio">Portfolio</Label>
+                      <Select
+                        value={newOperation.portfolio_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, portfolio_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a portfolio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {portfoliosData.map((portfolio) => (
+                            <SelectItem key={portfolio.id} value={portfolio.id}>
+                              {portfolio.code ? `${portfolio.code} - ${portfolio.name}` : portfolio.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-program">Program</Label>
+                      <Select
+                        value={newOperation.program_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, program_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a program" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {programsData.map((program) => (
+                            <SelectItem key={program.id} value={program.id}>
+                              {program.code ? `${program.code} - ${program.name}` : program.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
                   <Button onClick={() => setEditTab("financial")}>
@@ -732,57 +1091,96 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   <CardDescription>Edit financial details about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-funding_source">Funding Source</Label>
-                    <Select
-                      value={newOperation.origine_financement || "budget_national"}
-                      onValueChange={(value) =>
-                        setNewOperation({ ...newOperation, origine_financement: value as "budget_national" | "financement_exterieur" })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select funding source" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="budget_national">National Budget</SelectItem>
-                        <SelectItem value="financement_exterieur">External Funding</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="border-b pb-4">
-                    <h3 className="text-sm font-medium mb-3">Commitment Authorizations (AE)</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-allocated_ae">Allocated AE</Label>
-                        <Input
-                          id="edit-allocated_ae"
-                          type="number"
-                          value={newOperation.allocated_ae || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, allocated_ae: parseFloat(e.target.value) })}
-                          placeholder="Allocated AE"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-consumed_ae">Consumed AE</Label>
-                        <Input
-                          id="edit-consumed_ae"
-                          type="number"
-                          value={newOperation.consumed_ae || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
-                          placeholder="Consumed AE"
-                        />
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-initial_ae">Initial AE</Label>
+                      <Input
+                        id="edit-initial_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.initial_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, initial_ae: value });
+                          }
+                        }}
+                        placeholder="Initial AE"
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-current_ae">Current AE</Label>
+                      <Input
+                        id="edit-current_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.current_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, current_ae: value });
+                          }
+                        }}
+                        placeholder="Current AE"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-allocated_ae">Allocated AE</Label>
+                      <Input
+                        id="edit-allocated_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.allocated_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, allocated_ae: value });
+                          }
+                        }}
+                        placeholder="Allocated AE"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-committed_ae">Committed AE</Label>
+                      <Input
+                        id="edit-committed_ae"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newOperation.committed_ae || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setNewOperation({ ...newOperation, committed_ae: value });
+                          }
+                        }}
+                        placeholder="Committed AE"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="edit-consumed_ae">Consumed AE</Label>
+                    <Input
+                      id="edit-consumed_ae"
+                      type="number"
+                      value={newOperation.consumed_ae || 0}
+                      onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
+                      placeholder="Consumed AE"
+                    />
                   </div>
 
                   <div className="border-b pb-4">
                     <h3 className="text-sm font-medium mb-3">Payment Credits (CP)</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-allocated_cp">Allocated CP</Label>
+                        <Label htmlFor="allocated_cp">Allocated CP</Label>
                         <Input
-                          id="edit-allocated_cp"
+                          id="allocated_cp"
                           type="number"
                           value={newOperation.allocated_cp || 0}
                           onChange={(e) => setNewOperation({ ...newOperation, allocated_cp: parseFloat(e.target.value) })}
@@ -790,41 +1188,49 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-consumed_cp">Consumed CP</Label>
+                        <Label htmlFor="notified_cp">Notified CP</Label>
                         <Input
-                          id="edit-consumed_cp"
+                          id="notified_cp"
                           type="number"
-                          value={newOperation.consumed_cp || 0}
-                          onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
-                          placeholder="Consumed CP"
+                          value={newOperation.notified_cp || 0}
+                          onChange={(e) => setNewOperation({ ...newOperation, notified_cp: parseFloat(e.target.value) })}
+                          placeholder="Notified CP"
                         />
                       </div>
                     </div>
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="consumed_cp">Consumed CP</Label>
+                      <Input
+                        id="consumed_cp"
+                        type="number"
+                        value={newOperation.consumed_cp || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, consumed_cp: parseFloat(e.target.value) })}
+                        placeholder="Consumed CP"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-status">Status</Label>
-                    <Select
-                      value={newOperation.status || "planned"}
-                      onValueChange={(value) =>
-                        setNewOperation({
-                          ...newOperation,
-                          status: value as "planned" | "in_progress" | "completed" | "en_pause" | "arreter" | "draft",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="en_pause">On Hold</SelectItem>
-                        <SelectItem value="arreter">Stopped</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-cumulative_commitments">Cumulative Commitments</Label>
+                      <Input
+                        id="edit-cumulative_commitments"
+                        type="number"
+                        value={newOperation.cumulative_commitments || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, cumulative_commitments: parseFloat(e.target.value) })}
+                        placeholder="Cumulative commitments"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-cumulative_payments">Cumulative Payments</Label>
+                      <Input
+                        id="edit-cumulative_payments"
+                        type="number"
+                        value={newOperation.cumulative_payments || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, cumulative_payments: parseFloat(e.target.value) })}
+                        placeholder="Cumulative payments"
+                      />
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -850,25 +1256,133 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-start_date">Start Date</Label>
+                      <Label htmlFor="edit-start_year">Start Year</Label>
                       <Input
-                        id="edit-start_date"
-                        type="date"
-                        value={newOperation.start_date || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, start_date: e.target.value })}
+                        id="edit-start_year"
+                        type="number"
+                        value={newOperation.start_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, start_year: parseInt(e.target.value) })}
+                        placeholder="Start year"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-end_date">End Date</Label>
+                      <Label htmlFor="edit-end_year">End Year</Label>
                       <Input
-                        id="edit-end_date"
-                        type="date"
-                        value={newOperation.end_date || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, end_date: e.target.value })}
+                        id="edit-end_year"
+                        type="number"
+                        value={newOperation.end_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, end_year: parseInt(e.target.value) })}
+                        placeholder="End year"
                       />
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-start_order_date">Start Order Date</Label>
+                      <Input
+                        id="edit-start_order_date"
+                        type="date"
+                        value={newOperation.start_order_date || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, start_order_date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-completion_date">Completion Date</Label>
+                      <Input
+                        id="edit-completion_date"
+                        type="date"
+                        value={newOperation.completion_date || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, completion_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-delay">Delay (in days)</Label>
+                      <Input
+                        id="edit-delay"
+                        type="number"
+                        value={newOperation.delay || 0}
+                        onChange={(e) => setNewOperation({ ...newOperation, delay: parseFloat(e.target.value) })}
+                        placeholder="Delay in days"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-province">Province</Label>
+                      <Input
+                        id="edit-province"
+                        value={newOperation.province || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, province: e.target.value })}
+                        placeholder="Province"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-municipality">Municipality</Label>
+                      <Input
+                        id="edit-municipality"
+                        value={newOperation.municipality || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, municipality: e.target.value })}
+                        placeholder="Municipality"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-location">Location</Label>
+                      <Input
+                        id="edit-location"
+                        value={newOperation.location || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, location: e.target.value })}
+                        placeholder="Location"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-beneficiary">Beneficiary</Label>
+                      <Input
+                        id="edit-beneficiary"
+                        value={newOperation.beneficiary || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, beneficiary: e.target.value })}
+                        placeholder="Beneficiary"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-project_owner">Project Owner</Label>
+                      <Input
+                        id="edit-project_owner"
+                        value={newOperation.project_owner || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, project_owner: e.target.value })}
+                        placeholder="Project owner"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline" onClick={() => setEditTab("financial")}>
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button onClick={() => setEditTab("project")}>
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* Step 4: Project Details */}
+            <TabsContent value="project">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Details</CardTitle>
+                  <CardDescription>Edit project-specific details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-physical_rate">Physical Rate (%)</Label>
@@ -897,28 +1411,67 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-contractor">Contractor</Label>
-                    <Input
-                      id="edit-contractor"
-                      value={newOperation.contractor || ""}
-                      onChange={(e) => setNewOperation({ ...newOperation, contractor: e.target.value })}
-                      placeholder="Contractor name"
-                    />
+                    <Label htmlFor="edit-execution_mode">Execution Mode</Label>
+                    <Select
+                      value={newOperation.execution_mode || "state"}
+                      onValueChange={(value) =>
+                        setNewOperation({
+                          ...newOperation,
+                          execution_mode: value as "state" | "delegation" | "PPP",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select execution mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="state">State</SelectItem>
+                        <SelectItem value="delegation">Delegation</SelectItem>
+                        <SelectItem value="PPP">PPP</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="edit-implementation_notes">Implementation Notes</Label>
-                    <Textarea
-                      id="edit-implementation_notes"
-                      value={newOperation.implementation_notes || ""}
-                      onChange={(e) => setNewOperation({ ...newOperation, implementation_notes: e.target.value })}
-                      placeholder="Notes about implementation progress"
-                      rows={3}
-                    />
+                    <Label htmlFor="edit-project_status">Project Status</Label>
+                    <Select
+                      value={newOperation.project_status || "not_started"}
+                      onValueChange={(value) =>
+                        setNewOperation({
+                          ...newOperation,
+                          project_status: value as
+                            | "not_started"
+                            | "planned"
+                            | "in_progress"
+                            | "completed"
+                            | "on_hold"
+                            | "suspended"
+                            | "delayed"
+                            | "canceled"
+                            | "completely_frozen"
+                            | "partially_frozen",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_started">Not Started</SelectItem>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="on_hold">On Hold</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                        <SelectItem value="delayed">Delayed</SelectItem>
+                        <SelectItem value="canceled">Canceled</SelectItem>
+                        <SelectItem value="completely_frozen">Completely Frozen</SelectItem>
+                        <SelectItem value="partially_frozen">Partially Frozen</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => setEditTab("financial")}>
+                  <Button variant="outline" onClick={() => setEditTab("implementation")}>
                     <ChevronLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
@@ -932,55 +1485,13 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
             {/* Step 4: Operation Documents */}
             <TabsContent value="documents">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Operation Documents</CardTitle>
-                  <CardDescription>Edit or add related documents to the operation</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {currentOperation?.documents && currentOperation.documents.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                      {currentOperation.documents.map((doc, index) => (
-                        <div key={index} className="border rounded-md overflow-hidden">
-                          <div className="bg-gray-100 h-32 flex items-center justify-center">
-                            <FileText className="h-10 w-10 text-gray-400" />
-                          </div>
-                          <div className="p-3">
-                            <p className="font-medium text-sm">{doc.name}</p>
-                            <div className="flex justify-between items-center mt-1">
-                              <p className="text-xs text-gray-500">{doc.date}</p>
-                              <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <div className="flex flex-col items-center">
-                      <Upload className="h-10 w-10 text-gray-400 mb-3" />
-                      <p className="text-sm font-medium">Drag and drop files here</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF, Word, Excel files</p>
-                      <Button variant="outline" className="mt-4" size="sm">
-                        Browse Files
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => setEditTab("implementation")}>
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button onClick={() => setEditTab("notes")}>
-                    Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
+              <DocumentsAndPhotosTab
+                documents={currentOperation?.documents || []}
+                onAddDocument={handleAddDocument}
+                onRemoveDocument={handleRemoveDocument}
+                onPrevious={() => setEditTab("project")}
+                onNext={() => setEditTab("notes")}
+              />
             </TabsContent>
 
             {/* Step 5: Observations & Notes */}
@@ -991,7 +1502,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   <CardDescription>Edit or add notes and observations about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {currentOperation?.observations && currentOperation.observations.length > 0 && (
+                  {currentOperation?.observations && Array.isArray(currentOperation.observations) && currentOperation.observations.length > 0 && (
                     <div className="space-y-3 mb-6">
                       <h3 className="text-sm font-medium">Existing Observations</h3>
                       {currentOperation.observations.map((obs, index) => (

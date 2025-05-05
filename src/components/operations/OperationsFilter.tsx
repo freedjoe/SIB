@@ -85,35 +85,40 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   }, [budgetTitlesData]);
 
   return (
-    <Card className="budget-card mb-6">
+    <Card className="budget-card mb-6 mt-6">
       <CardHeader>
         <CardTitle className="text-base">Filtrer les opérations</CardTitle>
-        <CardDescription>Recherchez et filtrez par programme ou statut</CardDescription>
+        <CardDescription>Recherchez et filtrez les opérations</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-64">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 w-full">
+            {/* 1. Search input by code or name */}
+            <div className="relative w-full">
               <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher une opération..."
+                placeholder="Rechercher par code ou nom..."
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
+            {/* 2. Portfolio filter */}
             <Select value={programFilter} onValueChange={setProgramFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filtrer par programme" />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filtrer par portefeuille" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                <SelectItem value="all">Tous les programmes</SelectItem>
+                <SelectItem value="all">Tous les portefeuilles</SelectItem>
                 {programOptions}
               </SelectContent>
             </Select>
+
+            {/* 3. Wilaya filter */}
             <Select value={wilayaFilter} onValueChange={setWilayaFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par wilaya" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
@@ -121,8 +126,21 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
                 {wilayaOptions}
               </SelectContent>
             </Select>
+
+            {/* 4. Title filter */}
+            <Select value={titreBudgetaireFilter} onValueChange={setTitreBudgetaireFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filtrer par titre" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">Tous les titres</SelectItem>
+                {budgetTitleOptions}
+              </SelectContent>
+            </Select>
+
+            {/* 5. Status filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
@@ -133,25 +151,6 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
                 <SelectItem value="en_pause">En pause</SelectItem>
                 <SelectItem value="arreter">Arrêté</SelectItem>
                 <SelectItem value="completed">Terminé</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={titreBudgetaireFilter} onValueChange={setTitreBudgetaireFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filtrer par titre budgétaire" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                <SelectItem value="all">Tous les titres</SelectItem>
-                {budgetTitleOptions}
-              </SelectContent>
-            </Select>
-            <Select value={origineFinancementFilter} onValueChange={setOrigineFinancementFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filtrer par origine" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les origines</SelectItem>
-                <SelectItem value="budget_national">Budget national</SelectItem>
-                <SelectItem value="financement_exterieur">Financement extérieur</SelectItem>
               </SelectContent>
             </Select>
           </div>

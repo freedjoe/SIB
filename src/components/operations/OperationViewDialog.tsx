@@ -8,15 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileCog, FileText, ClipboardEdit, Map, PenTool, CalendarIcon, Upload } from "lucide-react";
 import { Operation, Program } from "@/types/database.types";
 import { formatCurrency } from "@/lib/utils";
-import {
-  getStatusBadge,
-  getProgressBarColor,
-  titresBudgetaires,
-  mockCPAnnuels,
-  mockDemandesCP,
-  mockEngagementsHistory,
-  mockContrats,
-} from "./OperationsUtils";
+import { getStatusBadge, getProgressBarColor, mockCPAnnuels, mockDemandesCP, mockEngagementsHistory, mockContrats } from "./OperationsUtils";
+import { useBudgetTitles } from "@/hooks/supabase";
 
 interface OperationViewDialogProps {
   isOpen: boolean;
@@ -29,8 +22,13 @@ interface OperationViewDialogProps {
 export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen, setIsOpen, operation, programsData, onEdit }) => {
   if (!operation) return null;
 
-  // Trouver les données titre budgétaire
-  const titreBudgetaireData = titresBudgetaires.find((t) => t.id === operation.titre_budgetaire);
+  // Fetch budget titles
+  const { data: budgetTitles = [] } = useBudgetTitles();
+
+  // Find the budget title data for this operation
+  const budgetTitle = operation.budget_title_id
+    ? budgetTitles.find((t) => t.id === operation.budget_title_id)
+    : budgetTitles.find((t) => t.id === operation.titre_budgetaire);
 
   // Formattage pour les montants
   const formattedAllocated = formatCurrency(operation.allocated_ae || 0);
@@ -45,10 +43,15 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileCog className="h-6 w-6" />
-            {operation.name}
-          </DialogTitle>
+          <div className="flex items-start justify-between mt-3">
+            <div className="flex-1 mr-4">
+              <DialogTitle className="flex items-center gap-2">
+                <FileCog className="h-6 w-6 flex-shrink-0" />
+                <span className="break-words">{operation.name}</span>
+              </DialogTitle>
+            </div>
+            <div className="flex-shrink-0">{getStatusBadge(operation.status)}</div>
+          </div>
           <DialogDescription>{operation.description}</DialogDescription>
         </DialogHeader>
 
@@ -61,17 +64,21 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                   <h3 className="text-sm font-medium text-gray-500">Code Opération</h3>
                   <FileText className="h-4 w-4 text-gray-400" />
                 </div>
-                <p className="text-lg font-semibold">{operation.code}</p>
+                <p className="text-lg font-semibold break-words">{operation.code}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-gray-500">Statut</h3>
+                  <h3 className="text-sm font-medium text-gray-500">Portefeuille</h3>
                   <ClipboardEdit className="h-4 w-4 text-gray-400" />
                 </div>
-                <div className="flex items-center gap-2">{getStatusBadge(operation.status)}</div>
+                <p className="text-lg font-semibold">
+                  {operation.action?.program?.portfolio
+                    ? `${operation.action.program.portfolio.code} - ${operation.action.program.portfolio.name}`
+                    : "Non défini"}
+                </p>
               </CardContent>
             </Card>
 
@@ -199,9 +206,7 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                         <div>
                           <h3 className="text-sm font-medium text-gray-500">Titre budgétaire</h3>
                           <p className="font-semibold">
-                            {titreBudgetaireData
-                              ? `${titreBudgetaireData.shortLabel} - ${titreBudgetaireData.name}`
-                              : `T${operation.titre_budgetaire || "?"}`}
+                            {budgetTitle ? `${budgetTitle.code} - ${budgetTitle.name}` : `T${operation.titre_budgetaire || "?"}`}
                           </p>
                         </div>
 

@@ -1,14 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Operation } from "@/types/database.types";
-
-// Titre budgétaire options
-export const titresBudgetaires = [
-  { id: 1, name: "Dépenses de fonctionnement", shortLabel: "T1" },
-  { id: 2, name: "Dépenses d'équipement public", shortLabel: "T2" },
-  { id: 3, name: "Dépenses en capital (ou transferts)", shortLabel: "T3" },
-  { id: 4, name: "Charge de la dette publique", shortLabel: "T4" },
-  { id: 5, name: "Dépenses exceptionnelles", shortLabel: "T5" },
-];
+import { advancedSearch } from "@/utils/search/searchUtils";
 
 // Get status badge component
 export const getStatusBadge = (status: string | null | undefined) => {
@@ -186,15 +178,21 @@ export const filterOperations = (
   titreBudgetaireFilter: string,
   origineFinancementFilter: string
 ) => {
-  return operations.filter((operation) => {
-    // Search filter
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      (operation.name || "").toLowerCase().includes(searchLower) ||
-      (operation.code || "").toLowerCase().includes(searchLower) ||
-      (operation.description || "").toLowerCase().includes(searchLower) ||
-      (operation.wilaya?.name || "").toLowerCase().includes(searchLower);
+  // First apply the advanced search with multi-word, case-insensitive, accent-insensitive search
+  const searchFields = ["name", "code", "description", "wilaya.name", "wilaya.name_fr", "wilaya.name_ar"];
+  let filteredBySearch = operations;
 
+  // Only apply search if there's a search term
+  if (searchTerm && searchTerm.trim() !== "") {
+    filteredBySearch = advancedSearch(operations, searchTerm, searchFields, {
+      matchAllWords: true, // Match any of the words in the search term
+      normalizeText: true, // Handle accented characters (French, Arabic, etc.)
+      wholeWordsOnly: false, // Match partial words too
+    });
+  }
+
+  // Then apply the rest of the filters
+  return filteredBySearch.filter((operation) => {
     // Program filter from nested action's program_id
     const matchesProgram = programFilter === "all" || operation.action?.program_id === programFilter;
 
@@ -213,6 +211,6 @@ export const filterOperations = (
       origineFinancementFilter === "all" || (operation.origine_financement || "").toLowerCase() === origineFinancementFilter.toLowerCase();
 
     // Return true if all filters match
-    return matchesSearch && matchesProgram && matchesWilaya && matchesStatus && matchesTitreBudgetaire && matchesOrigineFinancement;
+    return matchesProgram && matchesWilaya && matchesStatus && matchesTitreBudgetaire && matchesOrigineFinancement;
   });
 };

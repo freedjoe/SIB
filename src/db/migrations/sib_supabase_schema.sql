@@ -117,8 +117,8 @@ CREATE TABLE IF NOT EXISTS operations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Liens relationnels
-    action_id UUID REFERENCES actions(id),
     program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
+    action_id UUID REFERENCES actions(id),
     wilaya_id UUID REFERENCES wilayas(id),
     budget_title_id UUID REFERENCES budget_titles(id),
     portfolio_program TEXT,
