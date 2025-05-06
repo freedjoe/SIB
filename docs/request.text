@@ -1,0 +1,86 @@
+fix module engagements and make it fit those columns and make bettre workflow between the list on engagements add/edit view dialog, and pending approval systeme and reealuation request
+after that create new module for credit_payments with all table, add/edit/view dialogs
+and apply the same pattern as operations module for the table, fetching data, types, dialogs... every things
+
+and those tables with necessary columns to understand the structure and be creative
+-- 9. Budget Allocations (Dotations) - Permet de suivre les dotations initiales ou révisées en AE/CP par niveau de hiérarchie budgétaire (portefeuille, programme, action ou opération).
+CREATE TABLE IF NOT EXISTS allocations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reference_type TEXT CHECK (reference_type IN ('portfolio', 'program', 'action', 'operation')),
+    reference_id UUID NOT NULL,
+    budget_title_id UUID REFERENCES budget_titles(id),
+    ae_amount NUMERIC DEFAULT 0,
+    cp_amount NUMERIC DEFAULT 0,
+    state TEXT CHECK (state IN ('initial', 'revised')),
+    source TEXT CHECK (source IN (
+        'budget_general',            -- Budget général de l’État
+        'cas_302_145',               -- Compte d’affectation spéciale 302-145
+        'external_funding',          -- Financement extérieur (emprunts, dons, etc.)
+        'donation',                  -- Dons spécifiques
+        'interministeriel_transfer', -- Virements interportefeuilles
+        'reallocation',              -- Réaffectation interne
+        'revaluation'                -- Dotation suite à revalorisation
+    ))
+);
+
+
+-- 10. Budget Modifications - New table
+CREATE TABLE IF NOT EXISTS budget_modifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    action_id UUID REFERENCES actions(id),
+    type TEXT CHECK (type IN ('new_entry', 'revaluation', 'reallocation')),
+    reason TEXT,
+    amount NUMERIC,
+    decision TEXT
+);
+
+-- 11. Engagements
+CREATE TABLE IF NOT EXISTS engagements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    operation_id UUID REFERENCES operations(id),
+    reference TEXT,
+    date DATE,
+    vendor TEXT,
+    amount NUMERIC,
+    status TEXT CHECK (status IN ('proposed', 'validated', 'liquidated', 'draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
+    code VARCHAR(20),
+    inscription_date DATE,
+    year INTEGER,
+    type VARCHAR(20),
+    history TEXT,
+    description TEXT
+);
+
+-- 12. Revaluations
+CREATE TABLE IF NOT EXISTS revaluations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    engagement_id UUID REFERENCES engagements(id),
+    code VARCHAR(20),
+    revaluation_amount NUMERIC,
+    reason TEXT,
+    description TEXT,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
+    revaluation_date DATE DEFAULT CURRENT_DATE
+);
+
+-- 13. Credit Payments - Représente les ordonnancements ou paiements réels effectués pour une opération donnée, généralement à la suite d’un engagement.
+CREATE TABLE IF NOT EXISTS credit_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(20),
+    operation_id UUID REFERENCES operations(id),
+    fiscal_year_id UUID REFERENCES fiscal_years(id),
+    amount NUMERIC,
+    status TEXT CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved', 'rejected')) DEFAULT 'draft',
+    description TEXT
+);
+-- 8b. Operation CPs (Credit Payments) - Les prévisions de crédits de paiement (CP)
+CREATE TABLE IF NOT EXISTS operation_cps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    operation_id UUID REFERENCES operations(id) ON DELETE CASCADE,
+    fiscal_year_id UUID REFERENCES fiscal_years(id),
+    month INTEGER CHECK (month BETWEEN 1 AND 12),
+    montant_cp NUMERIC NOT NULL CHECK (montant_cp >= 0),
+    used_cp NUMERIC DEFAULT 0,
+    notified BOOLEAN DEFAULT FALSE,
+    UNIQUE(operation_id, fiscal_year_id, month)
+);

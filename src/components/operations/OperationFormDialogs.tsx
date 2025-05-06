@@ -25,6 +25,7 @@ import { Operation, Action, Wilaya, BudgetTitle, Portfolio, Program } from "@/ty
 import { useBudgetTitles } from "@/hooks/supabase";
 import { cn } from "@/lib/utils";
 import { DocumentsAndPhotosTab } from "./DocumentsAndPhotosTab";
+import { toast } from "@/hooks/use-toast";
 
 interface OperationFormDialogsProps {
   isAddDialogOpen: boolean;
@@ -267,14 +268,39 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="name">Operation Name</Label>
-                      <Input
-                        id="name"
-                        value={newOperation.name || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
-                        placeholder="Operation name"
-                      />
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={newOperation.status || "draft"}
+                        onValueChange={(value) =>
+                          setNewOperation({
+                            ...newOperation,
+                            status: value as "draft" | "submitted" | "reviewed" | "approved" | "rejected",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="reviewed">Reviewed</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Operation Name</Label>
+                    <Textarea
+                      id="name"
+                      value={newOperation.name || ""}
+                      onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
+                      placeholder="Operation name"
+                      rows={2}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -430,30 +456,6 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                         onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={newOperation.status || "draft"}
-                      onValueChange={(value) =>
-                        setNewOperation({
-                          ...newOperation,
-                          status: value as "draft" | "submitted" | "reviewed" | "approved" | "rejected",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="submitted">Submitted</SelectItem>
-                        <SelectItem value="reviewed">Reviewed</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
@@ -937,34 +939,59 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               <Card>
                 <CardHeader>
                   <CardTitle>Operation Details</CardTitle>
-                  <CardDescription>Edit basic information about the operation</CardDescription>
+                  <CardDescription>Enter basic information about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-name">Operation Name</Label>
+                      <Label htmlFor="code">Operation Code</Label>
                       <Input
-                        id="edit-name"
-                        value={newOperation.name || ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
-                        placeholder="Operation name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-code">Operation Code</Label>
-                      <Input
-                        id="edit-code"
+                        id="code"
                         value={newOperation.code || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, code: e.target.value })}
                         placeholder="Operation code"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={newOperation.status || "draft"}
+                        onValueChange={(value) =>
+                          setNewOperation({
+                            ...newOperation,
+                            status: value as "draft" | "submitted" | "reviewed" | "approved" | "rejected",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="reviewed">Reviewed</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-description">Description</Label>
+                    <Label htmlFor="name">Operation Name</Label>
                     <Textarea
-                      id="edit-description"
+                      id="name"
+                      value={newOperation.name || ""}
+                      onChange={(e) => setNewOperation({ ...newOperation, name: e.target.value })}
+                      placeholder="Operation name"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
                       value={newOperation.description || ""}
                       onChange={(e) => setNewOperation({ ...newOperation, description: e.target.value })}
                       placeholder="Description of the operation"
@@ -973,7 +1000,46 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-action">Action</Label>
+                      <Label htmlFor="portfolio">Portfolio</Label>
+                      <Select
+                        value={newOperation.portfolio_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, portfolio_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a portfolio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {portfoliosData.map((portfolio) => (
+                            <SelectItem key={portfolio.id} value={portfolio.id}>
+                              {portfolio.code ? `${portfolio.code} - ${portfolio.name}` : portfolio.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="program">Program</Label>
+                      <Select
+                        value={newOperation.program_id || ""}
+                        onValueChange={(value) => setNewOperation({ ...newOperation, program_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a program" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {programsData.map((program) => (
+                            <SelectItem key={program.id} value={program.id}>
+                              {program.code ? `${program.code} - ${program.name}` : program.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="action">Action</Label>
                       <Select value={newOperation.action_id || ""} onValueChange={(value) => setNewOperation({ ...newOperation, action_id: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select an action" />
@@ -988,7 +1054,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-wilaya">Wilaya</Label>
+                      <Label htmlFor="wilaya">Wilaya</Label>
                       <Select value={newOperation.wilaya_id || ""} onValueChange={(value) => setNewOperation({ ...newOperation, wilaya_id: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a wilaya" />
@@ -1006,7 +1072,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-budget_title_id">Budget Title</Label>
+                      <Label htmlFor="budget_title_id">Budget Title</Label>
                       <Select
                         value={String(newOperation.budget_title_id || "")}
                         onValueChange={(value) => setNewOperation({ ...newOperation, budget_title_id: value })}
@@ -1025,52 +1091,55 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-inscription_date">Registration Date</Label>
+                      <Label htmlFor="portfolio_program">Portfolio Program</Label>
                       <Input
-                        id="edit-inscription_date"
-                        type="date"
-                        value={newOperation.inscription_date ? new Date(newOperation.inscription_date).toISOString().split("T")[0] : ""}
-                        onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
+                        id="portfolio_program"
+                        value={newOperation.portfolio_program || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, portfolio_program: e.target.value })}
+                        placeholder="Portfolio program"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-portfolio">Portfolio</Label>
-                      <Select
-                        value={newOperation.portfolio_id || ""}
-                        onValueChange={(value) => setNewOperation({ ...newOperation, portfolio_id: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a portfolio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {portfoliosData.map((portfolio) => (
-                            <SelectItem key={portfolio.id} value={portfolio.id}>
-                              {portfolio.code ? `${portfolio.code} - ${portfolio.name}` : portfolio.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="program_type">Program Type</Label>
+                      <Input
+                        id="program_type"
+                        value={newOperation.program_type || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, program_type: e.target.value })}
+                        placeholder="Program type"
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-program">Program</Label>
-                      <Select
-                        value={newOperation.program_id || ""}
-                        onValueChange={(value) => setNewOperation({ ...newOperation, program_id: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a program" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {programsData.map((program) => (
-                            <SelectItem key={program.id} value={program.id}>
-                              {program.code ? `${program.code} - ${program.name}` : program.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="regional_budget_directorate">Regional Budget Directorate</Label>
+                      <Input
+                        id="regional_budget_directorate"
+                        value={newOperation.regional_budget_directorate || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, regional_budget_directorate: e.target.value })}
+                        placeholder="Regional budget directorate"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="notification_year">Notification Year</Label>
+                      <Input
+                        id="notification_year"
+                        value={newOperation.notification_year || ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, notification_year: e.target.value })}
+                        placeholder="Notification year"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inscription_date">Inscription Date</Label>
+                      <Input
+                        id="inscription_date"
+                        type="date"
+                        value={newOperation.inscription_date ? new Date(newOperation.inscription_date).toISOString().split("T")[0] : ""}
+                        onChange={(e) => setNewOperation({ ...newOperation, inscription_date: e.target.value })}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -1088,14 +1157,14 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               <Card>
                 <CardHeader>
                   <CardTitle>Financial Information</CardTitle>
-                  <CardDescription>Edit financial details about the operation</CardDescription>
+                  <CardDescription>Enter financial details about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-initial_ae">Initial AE</Label>
+                      <Label htmlFor="initial_ae">Initial AE</Label>
                       <Input
-                        id="edit-initial_ae"
+                        id="initial_ae"
                         type="number"
                         step="0.01"
                         min="0"
@@ -1110,9 +1179,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-current_ae">Current AE</Label>
+                      <Label htmlFor="current_ae">Current AE</Label>
                       <Input
-                        id="edit-current_ae"
+                        id="current_ae"
                         type="number"
                         step="0.01"
                         min="0"
@@ -1129,9 +1198,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-allocated_ae">Allocated AE</Label>
+                      <Label htmlFor="allocated_ae">Allocated AE</Label>
                       <Input
-                        id="edit-allocated_ae"
+                        id="allocated_ae"
                         type="number"
                         step="0.01"
                         min="0"
@@ -1146,9 +1215,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-committed_ae">Committed AE</Label>
+                      <Label htmlFor="committed_ae">Committed AE</Label>
                       <Input
-                        id="edit-committed_ae"
+                        id="committed_ae"
                         type="number"
                         step="0.01"
                         min="0"
@@ -1164,9 +1233,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                     </div>
                   </div>
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="edit-consumed_ae">Consumed AE</Label>
+                    <Label htmlFor="consumed_ae">Consumed AE</Label>
                     <Input
-                      id="edit-consumed_ae"
+                      id="consumed_ae"
                       type="number"
                       value={newOperation.consumed_ae || 0}
                       onChange={(e) => setNewOperation({ ...newOperation, consumed_ae: parseFloat(e.target.value) })}
@@ -1212,9 +1281,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-cumulative_commitments">Cumulative Commitments</Label>
+                      <Label htmlFor="cumulative_commitments">Cumulative Commitments</Label>
                       <Input
-                        id="edit-cumulative_commitments"
+                        id="cumulative_commitments"
                         type="number"
                         value={newOperation.cumulative_commitments || 0}
                         onChange={(e) => setNewOperation({ ...newOperation, cumulative_commitments: parseFloat(e.target.value) })}
@@ -1222,9 +1291,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-cumulative_payments">Cumulative Payments</Label>
+                      <Label htmlFor="cumulative_payments">Cumulative Payments</Label>
                       <Input
-                        id="edit-cumulative_payments"
+                        id="cumulative_payments"
                         type="number"
                         value={newOperation.cumulative_payments || 0}
                         onChange={(e) => setNewOperation({ ...newOperation, cumulative_payments: parseFloat(e.target.value) })}
@@ -1251,14 +1320,14 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               <Card>
                 <CardHeader>
                   <CardTitle>Implementation Details</CardTitle>
-                  <CardDescription>Edit information about the operation's implementation</CardDescription>
+                  <CardDescription>Enter information about the operation's implementation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-start_year">Start Year</Label>
+                      <Label htmlFor="start_year">Start Year</Label>
                       <Input
-                        id="edit-start_year"
+                        id="start_year"
                         type="number"
                         value={newOperation.start_year || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, start_year: parseInt(e.target.value) })}
@@ -1266,9 +1335,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-end_year">End Year</Label>
+                      <Label htmlFor="end_year">End Year</Label>
                       <Input
-                        id="edit-end_year"
+                        id="end_year"
                         type="number"
                         value={newOperation.end_year || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, end_year: parseInt(e.target.value) })}
@@ -1279,18 +1348,18 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-start_order_date">Start Order Date</Label>
+                      <Label htmlFor="start_order_date">Start Order Date</Label>
                       <Input
-                        id="edit-start_order_date"
+                        id="start_order_date"
                         type="date"
                         value={newOperation.start_order_date || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, start_order_date: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-completion_date">Completion Date</Label>
+                      <Label htmlFor="completion_date">Completion Date</Label>
                       <Input
-                        id="edit-completion_date"
+                        id="completion_date"
                         type="date"
                         value={newOperation.completion_date || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, completion_date: e.target.value })}
@@ -1300,9 +1369,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-delay">Delay (in days)</Label>
+                      <Label htmlFor="delay">Delay (in days)</Label>
                       <Input
-                        id="edit-delay"
+                        id="delay"
                         type="number"
                         value={newOperation.delay || 0}
                         onChange={(e) => setNewOperation({ ...newOperation, delay: parseFloat(e.target.value) })}
@@ -1310,9 +1379,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-province">Province</Label>
+                      <Label htmlFor="province">Province</Label>
                       <Input
-                        id="edit-province"
+                        id="province"
                         value={newOperation.province || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, province: e.target.value })}
                         placeholder="Province"
@@ -1322,18 +1391,18 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-municipality">Municipality</Label>
+                      <Label htmlFor="municipality">Municipality</Label>
                       <Input
-                        id="edit-municipality"
+                        id="municipality"
                         value={newOperation.municipality || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, municipality: e.target.value })}
                         placeholder="Municipality"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-location">Location</Label>
+                      <Label htmlFor="location">Location</Label>
                       <Input
-                        id="edit-location"
+                        id="location"
                         value={newOperation.location || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, location: e.target.value })}
                         placeholder="Location"
@@ -1343,18 +1412,18 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-beneficiary">Beneficiary</Label>
+                      <Label htmlFor="beneficiary">Beneficiary</Label>
                       <Input
-                        id="edit-beneficiary"
+                        id="beneficiary"
                         value={newOperation.beneficiary || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, beneficiary: e.target.value })}
                         placeholder="Beneficiary"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-project_owner">Project Owner</Label>
+                      <Label htmlFor="project_owner">Project Owner</Label>
                       <Input
-                        id="edit-project_owner"
+                        id="project_owner"
                         value={newOperation.project_owner || ""}
                         onChange={(e) => setNewOperation({ ...newOperation, project_owner: e.target.value })}
                         placeholder="Project owner"
@@ -1380,14 +1449,14 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               <Card>
                 <CardHeader>
                   <CardTitle>Project Details</CardTitle>
-                  <CardDescription>Edit project-specific details</CardDescription>
+                  <CardDescription>Enter project-specific details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-physical_rate">Physical Rate (%)</Label>
+                      <Label htmlFor="physical_rate">Physical Rate (%)</Label>
                       <Input
-                        id="edit-physical_rate"
+                        id="physical_rate"
                         type="number"
                         min="0"
                         max="100"
@@ -1397,9 +1466,9 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-financial_rate">Financial Rate (%)</Label>
+                      <Label htmlFor="financial_rate">Financial Rate (%)</Label>
                       <Input
-                        id="edit-financial_rate"
+                        id="financial_rate"
                         type="number"
                         min="0"
                         max="100"
@@ -1411,7 +1480,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-execution_mode">Execution Mode</Label>
+                    <Label htmlFor="execution_mode">Execution Mode</Label>
                     <Select
                       value={newOperation.execution_mode || "state"}
                       onValueChange={(value) =>
@@ -1432,7 +1501,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-project_status">Project Status</Label>
+                    <Label htmlFor="project_status">Project Status</Label>
                     <Select
                       value={newOperation.project_status || "not_started"}
                       onValueChange={(value) =>
@@ -1483,7 +1552,7 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               </Card>
             </TabsContent>
 
-            {/* Step 4: Operation Documents */}
+            {/* Step 5: Operation Documents */}
             <TabsContent value="documents">
               <DocumentsAndPhotosTab
                 documents={currentOperation?.documents || []}
@@ -1494,37 +1563,18 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
               />
             </TabsContent>
 
-            {/* Step 5: Observations & Notes */}
+            {/* Step 6: Observations & Notes */}
             <TabsContent value="notes">
               <Card>
                 <CardHeader>
                   <CardTitle>Observations & Notes</CardTitle>
-                  <CardDescription>Edit or add notes and observations about the operation</CardDescription>
+                  <CardDescription>Add any additional notes or observations about the operation</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {currentOperation?.observations && Array.isArray(currentOperation.observations) && currentOperation.observations.length > 0 && (
-                    <div className="space-y-3 mb-6">
-                      <h3 className="text-sm font-medium">Existing Observations</h3>
-                      {currentOperation.observations.map((obs, index) => (
-                        <div key={index} className="border p-3 rounded-md">
-                          <p className="text-sm">{obs.content}</p>
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-xs text-gray-500">
-                              Added by: {obs.author} on {obs.date}
-                            </p>
-                            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="space-y-2">
-                    <Label htmlFor="edit-observation">Add an observation</Label>
+                    <Label htmlFor="observation">Notes & Observations</Label>
                     <Textarea
-                      id="edit-observation"
+                      id="observation"
                       value={newOperation.observation || ""}
                       onChange={(e) => setNewOperation({ ...newOperation, observation: e.target.value })}
                       placeholder="Add any observations or notes about this operation"
@@ -1534,14 +1584,11 @@ export const OperationFormDialogs: React.FC<OperationFormDialogsProps> = ({
 
                   <div className="flex items-center space-x-2 mt-4">
                     <Checkbox
-                      id="edit-highlight"
+                      id="highlight"
                       checked={newOperation.highlighted || false}
                       onCheckedChange={(checked) => setNewOperation({ ...newOperation, highlighted: checked as boolean })}
                     />
-                    <Label
-                      htmlFor="edit-highlight"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
+                    <Label htmlFor="highlight" className="text-sm font-medium leading-none">
                       Flag this operation for special attention
                     </Label>
                   </div>

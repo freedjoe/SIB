@@ -35,13 +35,18 @@ export default function Engagements() {
   const [selectedEngagementForReevaluation, setSelectedEngagementForReevaluation] = useState<Engagement | null>(null);
   const [currentEngagement, setCurrentEngagement] = useState<Engagement | null>(null);
   const [newEngagement, setNewEngagement] = useState<Partial<Engagement>>({
-    operation: "",
-    beneficiaire: "",
-    montant_demande: 0,
-    statut: "En attente",
-    priorite: "Moyenne",
-    demande_par: "",
+    operation_id: "",
+    reference: "",
     date: new Date().toISOString().split("T")[0],
+    vendor: "",
+    amount: 0,
+    status: "draft",
+    code: "",
+    inscription_date: new Date().toISOString().split("T")[0],
+    year: new Date().getFullYear(),
+    type: "",
+    description: "",
+    history: "",
   });
   const [approvalAmount, setApprovalAmount] = useState<number | "">(0);
   const [reevaluations, setReevaluations] = useState<EngagementReevaluationWithRelations[]>([]);
@@ -49,18 +54,18 @@ export default function Engagements() {
 
   // Use our custom React Query hooks with staleTime configurations for local storage persistence
   const {
-    data: engagementsData = [],
+    data: engagementsData = [] as Engagement[],
     isLoading: isLoadingEngagements,
     refetch: refetchEngagements,
   } = useEngagements({
     staleTime: 1000 * 60 * 10, // 10 minutes - engagements change moderately often
   });
 
-  const { data: operationsData = [], isLoading: isLoadingOperations } = useOperations({
+  const { data: operationsData = [] as Operation[], isLoading: isLoadingOperations } = useOperations({
     staleTime: 1000 * 60 * 30, // 30 minutes - operations change less frequently
   });
 
-  const { data: ministriesData = [], isLoading: isLoadingMinistries } = useMinistries({
+  const { data: ministriesData = [] as Ministry[], isLoading: isLoadingMinistries } = useMinistries({
     staleTime: 1000 * 60 * 60, // 60 minutes - ministries rarely change
   });
 
@@ -83,31 +88,30 @@ export default function Engagements() {
 
   // Filter engagements based on search term
   const filteredEngagements = engagementsData.filter((engagement) => {
-    const operationText = typeof engagement.operation === "string" ? engagement.operation.toLowerCase() : String(engagement.operation).toLowerCase();
-
-    const beneficiaireText =
-      typeof engagement.beneficiaire === "string" ? engagement.beneficiaire.toLowerCase() : String(engagement.beneficiaire).toLowerCase();
-
-    const statutText = typeof engagement.statut === "string" ? engagement.statut.toLowerCase() : String(engagement.statut).toLowerCase();
-
     return (
-      operationText.includes(searchTerm.toLowerCase()) ||
-      beneficiaireText.includes(searchTerm.toLowerCase()) ||
-      statutText.includes(searchTerm.toLowerCase())
+      engagement.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      engagement.vendor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      engagement.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      engagement.code?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
-  const pendingApprovals = engagementsData.filter((engagement) => engagement.statut === "En attente");
+  const pendingApprovals = engagementsData.filter((engagement) => engagement.status === "submitted" || engagement.status === "reviewed");
 
   const handleOpenAddDialog = () => {
     setNewEngagement({
-      operation: "",
-      beneficiaire: "",
-      montant_demande: 0,
-      statut: "En attente",
-      priorite: "Moyenne",
-      demande_par: "",
+      operation_id: "",
+      reference: "",
       date: new Date().toISOString().split("T")[0],
+      vendor: "",
+      amount: 0,
+      status: "draft",
+      code: "",
+      inscription_date: new Date().toISOString().split("T")[0],
+      year: new Date().getFullYear(),
+      type: "",
+      description: "",
+      history: "",
     });
     setIsAddDialogOpen(true);
   };
@@ -115,13 +119,18 @@ export default function Engagements() {
   const handleOpenEditDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
     setNewEngagement({
-      operation: engagement.operation,
-      beneficiaire: engagement.beneficiaire,
-      montant_demande: engagement.montant_demande,
-      statut: engagement.statut,
-      priorite: engagement.priorite,
-      demande_par: engagement.demande_par,
+      operation_id: engagement.operation_id,
+      reference: engagement.reference,
       date: engagement.date,
+      vendor: engagement.vendor,
+      amount: engagement.amount,
+      status: engagement.status,
+      code: engagement.code,
+      inscription_date: engagement.inscription_date,
+      year: engagement.year,
+      type: engagement.type,
+      description: engagement.description,
+      history: engagement.history,
     });
     setIsEditDialogOpen(true);
   };
@@ -138,7 +147,7 @@ export default function Engagements() {
 
   const handleOpenApproveDialog = (engagement: Engagement) => {
     setCurrentEngagement(engagement);
-    setApprovalAmount(engagement.montant_demande);
+    setApprovalAmount(engagement.amount);
     setIsApproveDialogOpen(true);
   };
 
@@ -148,7 +157,7 @@ export default function Engagements() {
   };
 
   const handleAddEngagement = () => {
-    if (!newEngagement.operation || !newEngagement.beneficiaire || !newEngagement.demande_par) {
+    if (!newEngagement.operation_id || !newEngagement.vendor || !newEngagement.code) {
       toast({
         title: t("common.error"),
         description: t("engagements.fillRequiredFields"),
@@ -159,14 +168,18 @@ export default function Engagements() {
 
     // Create new engagement with data from state
     const engagement: Partial<Engagement> = {
-      operation: newEngagement.operation!,
-      beneficiaire: newEngagement.beneficiaire!,
-      montant_demande: Number(newEngagement.montant_demande) || 0,
-      montant_approuve: null,
-      statut: "En attente",
+      operation_id: newEngagement.operation_id!,
+      reference: newEngagement.reference!,
       date: newEngagement.date!,
-      priorite: newEngagement.priorite as "Haute" | "Moyenne" | "Basse",
-      demande_par: newEngagement.demande_par!,
+      vendor: newEngagement.vendor!,
+      amount: Number(newEngagement.amount) || 0,
+      status: newEngagement.status!,
+      code: newEngagement.code!,
+      inscription_date: newEngagement.inscription_date!,
+      year: newEngagement.year!,
+      type: newEngagement.type!,
+      description: newEngagement.description!,
+      history: newEngagement.history!,
     };
 
     // Use our mutation hook to add the engagement
@@ -181,7 +194,7 @@ export default function Engagements() {
   const handleEditEngagement = () => {
     if (!currentEngagement) return;
 
-    if (!newEngagement.operation || !newEngagement.beneficiaire || !newEngagement.demande_par) {
+    if (!newEngagement.operation_id || !newEngagement.vendor || !newEngagement.code) {
       toast({
         title: t("common.error"),
         description: t("engagements.fillRequiredFields"),
@@ -195,12 +208,18 @@ export default function Engagements() {
       type: "UPDATE",
       id: currentEngagement.id,
       data: {
-        operation: newEngagement.operation!,
-        beneficiaire: newEngagement.beneficiaire!,
-        montant_demande: Number(newEngagement.montant_demande) || 0,
-        priorite: newEngagement.priorite as "Haute" | "Moyenne" | "Basse",
-        demande_par: newEngagement.demande_par!,
+        operation_id: newEngagement.operation_id!,
+        reference: newEngagement.reference!,
         date: newEngagement.date!,
+        vendor: newEngagement.vendor!,
+        amount: Number(newEngagement.amount) || 0,
+        status: newEngagement.status!,
+        code: newEngagement.code!,
+        inscription_date: newEngagement.inscription_date!,
+        year: newEngagement.year!,
+        type: newEngagement.type!,
+        description: newEngagement.description!,
+        history: newEngagement.history!,
       },
     });
 
@@ -238,8 +257,8 @@ export default function Engagements() {
       type: "UPDATE",
       id: currentEngagement.id,
       data: {
-        montant_approuve: Number(amount),
-        statut: "Approuvé" as const,
+        amount: Number(amount),
+        status: "approved" as const,
       },
     });
 
@@ -252,14 +271,14 @@ export default function Engagements() {
       type: "UPDATE",
       id: engagement.id,
       data: {
-        montant_approuve: 0,
-        statut: "Rejeté" as const,
+        amount: 0,
+        status: "rejected" as const,
       },
     });
 
     toast({
       title: t("engagements.rejected"),
-      description: t("engagements.rejectedDescription", { operation: engagement.operation }),
+      description: t("engagements.rejectedDescription", { operation: engagement.operation_id }),
     });
   };
 
@@ -274,12 +293,26 @@ export default function Engagements() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Approuvé":
+      case "draft":
+        return <Badge variant="outline">{t("engagements.draft")}</Badge>;
+      case "submitted":
+        return <Badge variant="warning">{t("engagements.submitted")}</Badge>;
+      case "reviewed":
+        return <Badge variant="secondary">{t("engagements.reviewed")}</Badge>;
+      case "approved":
         return <Badge className="bg-green-500">{t("engagements.approved")}</Badge>;
-      case "Rejeté":
+      case "rejected":
         return <Badge variant="destructive">{t("engagements.rejected")}</Badge>;
-      case "En attente":
-        return <Badge variant="warning">{t("engagements.pending")}</Badge>;
+      case "proposed":
+        return (
+          <Badge variant="outline" className="border-blue-500 text-blue-500">
+            {t("engagements.proposed")}
+          </Badge>
+        );
+      case "validated":
+        return <Badge className="bg-blue-500">{t("engagements.validated")}</Badge>;
+      case "liquidated":
+        return <Badge className="bg-purple-500">{t("engagements.liquidated")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -422,12 +455,12 @@ export default function Engagements() {
                   ) : (
                     pendingApprovals.map((engagement) => (
                       <TableRow key={engagement.id}>
-                        <TableCell>{getPriorityBadge(engagement.priorite)}</TableCell>
+                        <TableCell>{getPriorityBadge(engagement.type || "Moyenne")}</TableCell>
                         <TableCell className="font-medium">
-                          {engagement.operation} - {engagement.beneficiaire}
+                          {engagement.operation_id && operationsData.find((op) => op.id === engagement.operation_id)?.name} - {engagement.vendor}
                         </TableCell>
-                        <TableCell>{engagement.demande_par}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(engagement.montant_demande)}</TableCell>
+                        <TableCell>{engagement.code}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(engagement.amount)}</TableCell>
                         <TableCell>{formatDate(engagement.date)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -490,24 +523,24 @@ export default function Engagements() {
               <Label htmlFor="operation" className="text-right">
                 {t("engagements.operation")}
               </Label>
-              <Select value={newEngagement.operation} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation: value })}>
+              <Select value={newEngagement.operation_id} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation_id: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectOperation")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {operations.map((operation) => (
-                    <SelectItem key={operation} value={operation}>
-                      {operation}
+                  {operationsData.map((operation) => (
+                    <SelectItem key={operation.id} value={operation.id}>
+                      {operation.name || operation.title || "Opération sans nom"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="beneficiaire" className="text-right">
+              <Label htmlFor="vendor" className="text-right">
                 {t("engagements.beneficiary")}
               </Label>
-              <Select value={newEngagement.beneficiaire} onValueChange={(value) => setNewEngagement({ ...newEngagement, beneficiaire: value })}>
+              <Select value={newEngagement.vendor} onValueChange={(value) => setNewEngagement({ ...newEngagement, vendor: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectBeneficiary")} />
                 </SelectTrigger>
@@ -521,27 +554,27 @@ export default function Engagements() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="montant" className="text-right">
+              <Label htmlFor="amount" className="text-right">
                 {t("engagements.requestedAmount")}
               </Label>
               <Input
-                id="montant"
+                id="amount"
                 type="number"
                 className="col-span-3"
-                value={newEngagement.montant_demande || ""}
+                value={newEngagement.amount || ""}
                 onChange={(e) =>
                   setNewEngagement({
                     ...newEngagement,
-                    montant_demande: parseFloat(e.target.value),
+                    amount: parseFloat(e.target.value),
                   })
                 }
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="demande_par" className="text-right">
+              <Label htmlFor="code" className="text-right">
                 {t("engagements.requestedBy")}
               </Label>
-              <Select value={newEngagement.demande_par} onValueChange={(value) => setNewEngagement({ ...newEngagement, demande_par: value })}>
+              <Select value={newEngagement.code} onValueChange={(value) => setNewEngagement({ ...newEngagement, code: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectDepartment")} />
                 </SelectTrigger>
@@ -555,29 +588,6 @@ export default function Engagements() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="priorite" className="text-right">
-                {t("engagements.priority")}
-              </Label>
-              <Select
-                value={newEngagement.priorite}
-                onValueChange={(value) =>
-                  setNewEngagement({
-                    ...newEngagement,
-                    priorite: value as "Haute" | "Moyenne" | "Basse",
-                  })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder={t("engagements.selectPriority")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Haute">{t("engagements.high")}</SelectItem>
-                  <SelectItem value="Moyenne">{t("engagements.medium")}</SelectItem>
-                  <SelectItem value="Basse">{t("engagements.low")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right">
                 {t("engagements.date")}
               </Label>
@@ -587,6 +597,38 @@ export default function Engagements() {
                 className="col-span-3"
                 value={newEngagement.date || ""}
                 onChange={(e) => setNewEngagement({ ...newEngagement, date: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                {t("engagements.status")}
+              </Label>
+              <Select value={newEngagement.status || "draft"} onValueChange={(value) => setNewEngagement({ ...newEngagement, status: value })}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={t("engagements.selectStatus")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">{t("engagements.draft")}</SelectItem>
+                  <SelectItem value="submitted">{t("engagements.submitted")}</SelectItem>
+                  <SelectItem value="reviewed">{t("engagements.reviewed")}</SelectItem>
+                  <SelectItem value="approved">{t("engagements.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("engagements.rejected")}</SelectItem>
+                  <SelectItem value="proposed">{t("engagements.proposed")}</SelectItem>
+                  <SelectItem value="validated">{t("engagements.validated")}</SelectItem>
+                  <SelectItem value="liquidated">{t("engagements.liquidated")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reference" className="text-right">
+                {t("engagements.reference")}
+              </Label>
+              <Input
+                id="reference"
+                type="text"
+                className="col-span-3"
+                value={newEngagement.reference || ""}
+                onChange={(e) => setNewEngagement({ ...newEngagement, reference: e.target.value })}
               />
             </div>
           </div>
@@ -610,24 +652,24 @@ export default function Engagements() {
               <Label htmlFor="edit-operation" className="text-right">
                 {t("engagements.operation")}
               </Label>
-              <Select value={newEngagement.operation} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation: value })}>
+              <Select value={newEngagement.operation_id} onValueChange={(value) => setNewEngagement({ ...newEngagement, operation_id: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectOperation")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {operations.map((operation) => (
-                    <SelectItem key={operation} value={operation}>
-                      {operation}
+                  {operationsData.map((operation) => (
+                    <SelectItem key={operation.id} value={operation.id}>
+                      {operation.name || operation.title || "Opération sans nom"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-beneficiaire" className="text-right">
+              <Label htmlFor="edit-vendor" className="text-right">
                 {t("engagements.beneficiary")}
               </Label>
-              <Select value={newEngagement.beneficiaire} onValueChange={(value) => setNewEngagement({ ...newEngagement, beneficiaire: value })}>
+              <Select value={newEngagement.vendor} onValueChange={(value) => setNewEngagement({ ...newEngagement, vendor: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectBeneficiary")} />
                 </SelectTrigger>
@@ -641,27 +683,27 @@ export default function Engagements() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-montant" className="text-right">
+              <Label htmlFor="edit-amount" className="text-right">
                 {t("engagements.requestedAmount")}
               </Label>
               <Input
-                id="edit-montant"
+                id="edit-amount"
                 type="number"
                 className="col-span-3"
-                value={newEngagement.montant_demande || ""}
+                value={newEngagement.amount || ""}
                 onChange={(e) =>
                   setNewEngagement({
                     ...newEngagement,
-                    montant_demande: parseFloat(e.target.value),
+                    amount: parseFloat(e.target.value),
                   })
                 }
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-demande-par" className="text-right">
+              <Label htmlFor="edit-code" className="text-right">
                 {t("engagements.requestedBy")}
               </Label>
-              <Select value={newEngagement.demande_par} onValueChange={(value) => setNewEngagement({ ...newEngagement, demande_par: value })}>
+              <Select value={newEngagement.code} onValueChange={(value) => setNewEngagement({ ...newEngagement, code: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder={t("engagements.selectDepartment")} />
                 </SelectTrigger>
@@ -675,29 +717,6 @@ export default function Engagements() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-priorite" className="text-right">
-                {t("engagements.priority")}
-              </Label>
-              <Select
-                value={newEngagement.priorite}
-                onValueChange={(value) =>
-                  setNewEngagement({
-                    ...newEngagement,
-                    priorite: value as "Haute" | "Moyenne" | "Basse",
-                  })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder={t("engagements.selectPriority")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Haute">{t("engagements.high")}</SelectItem>
-                  <SelectItem value="Moyenne">{t("engagements.medium")}</SelectItem>
-                  <SelectItem value="Basse">{t("engagements.low")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-date" className="text-right">
                 {t("engagements.date")}
               </Label>
@@ -707,6 +726,38 @@ export default function Engagements() {
                 className="col-span-3"
                 value={newEngagement.date || ""}
                 onChange={(e) => setNewEngagement({ ...newEngagement, date: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                {t("engagements.status")}
+              </Label>
+              <Select value={newEngagement.status || "draft"} onValueChange={(value) => setNewEngagement({ ...newEngagement, status: value })}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={t("engagements.selectStatus")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">{t("engagements.draft")}</SelectItem>
+                  <SelectItem value="submitted">{t("engagements.submitted")}</SelectItem>
+                  <SelectItem value="reviewed">{t("engagements.reviewed")}</SelectItem>
+                  <SelectItem value="approved">{t("engagements.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("engagements.rejected")}</SelectItem>
+                  <SelectItem value="proposed">{t("engagements.proposed")}</SelectItem>
+                  <SelectItem value="validated">{t("engagements.validated")}</SelectItem>
+                  <SelectItem value="liquidated">{t("engagements.liquidated")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reference" className="text-right">
+                {t("engagements.reference")}
+              </Label>
+              <Input
+                id="reference"
+                type="text"
+                className="col-span-3"
+                value={newEngagement.reference || ""}
+                onChange={(e) => setNewEngagement({ ...newEngagement, reference: e.target.value })}
               />
             </div>
           </div>
@@ -731,13 +782,13 @@ export default function Engagements() {
                 <strong>ID:</strong> {currentEngagement.id}
               </p>
               <p>
-                <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation}
+                <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation_id}
               </p>
               <p>
-                <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.beneficiaire}
+                <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.vendor}
               </p>
               <p>
-                <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.montant_demande)}
+                <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.amount)}
               </p>
             </div>
           )}
@@ -765,23 +816,23 @@ export default function Engagements() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.operation")}:</div>
-                <div>{currentEngagement.operation}</div>
+                <div>{currentEngagement.operation_id}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.beneficiary")}:</div>
-                <div>{currentEngagement.beneficiaire}</div>
+                <div>{currentEngagement.vendor}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.requestedAmount")}:</div>
-                <div>{formatCurrency(currentEngagement.montant_demande)}</div>
+                <div>{formatCurrency(currentEngagement.amount)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.approvedAmount")}:</div>
-                <div>{formatCurrency(currentEngagement.montant_approuve)}</div>
+                <div>{formatCurrency(currentEngagement.amount)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.status")}:</div>
-                <div>{getStatusBadge(currentEngagement.statut)}</div>
+                <div>{getStatusBadge(currentEngagement.status)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.date")}:</div>
@@ -789,11 +840,11 @@ export default function Engagements() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.priority")}:</div>
-                <div>{getPriorityBadge(currentEngagement.priorite)}</div>
+                <div>{getPriorityBadge(currentEngagement.status)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-semibold">{t("engagements.requestedBy")}:</div>
-                <div>{currentEngagement.demande_par}</div>
+                <div>{currentEngagement.code}</div>
               </div>
             </div>
           )}
@@ -813,13 +864,13 @@ export default function Engagements() {
             <div className="py-4 space-y-4">
               <div className="grid grid-cols-1 gap-2">
                 <p>
-                  <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation}
+                  <strong>{t("engagements.operation")}:</strong> {currentEngagement.operation_id}
                 </p>
                 <p>
-                  <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.beneficiaire}
+                  <strong>{t("engagements.beneficiary")}:</strong> {currentEngagement.vendor}
                 </p>
                 <p>
-                  <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.montant_demande)}
+                  <strong>{t("engagements.requestedAmount")}:</strong> {formatCurrency(currentEngagement.amount)}
                 </p>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -852,8 +903,8 @@ export default function Engagements() {
           engagement={{
             id: selectedEngagementForReevaluation.id,
             reference: selectedEngagementForReevaluation.id,
-            beneficiary: selectedEngagementForReevaluation.beneficiaire,
-            montant_initial: selectedEngagementForReevaluation.montant_demande,
+            beneficiary: selectedEngagementForReevaluation.vendor,
+            montant_initial: selectedEngagementForReevaluation.amount,
           }}
           onSuccess={handleReevaluationSuccess}
         />

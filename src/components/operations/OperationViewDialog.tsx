@@ -179,16 +179,10 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500">Date d'inscription</h3>
-                          <p className="font-semibold flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-gray-400" />
-                            {operation.inscription_date ? new Date(operation.inscription_date).toLocaleDateString("fr-FR") : "Non définie"}
-                          </p>
-                        </div>
-
-                        <div>
                           <h3 className="text-sm font-medium text-gray-500">Programme</h3>
-                          <p className="font-semibold">{programsData.find((p) => p.id === operation.action?.program_id)?.name || "Non défini"}</p>
+                          <p className="font-semibold">
+                            {programsData.find((p) => p.id === operation.program_id || p.id === operation.action?.program_id)?.name || "Non défini"}
+                          </p>
                         </div>
 
                         <div>
@@ -197,8 +191,21 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                         </div>
 
                         <div>
+                          <h3 className="text-sm font-medium text-gray-500">Date d'inscription</h3>
+                          <p className="font-semibold flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4 text-gray-400" />
+                            {operation.inscription_date ? new Date(operation.inscription_date).toLocaleDateString("fr-FR") : "Non définie"}
+                          </p>
+                        </div>
+
+                        <div>
                           <h3 className="text-sm font-medium text-gray-500">Wilaya</h3>
                           <p className="font-semibold">{operation.wilaya?.name || "Non définie"}</p>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Province</h3>
+                          <p className="font-semibold">{operation.province || "Non définie"}</p>
                         </div>
                       </div>
 
@@ -211,27 +218,28 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                         </div>
 
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500">Origine du financement</h3>
-                          <p className="font-semibold">
-                            {operation.origine_financement === "budget_national" ? "Budget national" : "Financement extérieur"}
-                          </p>
+                          <h3 className="text-sm font-medium text-gray-500">Programme de portefeuille</h3>
+                          <p className="font-semibold">{operation.portfolio_program || "Non défini"}</p>
                         </div>
 
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500">Dates planifiées</h3>
-                          <div>
-                            <p>
-                              <span className="font-medium">Début:</span> {operation.start_date || "Non définie"}
-                            </p>
-                            <p>
-                              <span className="font-medium">Fin:</span> {operation.end_date || "Non définie"}
-                            </p>
-                          </div>
+                          <h3 className="text-sm font-medium text-gray-500">Type de programme</h3>
+                          <p className="font-semibold">{operation.program_type || "Non défini"}</p>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Direction régionale du budget</h3>
+                          <p className="font-semibold">{operation.regional_budget_directorate || "Non définie"}</p>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Année de notification</h3>
+                          <p className="font-semibold">{operation.notification_year || "Non définie"}</p>
                         </div>
 
                         <div>
                           <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                          <p>{operation.description || "Aucune description disponible."}</p>
+                          <p className="text-sm text-gray-700">{operation.description || "Aucune description disponible."}</p>
                         </div>
                       </div>
                     </div>
@@ -253,21 +261,33 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                           <div className="space-y-2">
                             <div className="flex justify-between border-b pb-1">
                               <span>AE Initiale</span>
-                              <span className="font-semibold">{formattedAllocated}</span>
+                              <span className="font-semibold">{formatCurrency(operation.initial_ae || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>AE Actuelle</span>
+                              <span className="font-semibold">{formatCurrency(operation.current_ae || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>AE Allouée</span>
+                              <span className="font-semibold">{formatCurrency(operation.allocated_ae || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>AE Engagée</span>
+                              <span className="font-semibold">{formatCurrency(operation.committed_ae || 0)}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
                               <span>AE Consommée</span>
-                              <span className="font-semibold">{formattedConsumed}</span>
-                            </div>
-                            <div className="flex justify-between border-b pb-1">
-                              <span>AE Restante</span>
-                              <span className="font-semibold">{formattedRemaining}</span>
+                              <span className="font-semibold">{formatCurrency(operation.consumed_ae || 0)}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
                               <span>Source de financement</span>
                               <span className="font-semibold">
                                 {operation.origine_financement === "budget_national" ? "Budget national" : "Financement extérieur"}
                               </span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Engagements cumulés</span>
+                              <span className="font-semibold">{formatCurrency(operation.cumulative_commitments || 0)}</span>
                             </div>
                           </div>
                         </div>
@@ -280,8 +300,16 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                               <span className="font-semibold">{formatCurrency(operation.allocated_cp || 0)}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
+                              <span>CP Notifiés</span>
+                              <span className="font-semibold">{formatCurrency(operation.notified_cp || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
                               <span>CP Consommés</span>
                               <span className="font-semibold">{formatCurrency(operation.consumed_cp || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Paiements cumulés</span>
+                              <span className="font-semibold">{formatCurrency(operation.cumulative_payments || 0)}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
                               <span>Taux de consommation CP</span>
@@ -292,10 +320,6 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                                 %
                               </span>
                             </div>
-                            <div className="flex justify-between border-b pb-1">
-                              <span>Dernière opération CP</span>
-                              <span className="font-semibold">15/04/2025</span>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -305,12 +329,21 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                         <div className="mb-2">
                           <div className="flex justify-between text-sm mb-1">
                             <span>Taux de consommation AE</span>
-                            <span className="font-semibold">{consumptionRate}%</span>
+                            <span className="font-semibold">
+                              {operation.allocated_ae && operation.allocated_ae > 0
+                                ? (((operation.consumed_ae || 0) / operation.allocated_ae) * 100).toFixed(1)
+                                : "0"}
+                              %
+                            </span>
                           </div>
                           <Progress
-                            value={parseFloat(consumptionRate)}
+                            value={
+                              operation.allocated_ae && operation.allocated_ae > 0 ? ((operation.consumed_ae || 0) / operation.allocated_ae) * 100 : 0
+                            }
                             className="h-2"
-                            indicatorClassName={getProgressBarColor(parseFloat(consumptionRate))}
+                            indicatorClassName={getProgressBarColor(
+                              operation.allocated_ae && operation.allocated_ae > 0 ? ((operation.consumed_ae || 0) / operation.allocated_ae) * 100 : 0
+                            )}
                           />
                         </div>
                         <div className="text-sm text-gray-500">Dernière mise à jour: {new Date().toLocaleDateString("fr-FR")}</div>
@@ -391,59 +424,91 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Calendrier</h3>
+                          <h3 className="text-sm font-medium text-gray-500 mb-2">Calendrier et planification</h3>
                           <div className="space-y-2">
                             <div className="flex justify-between border-b pb-1">
-                              <span>Date de début</span>
-                              <span className="font-semibold">{operation.start_date || "Non définie"}</span>
+                              <span>Année de début</span>
+                              <span className="font-semibold">{operation.start_year || "Non définie"}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
-                              <span>Date de fin prévue</span>
-                              <span className="font-semibold">{operation.end_date || "Non définie"}</span>
+                              <span>Année de fin</span>
+                              <span className="font-semibold">{operation.end_year || "Non définie"}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
-                              <span>Durée</span>
-                              <span className="font-semibold">
-                                {operation.start_date && operation.end_date
-                                  ? `${Math.round(
-                                      (new Date(operation.end_date).getTime() - new Date(operation.start_date).getTime()) / (1000 * 60 * 60 * 24)
-                                    )} jours`
-                                  : "Non définie"}
-                              </span>
+                              <span>Date d'ordre de service</span>
+                              <span className="font-semibold">{operation.start_order_date || "Non définie"}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
-                              <span>Phase actuelle</span>
-                              <span className="font-semibold">
-                                {operation.status === "planned"
-                                  ? "Planification"
-                                  : operation.status === "in_progress"
-                                  ? "Exécution"
-                                  : operation.status === "completed"
-                                  ? "Finalisée"
-                                  : operation.status === "en_pause"
-                                  ? "En pause"
-                                  : operation.status === "arreter"
-                                  ? "Arrêtée"
-                                  : "Non définie"}
-                              </span>
+                              <span>Date d'achèvement</span>
+                              <span className="font-semibold">{operation.completion_date || "Non définie"}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Délai (jours)</span>
+                              <span className="font-semibold">{operation.delay || "Non défini"}</span>
                             </div>
                           </div>
                         </div>
 
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">Progression</h3>
+                          <h3 className="text-sm font-medium text-gray-500 mb-2">Localisation et acteurs</h3>
                           <div className="space-y-2">
                             <div className="flex justify-between border-b pb-1">
-                              <span>Achèvement physique</span>
-                              <span className="font-semibold">{operation.physical_rate || 0}%</span>
+                              <span>Province</span>
+                              <span className="font-semibold">{operation.province || "Non définie"}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
-                              <span>Consommation financière</span>
-                              <span className="font-semibold">{consumptionRate}%</span>
+                              <span>Municipalité</span>
+                              <span className="font-semibold">{operation.municipality || "Non définie"}</span>
                             </div>
                             <div className="flex justify-between border-b pb-1">
-                              <span>Statut actuel</span>
-                              <div className="flex items-center gap-2">{getStatusBadge(operation.status)}</div>
+                              <span>Emplacement</span>
+                              <span className="font-semibold">{operation.location || "Non défini"}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Bénéficiaire</span>
+                              <span className="font-semibold">{operation.beneficiary || "Non défini"}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Maître d'ouvrage</span>
+                              <span className="font-semibold">{operation.project_owner || "Non défini"}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Mode d'exécution</span>
+                              <span className="font-semibold">
+                                {operation.execution_mode === "state"
+                                  ? "Par l'État"
+                                  : operation.execution_mode === "delegation"
+                                  ? "Délégation"
+                                  : operation.execution_mode === "PPP"
+                                  ? "Partenariat public-privé"
+                                  : "Non défini"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-b pb-1">
+                              <span>Statut du projet</span>
+                              <span className="font-semibold">
+                                {operation.project_status === "not_started"
+                                  ? "Non démarré"
+                                  : operation.project_status === "planned"
+                                  ? "Planifié"
+                                  : operation.project_status === "in_progress"
+                                  ? "En cours"
+                                  : operation.project_status === "completed"
+                                  ? "Achevé"
+                                  : operation.project_status === "on_hold"
+                                  ? "En attente"
+                                  : operation.project_status === "suspended"
+                                  ? "Suspendu"
+                                  : operation.project_status === "delayed"
+                                  ? "Retardé"
+                                  : operation.project_status === "canceled"
+                                  ? "Annulé"
+                                  : operation.project_status === "completely_frozen"
+                                  ? "Gelé complètement"
+                                  : operation.project_status === "partially_frozen"
+                                  ? "Gelé partiellement"
+                                  : "Non défini"}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -453,7 +518,7 @@ export const OperationViewDialog: React.FC<OperationViewDialogProps> = ({ isOpen
                         <h3 className="text-sm font-medium text-gray-500 mb-2">Progression de mise en œuvre</h3>
                         <div className="mb-2">
                           <div className="flex justify-between text-sm mb-1">
-                            <span>Achèvement physique</span>
+                            <span>Taux d'achèvement physique</span>
                             <span className="font-semibold">{operation.physical_rate || 0}%</span>
                           </div>
                           <Progress
