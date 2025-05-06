@@ -87,31 +87,77 @@
 
 ---
 
-Workflow budgétaire : Opérations, AE, CP
-Création de l’opération : Une opération est enregistrée dans un programme/action. Elle contient les détails techniques, géographiques, financiers initiaux.
+# Workflow budgétaire : Opérations, AE, CP
 
-Allocation initiale (AE/CP) :
+## Création de l'opération
 
-AE : montant autorisé à engager.
+- Une opération est enregistrée dans un programme/action
+- Elle contient les détails techniques, géographiques, financiers initiaux
 
-CP : montant disponible pour paiement sur une année donnée (pluriannuel possible via operation_cps).
+## Allocation initiale (AE/CP)
 
-Engagements :
+- **AE (Autorisations d'Engagement)** : montant autorisé à engager
+- **CP (Crédits de Paiement)** : montant disponible pour paiement sur une année donnée (pluriannuel possible via operation_cps)
 
-Représentent les décisions d’engager une partie ou la totalité de l’AE (contrats, bons de commande, etc.).
+## Engagements
 
-L’engagement doit respecter les AE disponibles.
+- Représentent les décisions d'engager une partie ou la totalité de l'AE (contrats, bons de commande, etc.)
+- L'engagement doit respecter les AE disponibles
 
-Paiements :
+## Paiements
 
-Les paiements sont réalisés sur CP disponibles, en lien avec des engagements.
+- Les paiements sont réalisés sur CP disponibles, en lien avec des engagements
+- Chaque paiement consomme une portion des CP
 
-Chaque paiement consomme une portion des CP.
+## Réévaluation
 
-Réévaluation :
+- Modification des AE (ou CP) d'une opération pour prendre en compte une révision de coût ou une extension du projet
 
-Modification des AE (ou CP) d’une opération pour prendre en compte une révision de coût ou une extension du projet.
+## Demande hors budget
 
-Demande hors budget :
+- Saisie exceptionnelle pour des besoins non couverts par l'enveloppe budgétaire initiale
 
-Saisie exceptionnelle pour des besoins non couverts par l’enveloppe budgétaire initiale.
+## ✅ Types d'engagements (`type`) – Français 🇫🇷
+
+| Code            | Nom complet                          | Description                                                                     |
+| --------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| `juridique`     | Engagement juridique                 | Né d’un contrat, d’une commande ou d’un marché. Il engage juridiquement l'État. |
+| `provisoire`    | Engagement provisoire                | Réservation budgétaire sans contrat signé, à régulariser.                       |
+| `technique`     | Engagement technique                 | Utilisé à des fins de gestion ou pour bloquer des crédits temporairement.       |
+| `pluriannuel`   | Engagement pluriannuel               | Lié à une opération s'étalant sur plusieurs années (souvent avec AE/CP).        |
+| `reconduction`  | Engagement reconduit                 | Reprise d’un engagement d’un exercice antérieur (ex. non payé).                 |
+| `réévaluation`  | Réévaluation (ou régularisation)     | Modification à la hausse d’un engagement existant.                              |
+| `décaissement`  | Décaissement associé à un engagement | Souvent lié aux paiements d’une opération validée.                              |
+| `réaffectation` | Réaffectation de crédits             | Déplacement d’un engagement vers une autre opération.                           |
+| `hors_budget`   | Demande hors budget (exceptionnelle) | Cas particuliers nécessitant une régularisation ou validation exceptionnelle.   |
+
+---
+
+## ✅ Engagement Types (`type`) – English 🇬🇧
+
+| Code           | English Name            | Description                                                                   |
+| -------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| `legal`        | Legal Commitment        | A formal commitment arising from a contract, order, or signed agreement.      |
+| `provisional`  | Provisional Commitment  | Temporary reservation of funds without a signed contract; to be regularized.  |
+| `technical`    | Technical Commitment    | Used for internal management or temporary credit blocking.                    |
+| `multiannual`  | Multiannual Commitment  | Related to projects spread across several fiscal years (commonly with AE/CP). |
+| `carryover`    | Carried-over Commitment | Renewal of a previous year's engagement (e.g., unpaid from last year).        |
+| `revaluation`  | Revaluation             | Increase or adjustment of an existing commitment.                             |
+| `disbursement` | Disbursement            | Payment made based on a validated commitment.                                 |
+| `reallocation` | Credit Reallocation     | Movement of committed funds to a different operation.                         |
+| `off_budget`   | Off-Budget Request      | Exceptional case not covered in the initial budget; requires justification.   |
+
+## ✅ Project Status (`project_status`)
+
+| Code                | English Name      | Description                                                      |
+| ------------------- | ----------------- | ---------------------------------------------------------------- |
+| `not_started`       | Not Started       | The project is registered but no physical work has begun.        |
+| `planned`           | Planned           | The project has been approved and is scheduled to begin.         |
+| `in_progress`       | In Progress       | Execution or construction is currently underway.                 |
+| `completed`         | Completed         | The project is fully finished.                                   |
+| `on_hold`           | On Hold           | Work is temporarily stopped (e.g., due to external constraints). |
+| `suspended`         | Suspended         | Work stopped indefinitely with no planned restart date.          |
+| `delayed`           | Delayed           | The project is active but behind the original schedule.          |
+| `canceled`          | Canceled          | The project has been permanently stopped and will not resume.    |
+| `completely_frozen` | Completely Frozen | Entirely blocked (e.g., legally or administratively).            |
+| `partially_frozen`  | Partially Frozen  | Some components of the project are frozen, others may continue.  |

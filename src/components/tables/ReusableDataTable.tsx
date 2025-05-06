@@ -25,12 +25,14 @@ interface CustomAction<T> {
   condition?: (data: T) => boolean;
 }
 
+type CustomActionsType<T> = CustomAction<T>[] | ((row: T) => React.ReactNode | React.ReactNode[] | undefined);
+
 interface ReusableDataTableProps<T> {
   data: T[];
   columns: ColumnDef<T, unknown>[];
   filterColumn?: string;
   actionHandlers?: ActionHandlers<T>;
-  customActions?: CustomAction<T>[];
+  customActions?: CustomActionsType<T>;
   enableRowSelection?: boolean;
   onRowSelectionChange?: (selectedRows: Record<string, boolean>) => void;
   onRefresh?: () => void;
@@ -65,7 +67,7 @@ export function ReusableDataTable<T>({
   const { t } = useTranslation();
 
   // Add the actions column if any action handlers are provided
-  const hasActions = actionHandlers || (customActions && customActions.length > 0);
+  const hasActions = actionHandlers || customActions;
 
   // Use translation or default if not provided
   const defaultAddNewLabel = t("common.addNew");
@@ -87,6 +89,42 @@ export function ReusableDataTable<T>({
         header: t("common.actions"),
         cell: ({ row }) => {
           const data = row.original;
+
+          // Custom actions section
+          let customActionElements: React.ReactNode[] = [];
+
+          if (typeof customActions === "function") {
+            // If customActions is a function, call it with the row data
+            const customActionResult = customActions(data);
+
+            // Handle the case where the function returns undefined, a single element, or an array
+            if (customActionResult) {
+              if (Array.isArray(customActionResult)) {
+                customActionElements = customActionResult;
+              } else {
+                customActionElements = [customActionResult];
+              }
+            }
+          } else if (Array.isArray(customActions)) {
+            // If customActions is an array, map it to buttons
+            customActionElements = customActions
+              .map((action, idx) => {
+                if (action.condition && !action.condition(data)) return null;
+
+                return (
+                  <Button
+                    key={idx}
+                    variant={action.variant || "ghost"}
+                    size="icon"
+                    onClick={() => actionHandlers?.onCustomAction?.(data, action.actionType)}
+                    title={action.label}
+                  >
+                    {action.icon}
+                  </Button>
+                );
+              })
+              .filter(Boolean);
+          }
 
           return (
             <div className="flex justify-end gap-2">
@@ -132,21 +170,7 @@ export function ReusableDataTable<T>({
                 </Button>
               )}
 
-              {customActions.map((action, idx) => {
-                if (action.condition && !action.condition(data)) return null;
-
-                return (
-                  <Button
-                    key={idx}
-                    variant={action.variant || "ghost"}
-                    size="icon"
-                    onClick={() => actionHandlers?.onCustomAction?.(data, action.actionType)}
-                    title={action.label}
-                  >
-                    {action.icon}
-                  </Button>
-                );
-              })}
+              {customActionElements}
             </div>
           );
         },

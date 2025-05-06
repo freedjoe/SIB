@@ -13,8 +13,8 @@ export interface PaymentRequestWithRelations extends PaymentRequest {
       action_id: string | null;
       action?: {
         name: string;
-        program_id: string;
-        program?: {
+        subprogram_id: string;
+        subprogram?: {
           name: string;
         };
       };
@@ -37,8 +37,8 @@ export async function getAllPaymentRequests(): Promise<PaymentRequestWithRelatio
           action_id,
           action:action_id (
             name,
-            program_id,
-            program:program_id (name)
+            subprogram_id,
+            subprogram:subprogram_id (name)
           )
         )
       )
@@ -73,8 +73,8 @@ export async function getPaymentRequestById(id: string): Promise<PaymentRequestW
           action_id,
           action:action_id (
             name,
-            program_id,
-            program:program_id (name)
+            subprogram_id,
+            subprogram:subprogram_id (name)
           )
         )
       )
@@ -106,8 +106,8 @@ export async function getPaymentRequestsByStatus(status: string): Promise<Paymen
           action_id,
           action:action_id (
             name,
-            program_id,
-            program:program_id (name)
+            subprogram_id,
+            subprogram:subprogram_id (name)
           )
         )
       )

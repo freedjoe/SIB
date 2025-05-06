@@ -31,9 +31,15 @@ export default function LocalizationSettings() {
                 <SelectValue placeholder="Sélectionnez une langue" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="ar">العربية</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                <SelectItem key="fr" value="fr">
+                  Français
+                </SelectItem>
+                <SelectItem key="ar" value="ar">
+                  العربية
+                </SelectItem>
+                <SelectItem key="en" value="en">
+                  English
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -44,9 +50,15 @@ export default function LocalizationSettings() {
                 <SelectValue placeholder="Sélectionnez un fuseau horaire" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Africa/Algiers">Alger (GMT+1)</SelectItem>
-                <SelectItem value="Africa/Tunis">Tunis (GMT+1)</SelectItem>
-                <SelectItem value="Africa/Casablanca">Casablanca (GMT)</SelectItem>
+                <SelectItem key="Africa/Algiers" value="Africa/Algiers">
+                  Alger (GMT+1)
+                </SelectItem>
+                <SelectItem key="Africa/Tunis" value="Africa/Tunis">
+                  Tunis (GMT+1)
+                </SelectItem>
+                <SelectItem key="Africa/Casablanca" value="Africa/Casablanca">
+                  Casablanca (GMT)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -57,9 +69,15 @@ export default function LocalizationSettings() {
                 <SelectValue placeholder="Sélectionnez un format de date" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                <SelectItem key="DD/MM/YYYY" value="DD/MM/YYYY">
+                  DD/MM/YYYY
+                </SelectItem>
+                <SelectItem key="MM/DD/YYYY" value="MM/DD/YYYY">
+                  MM/DD/YYYY
+                </SelectItem>
+                <SelectItem key="YYYY-MM-DD" value="YYYY-MM-DD">
+                  YYYY-MM-DD
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -104,6 +104,12 @@ export function MainNav() {
       description: "Crédits de paiement",
     },
     {
+      label: t("app.navigation.creditPayments"),
+      href: "/credit-payments",
+      icon: CreditCard,
+      description: "Gestion des paiements de crédit",
+    },
+    {
       label: t("app.navigation.forecastedExpenses"),
       href: "/forecasted-expenses",
       icon: TrendingUp,

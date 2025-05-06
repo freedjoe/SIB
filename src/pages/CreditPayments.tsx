@@ -1,657 +1,505 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { useCreditPaymentMutation, useCreditPayments, useFiscalYears, useOperations } from "@/hooks/supabase";
-import { CreditPaymentWithRelations } from "@/types/credit_payments";
-import { CreditPaymentsTable } from "@/components/tables/CreditPaymentsTable";
-import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/utils";
-import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { CreditPaymentTable } from "@/components/tables/CreditPaymentTable";
+import { CreditPaymentViewDialog } from "@/components/credit-payments/CreditPaymentViewDialog";
+import { CreditPaymentFormDialog } from "@/components/credit-payments/CreditPaymentFormDialog";
+import { CreditPaymentApproveDialog } from "@/components/credit-payments/CreditPaymentApproveDialog";
+
+// Define the structure of credit payment
+export interface CreditPayment {
+  id: string;
+  code: string;
+  operation_id: string;
+  operation?: {
+    id: string;
+    title: string;
+    code: string;
+  };
+  fiscal_year_id: string;
+  fiscal_year?: {
+    id: string;
+    year: number;
+  };
+  amount: number;
+  status: "draft" | "submitted" | "reviewed" | "approved" | "rejected";
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Mock data for credit payments
+const mockCreditPayments: CreditPayment[] = [
+  {
+    id: "1",
+    code: "CP-2025-001",
+    operation_id: "op1",
+    operation: {
+      id: "op1",
+      title: "Construction de l'autoroute Est-Ouest",
+      code: "OP-2025-001",
+    },
+    fiscal_year_id: "fy1",
+    fiscal_year: {
+      id: "fy1",
+      year: 2025,
+    },
+    amount: 1500000000,
+    status: "submitted",
+    description: "Paiement de crédit pour la phase 1 de construction",
+    created_at: "2025-01-15T09:30:00",
+    updated_at: "2025-01-15T09:30:00",
+  },
+  {
+    id: "2",
+    code: "CP-2025-002",
+    operation_id: "op2",
+    operation: {
+      id: "op2",
+      title: "Modernisation du réseau d'eau potable",
+      code: "OP-2025-002",
+    },
+    fiscal_year_id: "fy1",
+    fiscal_year: {
+      id: "fy1",
+      year: 2025,
+    },
+    amount: 750000000,
+    status: "approved",
+    description: "Financement pour la rénovation des installations",
+    created_at: "2025-01-20T11:15:00",
+    updated_at: "2025-01-22T14:45:00",
+  },
+  {
+    id: "3",
+    code: "CP-2025-003",
+    operation_id: "op3",
+    operation: {
+      id: "op3",
+      title: "Construction de logements sociaux",
+      code: "OP-2025-003",
+    },
+    fiscal_year_id: "fy1",
+    fiscal_year: {
+      id: "fy1",
+      year: 2025,
+    },
+    amount: 1200000000,
+    status: "submitted",
+    description: "Financement de la première phase de construction",
+    created_at: "2025-01-25T13:20:00",
+    updated_at: "2025-01-25T13:20:00",
+  },
+  {
+    id: "4",
+    code: "CP-2025-004",
+    operation_id: "op4",
+    operation: {
+      id: "op4",
+      title: "Réhabilitation des équipements scolaires",
+      code: "OP-2025-004",
+    },
+    fiscal_year_id: "fy1",
+    fiscal_year: {
+      id: "fy1",
+      year: 2025,
+    },
+    amount: 450000000,
+    status: "approved",
+    description: "Modernisation des écoles primaires",
+    created_at: "2025-02-01T10:00:00",
+    updated_at: "2025-02-05T09:15:00",
+  },
+  {
+    id: "5",
+    code: "CP-2025-005",
+    operation_id: "op5",
+    operation: {
+      id: "op5",
+      title: "Extension du réseau électrique rural",
+      code: "OP-2025-005",
+    },
+    fiscal_year_id: "fy1",
+    fiscal_year: {
+      id: "fy1",
+      year: 2025,
+    },
+    amount: 850000000,
+    status: "rejected",
+    description: "Financement pour l'électrification des zones rurales",
+    created_at: "2025-02-03T15:30:00",
+    updated_at: "2025-02-07T11:25:00",
+  },
+];
+
+// Mock operations data for dialogs
+const mockOperations = [
+  { id: "op1", title: "Construction de l'autoroute Est-Ouest", code: "OP-2025-001" },
+  { id: "op2", title: "Modernisation du réseau d'eau potable", code: "OP-2025-002" },
+  { id: "op3", title: "Construction de logements sociaux", code: "OP-2025-003" },
+  { id: "op4", title: "Réhabilitation des équipements scolaires", code: "OP-2025-004" },
+  { id: "op5", title: "Extension du réseau électrique rural", code: "OP-2025-005" },
+];
+
+// Mock fiscal years data for dialogs
+const mockFiscalYears = [
+  { id: "fy1", year: 2025 },
+  { id: "fy2", year: 2026 },
+];
 
 export default function CreditPayments() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("liste");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  const [currentCreditPayment, setCurrentCreditPayment] = useState<CreditPaymentWithRelations | null>(null);
-  const [newCreditPayment, setNewCreditPayment] = useState<Partial<CreditPaymentWithRelations>>({
-    code: "",
+  const [activeTab, setActiveTab] = useState("pending");
+  const [creditPayments, setCreditPayments] = useState<CreditPayment[]>(mockCreditPayments);
+
+  // Filter payments based on search term and active tab
+  const filteredPayments = creditPayments.filter((payment) => {
+    const matchesSearch =
+      payment.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.operation?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment.description && payment.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (activeTab === "pending") {
+      return matchesSearch && payment.status === "submitted";
+    } else if (activeTab === "approved") {
+      return matchesSearch && payment.status === "approved";
+    } else if (activeTab === "history") {
+      return matchesSearch;
+    }
+    return matchesSearch;
+  });
+
+  // State for dialogs
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<CreditPayment | null>(null);
+  const [newCreditPayment, setNewCreditPayment] = useState<Partial<CreditPayment>>({
+    code: `CP-2025-${String(creditPayments.length + 1).padStart(3, "0")}`,
     operation_id: "",
-    fiscal_year_id: "",
+    fiscal_year_id: "fy1",
     amount: 0,
     status: "draft",
     description: "",
   });
 
-  // Use our custom React Query hooks
-  const {
-    data: creditPaymentsData = [],
-    isLoading: isLoadingCreditPayments,
-    refetch: refetchCreditPayments,
-  } = useCreditPayments({
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
+  // Format date helper function
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-  const { data: operationsData = [], isLoading: isLoadingOperations } = useOperations({
-    staleTime: 1000 * 60 * 30, // 30 minutes
-  });
+  // Handle view credit payment
+  const handleViewCreditPayment = (payment: CreditPayment) => {
+    setSelectedPayment(payment);
+    setViewDialogOpen(true);
+  };
 
-  const { data: fiscalYearsData = [], isLoading: isLoadingFiscalYears } = useFiscalYears({
-    staleTime: 1000 * 60 * 60, // 60 minutes
-  });
-
-  // Use mutation hook for credit payment operations
-  const creditPaymentMutation = useCreditPaymentMutation({
-    onSuccess: () => {
-      refetchCreditPayments();
-      toast({
-        title: "Succès",
-        description: "L'opération a été effectuée avec succès",
-      });
-    },
-  });
-
-  // Filter credit payments based on search term and status
-  const filteredCreditPayments = creditPaymentsData.filter((creditPayment) => {
-    const operationTitle = creditPayment.operation?.title?.toLowerCase() || "";
-    const code = creditPayment.code?.toLowerCase() || "";
-    return operationTitle.includes(searchTerm.toLowerCase()) || code.includes(searchTerm.toLowerCase());
-  });
-
-  const pendingApprovals = creditPaymentsData.filter((creditPayment) => creditPayment.status === "submitted");
-
-  const handleOpenAddDialog = () => {
+  // Handle edit credit payment
+  const handleEditCreditPayment = (payment: CreditPayment) => {
+    setSelectedPayment(payment);
     setNewCreditPayment({
-      code: `CP-${new Date().getTime().toString().slice(-8)}`,
+      ...payment,
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Handle add new credit payment
+  const handleAddNewCreditPayment = () => {
+    setNewCreditPayment({
+      code: `CP-2025-${String(creditPayments.length + 1).padStart(3, "0")}`,
       operation_id: "",
-      fiscal_year_id: "",
+      fiscal_year_id: "fy1",
       amount: 0,
       status: "draft",
       description: "",
     });
-    setIsAddDialogOpen(true);
+    setAddDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (creditPayment: CreditPaymentWithRelations) => {
-    setCurrentCreditPayment(creditPayment);
-    setNewCreditPayment({
-      code: creditPayment.code,
-      operation_id: creditPayment.operation_id,
-      fiscal_year_id: creditPayment.fiscal_year_id,
-      amount: creditPayment.amount,
-      status: creditPayment.status,
-      description: creditPayment.description || "",
-    });
-    setIsEditDialogOpen(true);
+  // Handle approve credit payment
+  const handleApprovePayment = (payment: CreditPayment) => {
+    setSelectedPayment(payment);
+    setApproveDialogOpen(true);
   };
 
-  const handleOpenDeleteDialog = (creditPayment: CreditPaymentWithRelations) => {
-    setCurrentCreditPayment(creditPayment);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleOpenViewDialog = (creditPayment: CreditPaymentWithRelations) => {
-    setCurrentCreditPayment(creditPayment);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleOpenApproveDialog = (creditPayment: CreditPaymentWithRelations) => {
-    setCurrentCreditPayment(creditPayment);
-    setIsApproveDialogOpen(true);
-  };
-
-  const handleAddCreditPayment = () => {
-    if (!newCreditPayment.operation_id || !newCreditPayment.fiscal_year_id) {
+  // Handle save edit credit payment
+  const handleSaveEditCreditPayment = () => {
+    if (selectedPayment && newCreditPayment) {
+      setCreditPayments(
+        creditPayments.map((cp) =>
+          cp.id === selectedPayment.id ? ({ ...cp, ...newCreditPayment, updated_at: new Date().toISOString() } as CreditPayment) : cp
+        )
+      );
+      setEditDialogOpen(false);
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
-        variant: "destructive",
+        title: t("creditPayments.updateSuccess") || "Paiement mis à jour",
+        description: t("creditPayments.updateSuccessDescription") || "Le paiement de crédit a été mis à jour avec succès.",
       });
-      return;
     }
-
-    // Create new credit payment with data from state
-    const creditPayment = {
-      code: newCreditPayment.code,
-      operation_id: newCreditPayment.operation_id,
-      fiscal_year_id: newCreditPayment.fiscal_year_id,
-      amount: Number(newCreditPayment.amount) || 0,
-      status: "draft" as const,
-      description: newCreditPayment.description || null,
-    };
-
-    // Use our mutation hook to add the credit payment
-    creditPaymentMutation.mutateAsync({
-      type: "INSERT",
-      data: creditPayment,
-    });
-
-    setIsAddDialogOpen(false);
   };
 
-  const handleEditCreditPayment = () => {
-    if (!currentCreditPayment) return;
-
-    if (!newCreditPayment.operation_id || !newCreditPayment.fiscal_year_id) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs requis.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Use our mutation hook to update the credit payment
-    creditPaymentMutation.mutateAsync({
-      type: "UPDATE",
-      id: currentCreditPayment.id,
-      data: {
-        code: newCreditPayment.code,
+  // Handle save new credit payment
+  const handleSaveNewCreditPayment = () => {
+    if (newCreditPayment.operation_id && newCreditPayment.amount) {
+      const now = new Date().toISOString();
+      const newPayment: CreditPayment = {
+        id: `${creditPayments.length + 1}`,
+        code: newCreditPayment.code || `CP-2025-${String(creditPayments.length + 1).padStart(3, "0")}`,
         operation_id: newCreditPayment.operation_id,
-        fiscal_year_id: newCreditPayment.fiscal_year_id,
-        amount: Number(newCreditPayment.amount) || 0,
+        operation: mockOperations.find((op) => op.id === newCreditPayment.operation_id),
+        fiscal_year_id: newCreditPayment.fiscal_year_id || "fy1",
+        fiscal_year: mockFiscalYears.find((fy) => fy.id === (newCreditPayment.fiscal_year_id || "fy1")),
+        amount: newCreditPayment.amount,
+        status: "submitted",
         description: newCreditPayment.description || null,
-      },
-    });
+        created_at: now,
+        updated_at: now,
+      };
 
-    setIsEditDialogOpen(false);
-  };
-
-  const handleDeleteCreditPayment = () => {
-    if (!currentCreditPayment) return;
-
-    // Use our mutation hook to delete the credit payment
-    creditPaymentMutation.mutateAsync({
-      type: "DELETE",
-      id: currentCreditPayment.id,
-    });
-
-    setIsDeleteDialogOpen(false);
-  };
-
-  const handleApproveCreditPayment = () => {
-    if (!currentCreditPayment) return;
-
-    // Use our mutation hook to approve the credit payment
-    creditPaymentMutation.mutateAsync({
-      type: "UPDATE",
-      id: currentCreditPayment.id,
-      data: {
-        status: "approved" as const,
-      },
-    });
-
-    setIsApproveDialogOpen(false);
-  };
-
-  const handleRejectCreditPayment = (creditPayment: CreditPaymentWithRelations) => {
-    // Use our mutation hook to reject the credit payment
-    creditPaymentMutation.mutateAsync({
-      type: "UPDATE",
-      id: creditPayment.id,
-      data: {
-        status: "rejected" as const,
-      },
-    });
-
-    toast({
-      title: "Crédit de paiement rejeté",
-      description: `Le crédit de paiement pour "${creditPayment.operation?.title || creditPayment.code}" a été rejeté.`,
-    });
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    return new Date(dateString).toLocaleDateString("fr-FR", options);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <Badge className="bg-green-500">Approuvé</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">Rejeté</Badge>;
-      case "submitted":
-        return <Badge className="bg-blue-500">Soumis</Badge>;
-      case "reviewed":
-        return <Badge className="bg-purple-500">Révisé</Badge>;
-      case "draft":
-        return <Badge variant="outline">Brouillon</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+      setCreditPayments([...creditPayments, newPayment]);
+      setAddDialogOpen(false);
+      toast({
+        title: t("creditPayments.createSuccess") || "Paiement créé",
+        description: t("creditPayments.createSuccessDescription") || "Le nouveau paiement de crédit a été créé avec succès.",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: t("creditPayments.error") || "Erreur",
+        description: t("creditPayments.fillRequiredFields") || "Veuillez remplir tous les champs obligatoires.",
+      });
     }
   };
 
-  if (isLoadingCreditPayments || isLoadingOperations || isLoadingFiscalYears) {
-    return <PageLoadingSpinner message="Chargement des crédits de paiement..." />;
-  }
+  // Handle confirm approval
+  const handleConfirmApproval = () => {
+    if (selectedPayment) {
+      setCreditPayments(
+        creditPayments.map((cp) => (cp.id === selectedPayment.id ? { ...cp, status: "approved", updated_at: new Date().toISOString() } : cp))
+      );
+      setApproveDialogOpen(false);
+      toast({
+        title: t("creditPayments.approveSuccess") || "Paiement approuvé",
+        description: t("creditPayments.approveSuccessDescription") || "Le paiement de crédit a été approuvé avec succès.",
+      });
+    }
+  };
+
+  // Handle reject credit payment
+  const handleRejectPayment = (payment: CreditPayment) => {
+    setCreditPayments(creditPayments.map((cp) => (cp.id === payment.id ? { ...cp, status: "rejected", updated_at: new Date().toISOString() } : cp)));
+    toast({
+      title: t("creditPayments.rejectSuccess") || "Paiement rejeté",
+      description: t("creditPayments.rejectSuccessDescription") || "Le paiement de crédit a été rejeté.",
+    });
+  };
+
+  // Handle delete credit payment
+  const handleDeletePayment = (payment: CreditPayment) => {
+    if (window.confirm(t("creditPayments.confirmDelete") || "Êtes-vous sûr de vouloir supprimer ce paiement de crédit ?")) {
+      setCreditPayments(creditPayments.filter((cp) => cp.id !== payment.id));
+      toast({
+        title: t("creditPayments.deleteSuccess") || "Paiement supprimé",
+        description: t("creditPayments.deleteSuccessDescription") || "Le paiement de crédit a été supprimé avec succès.",
+      });
+    }
+  };
 
   return (
     <Dashboard className="p-6">
-      <DashboardHeader title={t("app.navigation.creditPayments") || "Crédits de Paiement"} description="Gestion des crédits de paiement" />
+      <DashboardHeader
+        title={t("app.navigation.creditPayments") || "Paiements de Crédit"}
+        description={t("creditPayments.description") || "Gestion des paiements de crédit"}
+      />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="liste">Liste des Crédits de Paiement</TabsTrigger>
-          <TabsTrigger value="approbations">
-            Approbations en Attente
-            {pendingApprovals.length > 0 && (
-              <Badge variant="warning" className="ml-2">
-                {pendingApprovals.length}
-              </Badge>
-            )}
-          </TabsTrigger>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full mb-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="pending">{t("creditPayments.pending") || "En attente"}</TabsTrigger>
+          <TabsTrigger value="approved">{t("creditPayments.approved") || "Approuvés"}</TabsTrigger>
+          <TabsTrigger value="history">{t("creditPayments.history") || "Historique"}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="liste" className="mt-6">
+        <TabsContent
+          value="pending"
+          className="mt-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex justify-between items-center mb-6">
                 <div className="relative w-72">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher des crédits de paiement..."
+                    placeholder={t("creditPayments.searchPlaceholder") || "Rechercher des paiements..."}
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button onClick={handleOpenAddDialog}>
-                  <Plus className="mr-2 h-4 w-4" /> Ajouter un crédit de paiement
+                <Button onClick={handleAddNewCreditPayment}>
+                  <Plus className="mr-2 h-4 w-4" /> {t("creditPayments.addNew") || "Ajouter un paiement"}
                 </Button>
               </div>
 
-              <CreditPaymentsTable
-                creditPayments={filteredCreditPayments}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-                onEdit={handleOpenEditDialog}
-                onDelete={handleOpenDeleteDialog}
-                onView={handleOpenViewDialog}
-                onApprove={handleOpenApproveDialog}
-                onReject={handleRejectCreditPayment}
-                onRefresh={() => {
-                  refetchCreditPayments();
-                  toast({
-                    title: "Données actualisées",
-                    description: "La liste des crédits de paiement a été actualisée",
-                  });
-                }}
-                onAddNew={handleOpenAddDialog}
-              />
+              {filteredPayments.length > 0 ? (
+                <CreditPaymentTable
+                  creditPayments={filteredPayments}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                  onView={handleViewCreditPayment}
+                  onEdit={handleEditCreditPayment}
+                  onDelete={handleDeletePayment}
+                  onApprove={handleApprovePayment}
+                  onReject={handleRejectPayment}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>{t("creditPayments.noPayments") || "Aucun paiement de crédit trouvé."}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="approbations" className="mt-6">
+        <TabsContent
+          value="approved"
+          className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Approbations en attente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingApprovals.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Aucune approbation en attente</p>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className="relative w-72">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("creditPayments.searchPlaceholder") || "Rechercher des paiements..."}
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-              ) : (
-                <CreditPaymentsTable
-                  creditPayments={pendingApprovals}
+                <Button onClick={handleAddNewCreditPayment}>
+                  <Plus className="mr-2 h-4 w-4" /> {t("creditPayments.addNew") || "Ajouter un paiement"}
+                </Button>
+              </div>
+
+              {filteredPayments.length > 0 ? (
+                <CreditPaymentTable
+                  creditPayments={filteredPayments}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
-                  onEdit={handleOpenEditDialog}
-                  onDelete={handleOpenDeleteDialog}
-                  onView={handleOpenViewDialog}
-                  onApprove={handleOpenApproveDialog}
-                  onReject={handleRejectCreditPayment}
-                  onRefresh={() => {
-                    refetchCreditPayments();
-                    toast({
-                      title: "Données actualisées",
-                      description: "La liste des approbations a été actualisée",
-                    });
-                  }}
+                  onView={handleViewCreditPayment}
+                  onEdit={handleEditCreditPayment}
+                  onDelete={handleDeletePayment}
                 />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>{t("creditPayments.noApprovedPayments") || "Aucun paiement de crédit approuvé trouvé."}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent
+          value="history"
+          className="mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className="relative w-72">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("creditPayments.searchPlaceholder") || "Rechercher des paiements..."}
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button onClick={handleAddNewCreditPayment}>
+                  <Plus className="mr-2 h-4 w-4" /> {t("creditPayments.addNew") || "Ajouter un paiement"}
+                </Button>
+              </div>
+
+              {filteredPayments.length > 0 ? (
+                <CreditPaymentTable
+                  creditPayments={filteredPayments}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                  onView={handleViewCreditPayment}
+                  onEdit={handleEditCreditPayment}
+                  onDelete={handleDeletePayment}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>{t("creditPayments.noHistoryPayments") || "Aucun historique de paiement de crédit trouvé."}</p>
+                </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Ajouter un crédit de paiement</DialogTitle>
-            <DialogDescription>Complétez le formulaire pour ajouter un crédit de paiement.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="code" className="text-right">
-                Code
-              </Label>
-              <Input
-                id="code"
-                value={newCreditPayment.code || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, code: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="operation" className="text-right">
-                Opération
-              </Label>
-              <Select
-                value={newCreditPayment.operation_id}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une opération" />
-                </SelectTrigger>
-                <SelectContent>
-                  {operationsData.map((operation) => (
-                    <SelectItem key={operation.id} value={operation.id}>
-                      {operation.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fiscal_year" className="text-right">
-                Année Fiscale
-              </Label>
-              <Select
-                value={newCreditPayment.fiscal_year_id}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une année fiscale" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fiscalYearsData.map((fiscalYear) => (
-                    <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
-                      {fiscalYear.year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="amount" className="text-right">
-                Montant
-              </Label>
-              <Input
-                id="amount"
-                type="number"
-                className="col-span-3"
-                value={newCreditPayment.amount || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                className="col-span-3"
-                value={newCreditPayment.description || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, description: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleAddCreditPayment}>Ajouter</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Modifier le crédit de paiement</DialogTitle>
-            <DialogDescription>Modifiez les détails du crédit de paiement.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-code" className="text-right">
-                Code
-              </Label>
-              <Input
-                id="edit-code"
-                value={newCreditPayment.code || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, code: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-operation" className="text-right">
-                Opération
-              </Label>
-              <Select
-                value={newCreditPayment.operation_id}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une opération" />
-                </SelectTrigger>
-                <SelectContent>
-                  {operationsData.map((operation) => (
-                    <SelectItem key={operation.id} value={operation.id}>
-                      {operation.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-fiscal_year" className="text-right">
-                Année Fiscale
-              </Label>
-              <Select
-                value={newCreditPayment.fiscal_year_id}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une année fiscale" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fiscalYearsData.map((fiscalYear) => (
-                    <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
-                      {fiscalYear.year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-amount" className="text-right">
-                Montant
-              </Label>
-              <Input
-                id="edit-amount"
-                type="number"
-                className="col-span-3"
-                value={newCreditPayment.amount || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-status" className="text-right">
-                Statut
-              </Label>
-              <Select value={newCreditPayment.status} onValueChange={(value: any) => setNewCreditPayment({ ...newCreditPayment, status: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Brouillon</SelectItem>
-                  <SelectItem value="submitted">Soumis</SelectItem>
-                  <SelectItem value="reviewed">Révisé</SelectItem>
-                  <SelectItem value="approved">Approuvé</SelectItem>
-                  <SelectItem value="rejected">Rejeté</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="edit-description"
-                className="col-span-3"
-                value={newCreditPayment.description || ""}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, description: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleEditCreditPayment}>Enregistrer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce crédit de paiement? Cette action est irréversible.</DialogDescription>
-          </DialogHeader>
-          {currentCreditPayment && (
-            <div className="py-4">
-              <p>
-                <strong>ID:</strong> {currentCreditPayment.id}
-              </p>
-              <p>
-                <strong>Code:</strong> {currentCreditPayment.code}
-              </p>
-              <p>
-                <strong>Opération:</strong> {currentCreditPayment.operation?.title}
-              </p>
-              <p>
-                <strong>Montant:</strong> {formatCurrency(currentCreditPayment.amount)}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteCreditPayment}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* View Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Détails du crédit de paiement</DialogTitle>
-          </DialogHeader>
-          {currentCreditPayment && (
-            <div className="py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">ID:</div>
-                <div>{currentCreditPayment.id}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Code:</div>
-                <div>{currentCreditPayment.code}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Opération:</div>
-                <div>{currentCreditPayment.operation?.title}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Année fiscale:</div>
-                <div>{currentCreditPayment.fiscal_year?.year}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Montant:</div>
-                <div>{formatCurrency(currentCreditPayment.amount)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Statut:</div>
-                <div>{getStatusBadge(currentCreditPayment.status)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-semibold">Date de création:</div>
-                <div>{formatDate(currentCreditPayment.created_at)}</div>
-              </div>
-              {currentCreditPayment.description && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="font-semibold">Description:</div>
-                  <div>{currentCreditPayment.description}</div>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedPayment && (
+        <CreditPaymentViewDialog
+          isOpen={viewDialogOpen}
+          setIsOpen={setViewDialogOpen}
+          creditPayment={selectedPayment}
+          operationsData={mockOperations}
+          fiscalYearsData={mockFiscalYears}
+          onEdit={handleEditCreditPayment}
+        />
+      )}
+
+      {/* Add/Edit Dialogs */}
+      <CreditPaymentFormDialog
+        isOpen={addDialogOpen}
+        setIsOpen={setAddDialogOpen}
+        title={t("creditPayments.addNew") || "Ajouter un paiement de crédit"}
+        description={t("creditPayments.addNewDescription") || "Saisissez les détails pour créer un nouveau paiement de crédit."}
+        creditPayment={newCreditPayment}
+        setCreditPayment={setNewCreditPayment}
+        onSave={handleSaveNewCreditPayment}
+        operationsData={mockOperations}
+        fiscalYearsData={mockFiscalYears}
+      />
+
+      <CreditPaymentFormDialog
+        isOpen={editDialogOpen}
+        setIsOpen={setEditDialogOpen}
+        title={t("creditPayments.edit") || "Modifier le paiement de crédit"}
+        description={t("creditPayments.editDescription") || "Modifiez les détails du paiement de crédit."}
+        creditPayment={newCreditPayment}
+        setCreditPayment={setNewCreditPayment}
+        onSave={handleSaveEditCreditPayment}
+        operationsData={mockOperations}
+        fiscalYearsData={mockFiscalYears}
+      />
 
       {/* Approve Dialog */}
-      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Approuver le crédit de paiement</DialogTitle>
-            <DialogDescription>Confirmez l'approbation de ce crédit de paiement.</DialogDescription>
-          </DialogHeader>
-          {currentCreditPayment && (
-            <div className="py-4 space-y-4">
-              <p>
-                <strong>Opération:</strong> {currentCreditPayment.operation?.title}
-              </p>
-              <p>
-                <strong>Code:</strong> {currentCreditPayment.code}
-              </p>
-              <p>
-                <strong>Année fiscale:</strong> {currentCreditPayment.fiscal_year?.year}
-              </p>
-              <p>
-                <strong>Montant:</strong> {formatCurrency(currentCreditPayment.amount)}
-              </p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleApproveCreditPayment}>Approuver</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedPayment && (
+        <CreditPaymentApproveDialog
+          isOpen={approveDialogOpen}
+          setIsOpen={setApproveDialogOpen}
+          creditPayment={selectedPayment}
+          onApprove={handleConfirmApproval}
+          onReject={() => handleRejectPayment(selectedPayment)}
+        />
+      )}
     </Dashboard>
   );
 }

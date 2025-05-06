@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Plus, BarChart3, CircleDollarSign, FileCheck, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { OperationsTable } from "@/components/tables/OperationsTable";
-import { Operation } from "@/types/database.types";
-import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions, useBudgetTitles } from "@/hooks/supabase";
+
+import { Operation, Wilaya, Program, Portfolio, Action } from "@/types/database.types";
+import { useOperations, useOperationMutation, useWilayas, usePrograms, useActions, useBudgetTitles, usePortfolios } from "@/hooks/supabase";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { OperationsTable } from "@/components/tables/OperationsTable";
 import { filterOperations } from "@/components/operations/OperationsUtils";
 import { OperationsFilter } from "@/components/operations/OperationsFilter";
 import { OperationViewDialog } from "@/components/operations/OperationViewDialog";
@@ -91,7 +92,9 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
           <CardContent>
             <div className="space-y-4">
               {statusDistribution.map((item) => (
-                <div key={item.status} className="space-y-2">
+                <div
+                  key={item.status}
+                  className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center">
                       <div className={`h-3 w-3 rounded-full ${item.color} mr-2`} />
@@ -108,7 +111,10 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
                       <span className="text-muted-foreground">({total > 0 ? Math.round((item.count / total) * 100) : 0}%)</span>
                     </div>
                   </div>
-                  <Progress value={total > 0 ? (item.count / total) * 100 : 0} className={`h-2 ${item.color.replace("bg-", "bg-opacity-70 bg-")}`} />
+                  <Progress
+                    value={total > 0 ? (item.count / total) * 100 : 0}
+                    className={`h-2 ${item.color.replace("bg-", "bg-opacity-70 bg-")}`}
+                  />
                 </div>
               ))}
             </div>
@@ -126,7 +132,9 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
                 <TabsTrigger value="ae">AE</TabsTrigger>
                 <TabsTrigger value="cp">CP</TabsTrigger>
               </TabsList>
-              <TabsContent value="total" className="pt-4">
+              <TabsContent
+                value="total"
+                className="pt-4">
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -148,7 +156,9 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
                   </div>
                 </div>
               </TabsContent>
-              <TabsContent value="ae" className="pt-4">
+              <TabsContent
+                value="ae"
+                className="pt-4">
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -170,7 +180,9 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
                   </div>
                 </div>
               </TabsContent>
-              <TabsContent value="cp" className="pt-4">
+              <TabsContent
+                value="cp"
+                className="pt-4">
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -203,20 +215,20 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<string>("list");
   const [searchTerm, setSearchTerm] = useState("");
-  const [programFilter, setProgramFilter] = useState("all");
+  const [portfolioFilter, setPortfolioFilter] = useState("all");
   const [wilayaFilter, setWilayaFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [titreBudgetaireFilter, setTitreBudgetaireFilter] = useState("all");
   const [origineFinancementFilter, setOrigineFinancementFilter] = useState("all");
   const [currentOperation, setCurrentOperation] = useState<Operation | null>(null);
 
-  // Fetch operations data using the useOperations hook
+  // Fetch operations data using the useOperations hook - now including relationship data
   const {
     data: operationsData = [],
     isLoading: operationsLoading,
     refetch: refetchOperations,
   } = useOperations({
-    select: "*",
+    select: "*, action:action_id(*), program:program_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*), portfolio:portfolio_id(*)",
   });
 
   // Fetch wilayas data
@@ -224,15 +236,56 @@ export default function OperationsPage() {
     sort: { column: "code", ascending: true },
   });
 
+  // Convert wilayasData array to a lookup object indexed by ID
+  const wilayasLookup = wilayasData.reduce(
+    (acc, wilaya) => {
+      acc[wilaya.id] = wilaya;
+      return acc;
+    },
+    {} as Record<string, Wilaya>
+  );
+
   // Fetch programs data
   const { data: programsData = [] } = usePrograms({
     sort: { column: "code", ascending: true },
   });
 
+  // Convert programsData array to a lookup object indexed by ID
+  const programsLookup = programsData.reduce(
+    (acc, program) => {
+      acc[program.id] = program;
+      return acc;
+    },
+    {} as Record<string, Program>
+  );
+
+  // Fetch portfolios data
+  const { data: portfoliosData = [] } = usePortfolios({
+    sort: { column: "code", ascending: true },
+  });
+
+  // Convert portfoliosData array to a lookup object indexed by ID
+  const portfoliosLookup = portfoliosData.reduce(
+    (acc, portfolio) => {
+      acc[portfolio.id] = portfolio;
+      return acc;
+    },
+    {} as Record<string, Portfolio>
+  );
+
   // Fetch actions data
   const { data: actionsData = [] } = useActions({
     sort: { column: "code", ascending: true },
   });
+
+  // Convert actionsData array to a lookup object indexed by ID
+  const actionsLookup = actionsData.reduce(
+    (acc, action) => {
+      acc[action.id] = action;
+      return acc;
+    },
+    {} as Record<string, Action>
+  );
 
   // Fetch budget titles data
   const { data: budgetTitlesData = [] } = useBudgetTitles({
@@ -303,7 +356,7 @@ export default function OperationsPage() {
   const filteredOperations = filterOperations(
     operationsData,
     searchTerm,
-    programFilter,
+    portfolioFilter,
     wilayaFilter,
     statusFilter,
     titreBudgetaireFilter,
@@ -487,8 +540,12 @@ export default function OperationsPage() {
 
   return (
     <Dashboard>
-      <DashboardHeader title="Gestion des Opérations" description="Suivez et gérez les opérations dans le cadre des actions budgétaires">
-        <Button className="shadow-subtle" onClick={handleOpenAddDialog}>
+      <DashboardHeader
+        title="Gestion des Opérations"
+        description="Suivez et gérez les opérations dans le cadre des actions budgétaires">
+        <Button
+          className="shadow-subtle"
+          onClick={handleOpenAddDialog}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle opération
         </Button>
@@ -497,14 +554,19 @@ export default function OperationsPage() {
       <DashboardSection>
         <OperationsDashboard operations={operationsData} />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="list" className="animate-fade-in">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full">
+          <TabsContent
+            value="list"
+            className="animate-fade-in">
             {/* Operations filter component */}
             <OperationsFilter
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
-              programFilter={programFilter}
-              setProgramFilter={setProgramFilter}
+              portfolioFilter={portfolioFilter}
+              setPortfolioFilter={setPortfolioFilter}
               wilayaFilter={wilayaFilter}
               setWilayaFilter={setWilayaFilter}
               statusFilter={statusFilter}
@@ -516,6 +578,7 @@ export default function OperationsPage() {
               programsData={programsData}
               wilayasData={wilayasData}
               budgetTitlesData={budgetTitlesData}
+              portfoliosData={portfoliosData}
             />
 
             <Card className="budget-card">
@@ -529,6 +592,10 @@ export default function OperationsPage() {
               <CardContent>
                 <OperationsTable
                   operations={filteredOperations}
+                  wilayas={wilayasLookup}
+                  portfolios={portfoliosLookup}
+                  programs={programsLookup}
+                  actions={actionsLookup}
                   formatCurrency={(value) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "DZD" }).format(value)}
                   onView={handleOpenViewDialog}
                   onEdit={handleOpenEditDialog}

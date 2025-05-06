@@ -14,6 +14,7 @@ import Actions from "./pages/Actions";
 import Operations from "./pages/Operations";
 import Engagements from "./pages/Engagements";
 import Payments from "./pages/Payments";
+import CreditPayments from "./pages/CreditPayments";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
 import Profile from "./pages/settings/Profile";
@@ -115,6 +116,7 @@ const AppRoutes = () => {
         <Route path="/operations" element={<Operations />} />
         <Route path="/engagements" element={<Engagements />} />
         <Route path="/payments" element={<Payments />} />
+        <Route path="/credit-payments" element={<CreditPayments />} />
         <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
         <Route path="/previsions-cp" element={<PrevisionsCP />} />
         <Route path="/requests" element={<Requests />} />

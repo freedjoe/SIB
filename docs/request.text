@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS allocations (
 );
 
 
+
 -- 10. Budget Modifications - New table
 CREATE TABLE IF NOT EXISTS budget_modifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -84,3 +85,6 @@ CREATE TABLE IF NOT EXISTS operation_cps (
     notified BOOLEAN DEFAULT FALSE,
     UNIQUE(operation_id, fiscal_year_id, month)
 );
+
+
+First, I'll enhance the EngagementsTable component to better align with the workflow described in the Workflow.md file and make the approval process more intuitive:

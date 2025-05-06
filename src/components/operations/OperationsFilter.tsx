@@ -3,13 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchIcon } from "lucide-react";
-import { Wilaya, Program, BudgetTitle } from "@/types/database.types";
+import { Wilaya, Program, BudgetTitle, Portfolio } from "@/types/database.types";
 
 interface OperationsFilterProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
-  programFilter: string;
-  setProgramFilter: (value: string) => void;
+  portfolioFilter: string;
+  setPortfolioFilter: (value: string) => void;
   wilayaFilter: string;
   setWilayaFilter: (value: string) => void;
   statusFilter: string;
@@ -21,13 +21,14 @@ interface OperationsFilterProps {
   programsData: Program[];
   wilayasData: Wilaya[];
   budgetTitlesData?: BudgetTitle[];
+  portfoliosData?: Portfolio[];
 }
 
 export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   searchTerm,
   setSearchTerm,
-  programFilter,
-  setProgramFilter,
+  portfolioFilter,
+  setPortfolioFilter,
   wilayaFilter,
   setWilayaFilter,
   statusFilter,
@@ -39,6 +40,7 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   programsData,
   wilayasData,
   budgetTitlesData = [],
+  portfoliosData = [],
 }) => {
   // Debug: Log the wilayasData to see what we're getting
   useEffect(() => {
@@ -49,12 +51,27 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   const programOptions = useMemo(() => {
     return programsData?.length > 0
       ? programsData.map((program) => (
-          <SelectItem key={program.id} value={program.id}>
+          <SelectItem
+            key={program.id}
+            value={program.id}>
             {program.code} - {program.name}
           </SelectItem>
         ))
       : [];
   }, [programsData]);
+
+  // Create portfolio options
+  const portfolioOptions = useMemo(() => {
+    return portfoliosData?.length > 0
+      ? portfoliosData.map((portfolio) => (
+          <SelectItem
+            key={portfolio.id}
+            value={portfolio.id}>
+            {portfolio.code} - {portfolio.name}
+          </SelectItem>
+        ))
+      : [];
+  }, [portfoliosData]);
 
   const wilayaOptions = useMemo(() => {
     if (!wilayasData || wilayasData.length === 0) {
@@ -68,7 +85,9 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
     }
 
     return wilayasData.map((wilaya) => (
-      <SelectItem key={wilaya.id} value={wilaya.id}>
+      <SelectItem
+        key={wilaya.id}
+        value={wilaya.id}>
         {wilaya.code} - {wilaya.name_fr || "(Nom inconnu)"}
       </SelectItem>
     ));
@@ -77,7 +96,9 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
   const budgetTitleOptions = useMemo(() => {
     return budgetTitlesData?.length > 0
       ? budgetTitlesData.map((title) => (
-          <SelectItem key={title.id} value={title.id}>
+          <SelectItem
+            key={title.id}
+            value={title.id}>
             {title.code} - {title.name}
           </SelectItem>
         ))
@@ -106,18 +127,22 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
             </div>
 
             {/* 2. Portfolio filter */}
-            <Select value={programFilter} onValueChange={setProgramFilter}>
+            <Select
+              value={portfolioFilter}
+              onValueChange={setPortfolioFilter}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par portefeuille" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 <SelectItem value="all">Tous les portefeuilles</SelectItem>
-                {programOptions}
+                {portfolioOptions}
               </SelectContent>
             </Select>
 
             {/* 3. Wilaya filter */}
-            <Select value={wilayaFilter} onValueChange={setWilayaFilter}>
+            <Select
+              value={wilayaFilter}
+              onValueChange={setWilayaFilter}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par wilaya" />
               </SelectTrigger>
@@ -128,7 +153,9 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
             </Select>
 
             {/* 4. Title filter */}
-            <Select value={titreBudgetaireFilter} onValueChange={setTitreBudgetaireFilter}>
+            <Select
+              value={titreBudgetaireFilter}
+              onValueChange={setTitreBudgetaireFilter}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par titre" />
               </SelectTrigger>
@@ -139,7 +166,9 @@ export const OperationsFilter: React.FC<OperationsFilterProps> = ({
             </Select>
 
             {/* 5. Status filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>

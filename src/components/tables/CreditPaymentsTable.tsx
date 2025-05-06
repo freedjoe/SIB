@@ -2,18 +2,22 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2, RefreshCw } from "lucide-react";
+import { Eye, Edit, Trash2, RefreshCw, Check, X } from "lucide-react";
 import { CreditPayment, Operation } from "@/types/database.types";
+import { CreditPaymentWithRelations } from "@/types/credit_payments";
 
 interface CreditPaymentsTableProps {
-  creditPayments: CreditPayment[];
+  creditPayments: CreditPaymentWithRelations[];
   operations?: Operation[];
   formatCurrency: (value: number | undefined | null) => string;
   formatDate?: (date: string | undefined | null) => string;
-  onView: (creditPayment: CreditPayment) => void;
-  onEdit: (creditPayment: CreditPayment) => void;
-  onDelete: (creditPayment: CreditPayment) => void;
-  onRefresh: () => void;
+  onView: (creditPayment: CreditPaymentWithRelations) => void;
+  onEdit: (creditPayment: CreditPaymentWithRelations) => void;
+  onDelete: (creditPayment: CreditPaymentWithRelations) => void;
+  onApprove?: (creditPayment: CreditPaymentWithRelations) => void;
+  onReject?: (creditPayment: CreditPaymentWithRelations) => void;
+  onRefresh?: () => void;
+  onAddNew?: () => void;
 }
 
 export function CreditPaymentsTable({
@@ -24,7 +28,10 @@ export function CreditPaymentsTable({
   onView,
   onEdit,
   onDelete,
+  onApprove,
+  onReject,
   onRefresh,
+  onAddNew,
 }: CreditPaymentsTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,15 +53,22 @@ export function CreditPaymentsTable({
   // Find operation name from operations list
   const getOperationName = (operationId: string) => {
     const operation = operations.find((op) => op.id === operationId);
-    return operation ? operation.name : "Opération inconnue";
+    return operation ? operation.name : creditPayments.find((cp) => cp.operation_id === operationId)?.operation?.title || "Opération inconnue";
   };
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" size="sm" className="ml-auto" onClick={onRefresh}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Actualiser
-        </Button>
+      <div className="flex justify-between mb-4">
+        {onAddNew && (
+          <Button variant="default" size="sm" onClick={onAddNew}>
+            <Eye className="mr-2 h-4 w-4" /> Ajouter un crédit de paiement
+          </Button>
+        )}
+        {onRefresh && (
+          <Button variant="outline" size="sm" className={onAddNew ? "" : "ml-auto"} onClick={onRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Actualiser
+          </Button>
+        )}
       </div>
       <div className="rounded-md border">
         <Table>
@@ -78,7 +92,7 @@ export function CreditPaymentsTable({
               creditPayments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell className="font-medium">{payment.code}</TableCell>
-                  <TableCell>{getOperationName(payment.operation_id)}</TableCell>
+                  <TableCell>{payment.operation?.title || getOperationName(payment.operation_id)}</TableCell>
                   <TableCell>{formatCurrency(payment.amount)}</TableCell>
                   <TableCell>{getStatusBadge(payment.status)}</TableCell>
                   <TableCell className="text-right">
@@ -92,6 +106,16 @@ export function CreditPaymentsTable({
                       <Button variant="ghost" size="icon" onClick={() => onDelete(payment)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      {onApprove && payment.status === "submitted" && (
+                        <Button variant="ghost" size="icon" onClick={() => onApprove(payment)}>
+                          <Check className="h-4 w-4 text-green-500" />
+                        </Button>
+                      )}
+                      {onReject && payment.status === "submitted" && (
+                        <Button variant="ghost" size="icon" onClick={() => onReject(payment)}>
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

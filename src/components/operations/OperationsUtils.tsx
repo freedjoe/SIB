@@ -7,43 +7,57 @@ export const getStatusBadge = (status: string | null | undefined) => {
   switch (status?.toLowerCase()) {
     case "in_progress":
       return (
-        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
+        <Badge
+          variant="outline"
+          className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
           En cours
         </Badge>
       );
     case "completed":
       return (
-        <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
+        <Badge
+          variant="outline"
+          className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
           Terminé
         </Badge>
       );
     case "planned":
       return (
-        <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">
+        <Badge
+          variant="outline"
+          className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">
           Planifié
         </Badge>
       );
     case "en_pause":
       return (
-        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
+        <Badge
+          variant="outline"
+          className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
           En pause
         </Badge>
       );
     case "arreter":
       return (
-        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
+        <Badge
+          variant="outline"
+          className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
           Arrêté
         </Badge>
       );
     case "draft":
       return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
+        <Badge
+          variant="outline"
+          className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
           Brouillon
         </Badge>
       );
     default:
       return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
+        <Badge
+          variant="outline"
+          className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-400">
           Inconnu
         </Badge>
       );
@@ -172,7 +186,7 @@ export const mockContrats = [
 export const filterOperations = (
   operations: Operation[],
   searchTerm: string,
-  programFilter: string,
+  portfolioFilter: string,
   wilayaFilter: string,
   statusFilter: string,
   titreBudgetaireFilter: string,
@@ -193,8 +207,9 @@ export const filterOperations = (
 
   // Then apply the rest of the filters
   return filteredBySearch.filter((operation) => {
-    // Program filter from nested action's program_id
-    const matchesProgram = programFilter === "all" || operation.action?.program_id === programFilter;
+    // Portfolio filter from program's portfolio_id
+    const matchesPortfolio =
+      portfolioFilter === "all" || operation.program?.portfolio_id === portfolioFilter || operation.action?.program?.portfolio_id === portfolioFilter;
 
     // Wilaya filter
     const matchesWilaya = wilayaFilter === "all" || operation.wilaya_id === wilayaFilter;
@@ -211,6 +226,6 @@ export const filterOperations = (
       origineFinancementFilter === "all" || (operation.origine_financement || "").toLowerCase() === origineFinancementFilter.toLowerCase();
 
     // Return true if all filters match
-    return matchesProgram && matchesWilaya && matchesStatus && matchesTitreBudgetaire && matchesOrigineFinancement;
+    return matchesPortfolio && matchesWilaya && matchesStatus && matchesTitreBudgetaire && matchesOrigineFinancement;
   });
 };

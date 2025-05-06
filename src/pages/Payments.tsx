@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { getAllPayments, type PaymentWithRelations } from "@/services/paymentsService";
-import { getAllPaymentRequests, type PaymentRequestWithRelations } from "@/services/paymentRequestsService";
-import { getAllEngagements } from "@/services/engagementsService";
+import { usePayments, usePaymentMutation } from "@/hooks/supabase/entities/payments";
+import { usePaymentRequests, usePaymentRequestMutation } from "@/hooks/supabase/entities/payment_requests";
+import { useEngagements } from "@/hooks/supabase/entities/engagements";
+import { type PaymentWithRelations } from "@/services/paymentsService";
+import { type PaymentRequestWithRelations } from "@/services/paymentRequestsService";
 import { PaymentStats } from "@/components/stats/PaymentStats";
 import { StatCard } from "@/components/ui-custom/StatCard";
 import { Payment, PaymentRequest } from "@/types/database.types";
@@ -39,31 +40,82 @@ const Payments = () => {
   const [selectedRequest, setSelectedRequest] = useState<PaymentRequest | null>(null);
 
   const {
-    data: paymentsData,
+    data: paymentsData = [],
     isLoading: isLoadingPayments,
-    error: paymentsError,
     refetch: refetchPayments,
-  } = useQuery({
-    queryKey: ["payments"],
-    queryFn: getAllPayments,
+  } = usePayments({
+    staleTime: 1000 * 60 * 5,
   });
 
   const {
-    data: requestsData,
+    data: requestsData = [],
     isLoading: isLoadingRequests,
-    error: requestsError,
     refetch: refetchRequests,
-  } = useQuery({
-    queryKey: ["payment-requests"],
-    queryFn: getAllPaymentRequests,
+  } = usePaymentRequests({
+    staleTime: 1000 * 60 * 5,
   });
 
-  const { data: engagementsData, isLoading: isLoadingEngagements } = useQuery({
-    queryKey: ["engagements"],
-    queryFn: getAllEngagements,
+  const { data: engagementsData = [], isLoading: isLoadingEngagements } = useEngagements({
+    staleTime: 1000 * 60 * 10,
   });
 
-  // Show loading spinner when any data is being fetched
+  const paymentMutation = usePaymentMutation({
+    onSuccess: () => {
+      refetchPayments();
+      if (paymentDialogType === "add") {
+        toast({
+          title: t("payments.added.title"),
+          description: t("payments.added.description"),
+        });
+      } else if (paymentDialogType === "edit") {
+        toast({
+          title: t("payments.edited.title"),
+          description: t("payments.edited.description"),
+        });
+      } else if (paymentDialogType === "delete") {
+        toast({
+          title: t("payments.deleted.title"),
+          description: t("payments.deleted.description"),
+        });
+      }
+      setPaymentDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error("Error with payment mutation:", error);
+      toast({
+        title: t("common.error.title"),
+        description: t("common.error.description"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const paymentRequestMutation = usePaymentRequestMutation({
+    onSuccess: () => {
+      refetchRequests();
+      if (requestDialogType === "add") {
+        toast({
+          title: t("requests.added.title"),
+          description: t("requests.added.description"),
+        });
+      } else if (requestDialogType === "edit") {
+        toast({
+          title: t("requests.edited.title"),
+          description: t("requests.edited.description"),
+        });
+      }
+      setRequestDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error("Error with payment request mutation:", error);
+      toast({
+        title: t("common.error.title"),
+        description: t("common.error.description"),
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoadingPayments || isLoadingRequests || isLoadingEngagements) {
     return <PageLoadingSpinner message={t("payments.loading")} />;
   }
@@ -183,53 +235,52 @@ const Payments = () => {
   };
 
   const handleDeleteRequest = (request: PaymentRequest) => {
-    toast({
-      title: t("requests.deleted.title"),
-      description: t("requests.deleted.description"),
-      variant: "default",
+    paymentRequestMutation.mutate({
+      type: "DELETE",
+      id: request.id,
     });
-    refetchRequests();
   };
 
   const handleApproveRequest = (request: PaymentRequest) => {
-    toast({
-      title: t("requests.approved.title"),
-      description: t("requests.approved.description"),
-      variant: "default",
+    paymentRequestMutation.mutate({
+      type: "UPDATE",
+      id: request.id,
+      data: {
+        status: "approved",
+        approved_date: new Date().toISOString(),
+      },
     });
-    refetchRequests();
   };
 
   const handleRejectRequest = (request: PaymentRequest) => {
-    toast({
-      title: t("requests.rejected.title"),
-      description: t("requests.rejected.description"),
-      variant: "destructive",
+    paymentRequestMutation.mutate({
+      type: "UPDATE",
+      id: request.id,
+      data: {
+        status: "rejected",
+      },
     });
-    refetchRequests();
   };
 
   const handleSavePayment = async (paymentData: Partial<Payment>) => {
     try {
       if (paymentDialogType === "add") {
-        toast({
-          title: t("payments.added.title"),
-          description: t("payments.added.description"),
+        await paymentMutation.mutateAsync({
+          type: "INSERT",
+          data: paymentData,
         });
-      } else if (paymentDialogType === "edit") {
-        toast({
-          title: t("payments.edited.title"),
-          description: t("payments.edited.description"),
+      } else if (paymentDialogType === "edit" && selectedPayment) {
+        await paymentMutation.mutateAsync({
+          type: "UPDATE",
+          id: selectedPayment.id,
+          data: paymentData,
         });
       } else if (paymentDialogType === "delete" && selectedPayment) {
-        toast({
-          title: t("payments.deleted.title"),
-          description: t("payments.deleted.description"),
+        await paymentMutation.mutateAsync({
+          type: "DELETE",
+          id: selectedPayment.id,
         });
       }
-
-      setPaymentDialogOpen(false);
-      refetchPayments();
     } catch (error) {
       console.error("Error saving payment:", error);
       toast({
@@ -243,19 +294,17 @@ const Payments = () => {
   const handleSaveRequest = async (requestData: Partial<PaymentRequest>) => {
     try {
       if (requestDialogType === "add") {
-        toast({
-          title: t("requests.added.title"),
-          description: t("requests.added.description"),
+        await paymentRequestMutation.mutateAsync({
+          type: "INSERT",
+          data: requestData,
         });
-      } else if (requestDialogType === "edit") {
-        toast({
-          title: t("requests.edited.title"),
-          description: t("requests.edited.description"),
+      } else if (requestDialogType === "edit" && selectedRequest) {
+        await paymentRequestMutation.mutateAsync({
+          type: "UPDATE",
+          id: selectedRequest.id,
+          data: requestData,
         });
       }
-
-      setRequestDialogOpen(false);
-      refetchRequests();
     } catch (error) {
       console.error("Error saving payment request:", error);
       toast({
@@ -316,7 +365,7 @@ const Payments = () => {
         operation: eng.operation?.name || "N/A",
         beneficiary: eng.beneficiary,
         budget: eng.montant_approuve || 0,
-        allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0, // Simulation du montant déjà alloué
+        allocated: eng.montant_approuve ? eng.montant_approuve / 2 : 0,
       }))
     : [];
 
@@ -332,10 +381,6 @@ const Payments = () => {
         <span className="ml-4 text-lg text-muted-foreground">{t("payments.loading")}</span>
       </div>
     );
-  }
-
-  if (paymentsError || requestsError) {
-    return <div className="flex items-center justify-center h-screen">{t("common.error.loading")}</div>;
   }
 
   return (
@@ -525,7 +570,6 @@ const Payments = () => {
         </CardContent>
       </Card>
 
-      {/* Payment Dialog */}
       {paymentDialogOpen && (
         <PaymentDialog
           type={paymentDialogType}
@@ -541,7 +585,6 @@ const Payments = () => {
         />
       )}
 
-      {/* Payment Request Dialog */}
       {requestDialogOpen && (
         <PaymentRequestDialog
           open={requestDialogOpen}

@@ -5,18 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CreditPayment, Operation, FiscalYear } from "@/types/database.types";
+import { CreditPaymentWithRelations } from "@/types/credit_payments";
+import { Operation, FiscalYear } from "@/types/database.types";
 import { formatCurrency } from "@/lib/utils";
 
 interface CreditPaymentFormDialogsProps {
   isAddDialogOpen: boolean;
   setIsAddDialogOpen: (open: boolean) => void;
-  newCreditPayment: Partial<CreditPayment>;
-  setNewCreditPayment: React.Dispatch<React.SetStateAction<Partial<CreditPayment>>>;
+  newCreditPayment: Partial<CreditPaymentWithRelations>;
+  setNewCreditPayment: React.Dispatch<React.SetStateAction<Partial<CreditPaymentWithRelations>>>;
   handleAddCreditPayment: () => void;
   isEditDialogOpen: boolean;
   setIsEditDialogOpen: (open: boolean) => void;
-  currentCreditPayment: CreditPayment | null;
+  currentCreditPayment: CreditPaymentWithRelations | null;
   handleEditCreditPayment: () => void;
   isDeleteDialogOpen: boolean;
   setIsDeleteDialogOpen: (open: boolean) => void;
@@ -41,16 +42,14 @@ export function CreditPaymentFormDialogs({
   operationsData,
   fiscalYearsData,
 }: CreditPaymentFormDialogsProps) {
-  // Helper function to get operation name by ID
-  const getOperationName = (id: string) => {
-    const operation = operationsData.find((op) => op.id === id);
-    return operation ? operation.name : "Opération inconnue";
+  const getOperationName = (operationId: string): string => {
+    const operation = operationsData.find((op) => op.id === operationId);
+    return operation?.title || "Opération inconnue";
   };
 
-  // Helper function to get fiscal year by ID
-  const getFiscalYearName = (id: string) => {
-    const year = fiscalYearsData.find((fy) => fy.id === id);
-    return year ? year.year.toString() : "Année inconnue";
+  const getFiscalYearName = (fiscalYearId: string): string => {
+    const fiscalYear = fiscalYearsData.find((fy) => fy.id === fiscalYearId);
+    return fiscalYear?.year?.toString() || "Année inconnue";
   };
 
   return (
@@ -72,7 +71,6 @@ export function CreditPaymentFormDialogs({
                 value={newCreditPayment.code || ""}
                 onChange={(e) => setNewCreditPayment({ ...newCreditPayment, code: e.target.value })}
                 className="col-span-3"
-                placeholder="CP-2025-001"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -80,7 +78,7 @@ export function CreditPaymentFormDialogs({
                 Opération
               </Label>
               <Select
-                value={newCreditPayment.operation_id || ""}
+                value={newCreditPayment.operation_id}
                 onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
               >
                 <SelectTrigger className="col-span-3">
@@ -89,27 +87,27 @@ export function CreditPaymentFormDialogs({
                 <SelectContent>
                   {operationsData.map((operation) => (
                     <SelectItem key={operation.id} value={operation.id}>
-                      {operation.name || operation.code || "Sans nom"}
+                      {operation.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fiscal-year" className="text-right">
-                Année fiscale
+              <Label htmlFor="fiscal_year" className="text-right">
+                Année Fiscale
               </Label>
               <Select
-                value={newCreditPayment.fiscal_year_id || ""}
+                value={newCreditPayment.fiscal_year_id}
                 onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une année" />
+                  <SelectValue placeholder="Sélectionner une année fiscale" />
                 </SelectTrigger>
                 <SelectContent>
-                  {fiscalYearsData.map((year) => (
-                    <SelectItem key={year.id} value={year.id}>
-                      {year.year}
+                  {fiscalYearsData.map((fiscalYear) => (
+                    <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                      {fiscalYear.year}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -122,30 +120,10 @@ export function CreditPaymentFormDialogs({
               <Input
                 id="amount"
                 type="number"
-                value={newCreditPayment.amount || 0}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
                 className="col-span-3"
+                value={newCreditPayment.amount || ""}
+                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Statut
-              </Label>
-              <Select
-                value={newCreditPayment.status || "draft"}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, status: value as any })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Brouillon</SelectItem>
-                  <SelectItem value="submitted">Soumis</SelectItem>
-                  <SelectItem value="reviewed">En revue</SelectItem>
-                  <SelectItem value="approved">Approuvé</SelectItem>
-                  <SelectItem value="rejected">Rejeté</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
@@ -153,19 +131,17 @@ export function CreditPaymentFormDialogs({
               </Label>
               <Textarea
                 id="description"
+                className="col-span-3"
                 value={newCreditPayment.description || ""}
                 onChange={(e) => setNewCreditPayment({ ...newCreditPayment, description: e.target.value })}
-                className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddCreditPayment}>
-              Ajouter
-            </Button>
+            <Button onClick={handleAddCreditPayment}>Ajouter</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -194,7 +170,7 @@ export function CreditPaymentFormDialogs({
                 Opération
               </Label>
               <Select
-                value={newCreditPayment.operation_id || ""}
+                value={newCreditPayment.operation_id}
                 onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, operation_id: value })}
               >
                 <SelectTrigger className="col-span-3">
@@ -203,27 +179,27 @@ export function CreditPaymentFormDialogs({
                 <SelectContent>
                   {operationsData.map((operation) => (
                     <SelectItem key={operation.id} value={operation.id}>
-                      {operation.name || operation.code || "Sans nom"}
+                      {operation.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-fiscal-year" className="text-right">
-                Année fiscale
+              <Label htmlFor="edit-fiscal_year" className="text-right">
+                Année Fiscale
               </Label>
               <Select
-                value={newCreditPayment.fiscal_year_id || ""}
+                value={newCreditPayment.fiscal_year_id}
                 onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, fiscal_year_id: value })}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une année" />
+                  <SelectValue placeholder="Sélectionner une année fiscale" />
                 </SelectTrigger>
                 <SelectContent>
-                  {fiscalYearsData.map((year) => (
-                    <SelectItem key={year.id} value={year.id}>
-                      {year.year}
+                  {fiscalYearsData.map((fiscalYear) => (
+                    <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                      {fiscalYear.year}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -236,26 +212,23 @@ export function CreditPaymentFormDialogs({
               <Input
                 id="edit-amount"
                 type="number"
-                value={newCreditPayment.amount || 0}
-                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
                 className="col-span-3"
+                value={newCreditPayment.amount || ""}
+                onChange={(e) => setNewCreditPayment({ ...newCreditPayment, amount: parseFloat(e.target.value) })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-status" className="text-right">
                 Statut
               </Label>
-              <Select
-                value={newCreditPayment.status || "draft"}
-                onValueChange={(value) => setNewCreditPayment({ ...newCreditPayment, status: value as any })}
-              >
+              <Select value={newCreditPayment.status} onValueChange={(value: any) => setNewCreditPayment({ ...newCreditPayment, status: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Brouillon</SelectItem>
                   <SelectItem value="submitted">Soumis</SelectItem>
-                  <SelectItem value="reviewed">En revue</SelectItem>
+                  <SelectItem value="reviewed">Révisé</SelectItem>
                   <SelectItem value="approved">Approuvé</SelectItem>
                   <SelectItem value="rejected">Rejeté</SelectItem>
                 </SelectContent>
@@ -274,25 +247,23 @@ export function CreditPaymentFormDialogs({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditCreditPayment}>
-              Enregistrer
-            </Button>
+            <Button onClick={handleEditCreditPayment}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Credit Payment Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Supprimer le paiement de crédit</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce paiement de crédit? Cette action ne peut pas être annulée.</DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce paiement de crédit? Cette action est irréversible.</DialogDescription>
           </DialogHeader>
           {currentCreditPayment && (
-            <div className="py-4 space-y-2">
+            <div className="grid gap-4 py-4">
               <div className="flex items-center gap-2">
                 <span className="font-medium">Code:</span>
                 <span>{currentCreditPayment.code}</span>
@@ -312,10 +283,10 @@ export function CreditPaymentFormDialogs({
             </div>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="destructive" onClick={handleDeleteCreditPayment}>
+            <Button variant="destructive" onClick={handleDeleteCreditPayment}>
               Supprimer
             </Button>
           </DialogFooter>

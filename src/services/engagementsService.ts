@@ -9,8 +9,8 @@ export interface EngagementWithRelations extends Engagement {
     action_id: string | null;
     action?: {
       name: string;
-      program_id: string;
-      program?: {
+      subprogram_id: string;
+      subprogram?: {
         name: string;
       };
     };
@@ -28,8 +28,8 @@ export async function getAllEngagements(): Promise<EngagementWithRelations[]> {
         action_id,
         action:action_id (
           name,
-          program_id,
-          program:program_id (name)
+          subprogram_id,
+          subprogram:subprogram_id (name)
         )
       )
     `
@@ -55,8 +55,8 @@ export async function getEngagementsByOperationId(operationId: string): Promise<
         action_id,
         action:action_id (
           name,
-          program_id,
-          program:program_id (name)
+          subprogram_id,
+          subprogram:subprogram_id (name)
         )
       )
     `
@@ -83,8 +83,8 @@ export async function getEngagementById(id: string): Promise<EngagementWithRelat
         action_id,
         action:action_id (
           name,
-          program_id,
-          program:program_id (name)
+          subprogram_id,
+          subprogram:subprogram_id (name)
         )
       )
     `
