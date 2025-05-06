@@ -415,7 +415,7 @@
       "engagements": "Engagements",
       "payments": "Payments",
       "forecastedExpenses": "Forecasted Expenses",
-      "previsionsCP": "CP Previsions",
+      "previsionsCP": "CP Forecasts",
       "reports": "Reports",
       "audit": "Audit",
       "settings": "Settings",
@@ -431,7 +431,9 @@
       "fiscalYears": "Fiscal Years",
       "translation": "Translation",
       "chat": "AI Assistant",
-      "controlsAudits": "Controls & Audits"
+      "controlsAudits": "Controls & Audits",
+      "creditPayments": "Payment Credits",
+      "requests": "Requests"
     }
   },
   "common": {
@@ -864,7 +866,9 @@
     "fiscalYears": "Fiscal Years",
     "translation": "Translation",
     "chat": "AI Assistant",
-    "controlsAudits": "Controls & Audits"
+    "controlsAudits": "Controls & Audits",
+    "creditPayments": "Payment Credits",
+    "requests": "Requests"
   },
   "PrevisionsCP": {
     "title": "CP Forecasting and Mobilization",

@@ -98,23 +98,12 @@ export function MainNav() {
       description: "Autorisations d'engagement",
     },
     {
-      label: t("app.navigation.payments"),
-      href: "/payments",
-      icon: PieChart,
-      description: "Crédits de paiement",
-    },
-    {
       label: t("app.navigation.creditPayments"),
       href: "/credit-payments",
       icon: CreditCard,
       description: "Gestion des paiements de crédit",
     },
-    {
-      label: t("app.navigation.forecastedExpenses"),
-      href: "/forecasted-expenses",
-      icon: TrendingUp,
-      description: "Prévisions des dépenses - CP à mobiliser",
-    },
+
     {
       label: t("app.navigation.previsionsCP"),
       href: "/previsions-cp",
@@ -122,7 +111,20 @@ export function MainNav() {
       description: "Prévisions et mobilisation des CP",
     },
     {
-      label: "Requests",
+      label: t("app.navigation.payments"),
+      href: "/payments",
+      icon: PieChart,
+      description: "Crédits de paiement",
+    },
+    /*
+    {
+      label: t("app.navigation.forecastedExpenses"),
+      href: "/forecasted-expenses",
+      icon: TrendingUp,
+      description: "Prévisions des dépenses - CP à mobiliser",
+    },*/
+    {
+      label: t("app.navigation.requests"),
       href: "/requests",
       icon: Briefcase,
       description: "Gestion des demandes des ministères",
@@ -140,7 +142,7 @@ export function MainNav() {
       description: "Contrôles et audits",
     },
     {
-      label: "Assistant IA",
+      label: t("app.navigation.chat"),
       href: "/chat",
       icon: MessageSquare,
       description: "Assistant IA pour répondre à vos questions",
@@ -211,7 +213,9 @@ export function MainNav() {
     <Sidebar>
       <SidebarHeader className="flex-1">
         <div className="h-16 flex flex-col items-center px-4">
-          <NavLink to="/" className="flex items-center">
+          <NavLink
+            to="/"
+            className="flex items-center">
             <Logo />
           </NavLink>
           <div className="w-full mt-4 border-t pt-4">
@@ -222,8 +226,7 @@ export function MainNav() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.2 }}
-              >
+                transition={{ duration: 0.2 }}>
                 <SidebarMenu>
                   {(isParametersMenu ? parametersNavItems : mainNavItems).map((item) => (
                     <SidebarMenuItem key={item.href}>
@@ -235,8 +238,7 @@ export function MainNav() {
                               "flex items-center gap-3 px-3 py-2 rounded-md",
                               isActive ? "bg-primary text-primary-foreground" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                             )
-                          }
-                        >
+                          }>
                           <item.icon className="h-5 w-5" />
                           <span>{item.label}</span>
                         </NavLink>
@@ -257,8 +259,7 @@ export function MainNav() {
               variant="outline"
               size="icon"
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => setIsParametersMenu(!isParametersMenu)}
-            >
+              onClick={() => setIsParametersMenu(!isParametersMenu)}>
               <Settings className="h-4 w-4" />
               <span>{isParametersMenu ? t("app.navigation.modules") : t("app.navigation.parameters")}</span>
             </Button>

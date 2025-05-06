@@ -260,13 +260,17 @@ export default function ProgramsPage() {
     switch (status) {
       case "active":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400 whitespace-nowrap">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400 whitespace-nowrap">
             Actif
           </Badge>
         );
       case "archived":
         return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap">
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap">
             Archivé
           </Badge>
         );
@@ -274,8 +278,7 @@ export default function ProgramsPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400 whitespace-nowrap"
-          >
+            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400 whitespace-nowrap">
             Brouillon
           </Badge>
         );
@@ -288,7 +291,9 @@ export default function ProgramsPage() {
     switch (type) {
       case "program":
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400 whitespace-nowrap">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400 whitespace-nowrap">
             Programme
           </Badge>
         );
@@ -296,8 +301,7 @@ export default function ProgramsPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400 whitespace-nowrap"
-          >
+            className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400 whitespace-nowrap">
             Sous-Programme
           </Badge>
         );
@@ -321,8 +325,6 @@ export default function ProgramsPage() {
         return "Programme";
       case "subprogram":
         return "Sous-Programme";
-      case "dotation":
-        return "Dotation";
       default:
         return type;
     }
@@ -499,10 +501,14 @@ export default function ProgramsPage() {
   return (
     <Dashboard>
       {/* Updated Header */}
-      <DashboardHeader title="Liste des Programmes" description="Gérez les programmes, sous-programmes et dotations.">
-        <Button onClick={handleOpenAddDialog} className="ml-auto">
+      <DashboardHeader
+        title="Liste des Programmes"
+        description="Gérez les programmes et sous-programmes">
+        <Button
+          onClick={handleOpenAddDialog}
+          className="ml-auto">
           <FolderPlus className="mr-2 h-4 w-4" />
-          Nouveau Programme/Dotation
+          Nouveau Programme
         </Button>
       </DashboardHeader>
 
@@ -515,7 +521,9 @@ export default function ProgramsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Name Filter */}
             <div>
-              <Label htmlFor="program-name-filter" className="mb-2 block">
+              <Label
+                htmlFor="program-name-filter"
+                className="mb-2 block">
                 Recherche (Nom/Code)
               </Label>
               <div className="relative">
@@ -531,18 +539,26 @@ export default function ProgramsPage() {
             </div>
             {/* Portfolio Filter */}
             <div>
-              <Label htmlFor="program-portfolio-filter" className="mb-2 block">
+              <Label
+                htmlFor="program-portfolio-filter"
+                className="mb-2 block">
                 Portefeuille
               </Label>
-              <Select value={portfolioFilter} onValueChange={setPortfolioFilter}>
-                <SelectTrigger id="program-portfolio-filter" className="w-full">
+              <Select
+                value={portfolioFilter}
+                onValueChange={setPortfolioFilter}>
+                <SelectTrigger
+                  id="program-portfolio-filter"
+                  className="w-full">
                   <SelectValue placeholder="Sélectionner un portefeuille" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les portefeuilles</SelectItem>
                   {portfolios.map((portfolio) => (
-                    <SelectItem key={portfolio.id} value={portfolio.id}>
-                      {portfolio.name} ({portfolio.code})
+                    <SelectItem
+                      key={portfolio.id}
+                      value={portfolio.id}>
+                      {portfolio.code + " - " + portfolio.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -550,11 +566,17 @@ export default function ProgramsPage() {
             </div>
             {/* Status Filter */}
             <div>
-              <Label htmlFor="program-status-filter" className="mb-2 block">
+              <Label
+                htmlFor="program-status-filter"
+                className="mb-2 block">
                 Statut
               </Label>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-                <SelectTrigger id="program-status-filter" className="w-full">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+                <SelectTrigger
+                  id="program-status-filter"
+                  className="w-full">
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -582,7 +604,9 @@ export default function ProgramsPage() {
             const parentName = getParentProgramName(program.parent_id);
 
             return (
-              <Card key={program.id} className="budget-card transition-all duration-300 hover:shadow-lg flex flex-col">
+              <Card
+                key={program.id}
+                className="budget-card transition-all duration-300 hover:shadow-lg flex flex-col">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
@@ -597,8 +621,7 @@ export default function ProgramsPage() {
                       {getProgramTypeBadge(program.type)}
                       <Badge
                         variant="outline"
-                        className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap"
-                      >
+                        className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-400 whitespace-nowrap">
                         {program.code}
                       </Badge>
 
@@ -618,33 +641,38 @@ export default function ProgramsPage() {
                           className={cn(
                             "text-sm font-medium",
                             progress < 40 ? "text-red-600" : progress < 70 ? "text-yellow-600" : "text-green-600" // Consistent colors
-                          )}
-                        >
+                          )}>
                           {progress}%
                         </span>
                       </div>
-                      <Progress value={progress} className="h-2" />
+                      <Progress
+                        value={progress}
+                        className="h-2"
+                      />
                     </div>
 
                     {/* AE/CP Info */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Budget AE</p>
-                        <p className="font-medium">{formatCurrency(allocatedAE)}</p>
+                        <p className="font-medium">{formatCurrency(program.allocated_ae || 0)}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">AE Consommé</p>
-                        <p className="font-medium">{formatCurrency(consumedAE)}</p>
+                        <p className="text-sm text-muted-foreground mb-1">Budget CP</p>
+                        <p className="font-medium">{formatCurrency(program.allocated_cp || 0)}</p>
                       </div>
                     </div>
 
                     {/* Portfolio Info */}
-                    <div className="grid grid-cols-1 gap-1">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Portefeuille</p>
-                        <p className="font-medium line-clamp-2">{portfolioName}</p> {/* Changed from truncate to line-clamp-2 */}
-                      </div>
-                      {/* Add other info like CP if needed */}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Portefeuille</p>
+                      <p className="font-medium">{portfolioName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Actions</p>
+                      <p className="font-medium">{program?.actions || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -653,24 +681,40 @@ export default function ProgramsPage() {
                   {/* Added border-t and padding */}
                   {/* Action Buttons */}
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenViewDialog(program)} title="Voir les détails">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleOpenViewDialog(program)}
+                      title="Voir les détails">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(program)} title="Modifier">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleOpenEditDialog(program)}
+                      title="Modifier">
                       <FileEdit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(program)} title="Supprimer">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleOpenDeleteDialog(program)}
+                      title="Supprimer">
                       <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
                     </Button>
                   </div>
                   {/* Fiscal Year Selector */}
-                  <Select value={getProgramFiscalYear(program.id)} onValueChange={(value) => setProgramFiscalYear(program.id, value)}>
+                  <Select
+                    value={getProgramFiscalYear(program.id)}
+                    onValueChange={(value) => setProgramFiscalYear(program.id, value)}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Année fiscale" />
                     </SelectTrigger>
                     <SelectContent>
                       {fiscalYears?.map((fiscalYear) => (
-                        <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                        <SelectItem
+                          key={fiscalYear.id}
+                          value={fiscalYear.id}>
                           {"Année " + fiscalYear.year}
                         </SelectItem>
                       ))}
@@ -704,14 +748,15 @@ export default function ProgramsPage() {
                   onValueChange={(value) => {
                     setItemsPerPage(Number(value));
                     setCurrentPage(0); // Reset to first page when changing items per page
-                  }}
-                >
+                  }}>
                   <SelectTrigger className="h-8 w-[70px]">
                     <SelectValue placeholder={itemsPerPage} />
                   </SelectTrigger>
                   <SelectContent side="top">
                     {[10, 20, 30, 50, 100].map((pageSize) => (
-                      <SelectItem key={pageSize} value={String(pageSize)}>
+                      <SelectItem
+                        key={pageSize}
+                        value={String(pageSize)}>
                         {pageSize}
                       </SelectItem>
                     ))}
@@ -732,8 +777,7 @@ export default function ProgramsPage() {
                     className="h-8 w-8"
                     onClick={() => setCurrentPage(0)}
                     disabled={currentPage === 0}
-                    title="Première page"
-                  >
+                    title="Première page">
                     <span className="sr-only">Première page</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -744,8 +788,7 @@ export default function ProgramsPage() {
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                      strokeLinejoin="round">
                       <path d="m11 17-5-5 5-5"></path>
                       <path d="m18 17-5-5 5-5"></path>
                     </svg>
@@ -756,8 +799,7 @@ export default function ProgramsPage() {
                     className="h-8 w-8"
                     onClick={() => setCurrentPage(currentPage > 0 ? currentPage - 1 : 0)}
                     disabled={currentPage === 0}
-                    title="Page précédente"
-                  >
+                    title="Page précédente">
                     <span className="sr-only">Page précédente</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -768,8 +810,7 @@ export default function ProgramsPage() {
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                      strokeLinejoin="round">
                       <path d="m15 18-6-6 6-6"></path>
                     </svg>
                   </Button>
@@ -782,8 +823,7 @@ export default function ProgramsPage() {
                       setCurrentPage(currentPage < lastPage ? currentPage + 1 : lastPage);
                     }}
                     disabled={currentPage >= Math.ceil(filteredPrograms.length / itemsPerPage) - 1}
-                    title="Page suivante"
-                  >
+                    title="Page suivante">
                     <span className="sr-only">Page suivante</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -794,8 +834,7 @@ export default function ProgramsPage() {
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                      strokeLinejoin="round">
                       <path d="m9 18 6-6-6-6"></path>
                     </svg>
                   </Button>
@@ -808,8 +847,7 @@ export default function ProgramsPage() {
                       setCurrentPage(lastPage);
                     }}
                     disabled={currentPage >= Math.ceil(filteredPrograms.length / itemsPerPage) - 1}
-                    title="Dernière page"
-                  >
+                    title="Dernière page">
                     <span className="sr-only">Dernière page</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -820,8 +858,7 @@ export default function ProgramsPage() {
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                      strokeLinejoin="round">
                       <path d="m13 17 5-5-5-5"></path>
                       <path d="m6 17 5-5-5-5"></path>
                     </svg>
@@ -834,11 +871,13 @@ export default function ProgramsPage() {
       </DashboardSection>
 
       {/* Add Program Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Ajouter un nouveau programme</DialogTitle>
-            <DialogDescription>Créez un nouveau programme, sous-programme ou dotation.</DialogDescription>
+            <DialogDescription>Créez un nouveau programme ou sous-programme.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddProgram}>
             <div className="grid gap-6 py-4">
@@ -881,13 +920,18 @@ export default function ProgramsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="form-portfolio">Portefeuille</Label>
-                  <Select value={formData?.portfolio_id} onValueChange={(value) => setFormData({ ...formData, portfolio_id: value })} required>
+                  <Select
+                    value={formData?.portfolio_id}
+                    onValueChange={(value) => setFormData({ ...formData, portfolio_id: value })}
+                    required>
                     <SelectTrigger id="form-portfolio">
                       <SelectValue placeholder="Sélectionner un portefeuille" />
                     </SelectTrigger>
                     <SelectContent>
                       {portfolios?.map((portfolio) => (
-                        <SelectItem key={portfolio.id} value={portfolio.id}>
+                        <SelectItem
+                          key={portfolio.id}
+                          value={portfolio.id}>
                           {portfolio.name}
                         </SelectItem>
                       ))}
@@ -897,7 +941,9 @@ export default function ProgramsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="form-parent">Programme parent (optionnel)</Label>
-                  <Select value={formData.parent_id || ""} onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}>
+                  <Select
+                    value={formData.parent_id || ""}
+                    onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}>
                     <SelectTrigger id="form-parent">
                       <SelectValue placeholder="Sélectionner un parent" />
                     </SelectTrigger>
@@ -906,7 +952,9 @@ export default function ProgramsPage() {
                       {availableParentPrograms
                         ?.filter((p) => p.type === "program") // Only programs can be parents
                         .map((program) => (
-                          <SelectItem key={program.id} value={program.id}>
+                          <SelectItem
+                            key={program.id}
+                            value={program.id}>
                             {program.name}
                           </SelectItem>
                         ))}
@@ -918,14 +966,16 @@ export default function ProgramsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="form-type">Type</Label>
-                  <Select value={formData?.type} onValueChange={(value) => setFormData({ ...formData, type: value as Program["type"] })} required>
+                  <Select
+                    value={formData?.type}
+                    onValueChange={(value) => setFormData({ ...formData, type: value as Program["type"] })}
+                    required>
                     <SelectTrigger id="form-type">
                       <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="program">Programme</SelectItem>
                       <SelectItem value="subprogram">Sous-Programme</SelectItem>
-                      <SelectItem value="dotation">Dotation</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -935,8 +985,7 @@ export default function ProgramsPage() {
                   <Select
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value as Program["status"] })}
-                    required
-                  >
+                    required>
                     <SelectTrigger id="form-status">
                       <SelectValue placeholder="Sélectionner un statut" />
                     </SelectTrigger>
@@ -974,10 +1023,14 @@ export default function ProgramsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={programMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={programMutation.isPending}>
                 {programMutation.isPending ? "Création en cours..." : "Créer programme"}
               </Button>
             </DialogFooter>
@@ -986,7 +1039,9 @@ export default function ProgramsPage() {
       </Dialog>
 
       {/* Edit Program Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Modifier le programme</DialogTitle>
@@ -1033,13 +1088,18 @@ export default function ProgramsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-form-portfolio">Portefeuille</Label>
-                  <Select value={formData?.portfolio_id} onValueChange={(value) => setFormData({ ...formData, portfolio_id: value })} required>
+                  <Select
+                    value={formData?.portfolio_id}
+                    onValueChange={(value) => setFormData({ ...formData, portfolio_id: value })}
+                    required>
                     <SelectTrigger id="edit-form-portfolio">
                       <SelectValue placeholder="Sélectionner un portefeuille" />
                     </SelectTrigger>
                     <SelectContent>
                       {portfolios?.map((portfolio) => (
-                        <SelectItem key={portfolio.id} value={portfolio.id}>
+                        <SelectItem
+                          key={portfolio.id}
+                          value={portfolio.id}>
                           {portfolio.name}
                         </SelectItem>
                       ))}
@@ -1049,7 +1109,9 @@ export default function ProgramsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-form-parent">Programme parent (optionnel)</Label>
-                  <Select value={formData.parent_id || ""} onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}>
+                  <Select
+                    value={formData.parent_id || ""}
+                    onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}>
                     <SelectTrigger id="edit-form-parent">
                       <SelectValue placeholder="Sélectionner un parent" />
                     </SelectTrigger>
@@ -1058,7 +1120,9 @@ export default function ProgramsPage() {
                       {availableParentPrograms
                         ?.filter((p) => p.type === "program") // Only programs can be parents
                         .map((program) => (
-                          <SelectItem key={program.id} value={program.id}>
+                          <SelectItem
+                            key={program.id}
+                            value={program.id}>
                             {program.name}
                           </SelectItem>
                         ))}
@@ -1070,14 +1134,16 @@ export default function ProgramsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-form-type">Type</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as Program["type"] })} required>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value) => setFormData({ ...formData, type: value as Program["type"] })}
+                    required>
                     <SelectTrigger id="edit-form-type">
                       <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="program">Programme</SelectItem>
                       <SelectItem value="subprogram">Sous-Programme</SelectItem>
-                      <SelectItem value="dotation">Dotation</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1087,8 +1153,7 @@ export default function ProgramsPage() {
                   <Select
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value as Program["status"] })}
-                    required
-                  >
+                    required>
                     <SelectTrigger id="edit-form-status">
                       <SelectValue placeholder="Sélectionner un statut" />
                     </SelectTrigger>
@@ -1127,10 +1192,14 @@ export default function ProgramsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={programMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={programMutation.isPending}>
                 {programMutation.isPending ? "Mise à jour en cours..." : "Mettre à jour"}
               </Button>
             </DialogFooter>
@@ -1139,7 +1208,9 @@ export default function ProgramsPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
@@ -1148,10 +1219,15 @@ export default function ProgramsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteProgram} disabled={programMutation.isPending}>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProgram}
+              disabled={programMutation.isPending}>
               {programMutation.isPending ? "Suppression en cours..." : "Supprimer"}
             </Button>
           </DialogFooter>
@@ -1159,7 +1235,9 @@ export default function ProgramsPage() {
       </Dialog>
 
       {/* View Program Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+      <Dialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
@@ -1195,13 +1273,17 @@ export default function ProgramsPage() {
             <div className="border-t pt-5">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-semibold">Données budgétaires</h3>
-                <Select value={selectedFiscalYearView} onValueChange={setSelectedFiscalYearView}>
+                <Select
+                  value={selectedFiscalYearView}
+                  onValueChange={setSelectedFiscalYearView}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Année fiscale" />
                   </SelectTrigger>
                   <SelectContent>
                     {fiscalYears?.map((fiscalYear) => (
-                      <SelectItem key={fiscalYear.id} value={fiscalYear.id}>
+                      <SelectItem
+                        key={fiscalYear.id}
+                        value={fiscalYear.id}>
                         {"Année " + fiscalYear.year}
                       </SelectItem>
                     ))}
@@ -1234,17 +1316,19 @@ export default function ProgramsPage() {
                   <div className="col-span-2">
                     <p className="text-sm text-muted-foreground mb-1">Progression</p>
                     <div className="flex justify-between items-center mb-1">
-                      <Progress value={getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0} className="h-2 flex-1 mr-3" />
+                      <Progress
+                        value={getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0}
+                        className="h-2 flex-1 mr-3"
+                      />
                       <span
                         className={cn(
                           "text-sm font-medium",
                           (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 40
                             ? "text-red-600"
                             : (getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0) < 70
-                              ? "text-yellow-600"
-                              : "text-green-600"
-                        )}
-                      >
+                            ? "text-yellow-600"
+                            : "text-green-600"
+                        )}>
                         {getFiscalYearData(currentProgram.id, selectedFiscalYearView).progress || 0}%
                       </span>
                     </div>
@@ -1273,7 +1357,9 @@ export default function ProgramsPage() {
                         const actionFiscalYearData = getActionFiscalYearData(action.id, selectedFiscalYearView);
 
                         return (
-                          <tr key={action.id} className="border-b border-border transition-colors hover:bg-muted/50">
+                          <tr
+                            key={action.id}
+                            className="border-b border-border transition-colors hover:bg-muted/50">
                             <td className="p-4 align-middle">{action.code}</td>
                             <td className="p-4 align-middle">{action.name}</td>
                             <td className="p-4 align-middle text-right">{formatCurrency(actionFiscalYearData.allocatedAE || 0)}</td>
@@ -1285,10 +1371,9 @@ export default function ProgramsPage() {
                                   (actionFiscalYearData?.progress || 0) < 40
                                     ? "text-red-600 dark:text-red-400"
                                     : (actionFiscalYearData?.progress || 0) < 70
-                                      ? "text-yellow-600 dark:text-yellow-400"
-                                      : "text-green-600 dark:text-green-400"
-                                )}
-                              >
+                                    ? "text-yellow-600 dark:text-yellow-400"
+                                    : "text-green-600 dark:text-green-400"
+                                )}>
                                 {actionFiscalYearData?.progress || 0}%
                               </span>
                             </td>
@@ -1297,7 +1382,9 @@ export default function ProgramsPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                        <td
+                          colSpan={5}
+                          className="p-6 text-center text-muted-foreground">
                           Aucune action associée à ce programme
                         </td>
                       </tr>

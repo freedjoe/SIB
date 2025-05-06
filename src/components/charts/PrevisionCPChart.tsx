@@ -1,79 +1,130 @@
-import React, { useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, LineChart } from "recharts";
-
+import React from "react";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PrevisionCP } from "@/types/prevision_cp";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCurrency } from "@/lib/utils";
 
 interface PrevisionCPChartProps {
   previsions: PrevisionCP[];
 }
 
-export function PrevisionCPChart({ previsions }: PrevisionCPChartProps) {
-  const { t } = useTranslation();
+export const PrevisionCPChart: React.FC<PrevisionCPChartProps> = ({ previsions }) => {
+  // Process data for charts
+  const chartData = previsions.reduce((acc: any[], curr) => {
+    const existing = acc.find((item) => item.periode === curr.periode);
+    if (existing) {
+      existing.montant_prevu += curr.montant_prevu || 0;
+      existing.montant_demande += curr.montant_demande || 0;
+      existing.montant_mobilise += curr.montant_mobilise || 0;
+      existing.montant_consomme += curr.montant_consomme || 0;
+    } else {
+      acc.push({
+        periode: curr.periode,
+        montant_prevu: curr.montant_prevu || 0,
+        montant_demande: curr.montant_demande || 0,
+        montant_mobilise: curr.montant_mobilise || 0,
+        montant_consomme: curr.montant_consomme || 0,
+      });
+    }
+    return acc;
+  }, []);
 
-  // Group previsions by period
-  const data = previsions.reduce(
-    (acc, prevision) => {
-      const existingPeriod = acc.find((item) => item.periode === prevision.periode);
-      if (existingPeriod) {
-        existingPeriod.montant_prevu += prevision.montant_prevu;
-        existingPeriod.montant_demande += prevision.montant_demande || 0;
-        existingPeriod.montant_mobilise += prevision.montant_mobilise || 0;
-        existingPeriod.montant_consomme += prevision.montant_consomme || 0;
-      } else {
-        acc.push({
-          periode: prevision.periode,
-          montant_prevu: prevision.montant_prevu,
-          montant_demande: prevision.montant_demande || 0,
-          montant_mobilise: prevision.montant_mobilise || 0,
-          montant_consomme: prevision.montant_consomme || 0,
-        });
-      }
-      return acc;
-    },
-    [] as Array<{
-      periode: string;
-      montant_prevu: number;
-      montant_demande: number;
-      montant_mobilise: number;
-      montant_consomme: number;
-    }>
-  );
-
-  // Sort data by period
-  data.sort((a, b) => a.periode.localeCompare(b.periode));
+  const ministryData = previsions.reduce((acc: any[], curr) => {
+    const existing = acc.find((item) => item.ministere === curr.ministere_name);
+    if (existing) {
+      existing.montant += curr.montant_prevu || 0;
+    } else {
+      acc.push({
+        ministere: curr.ministere_name,
+        montant: curr.montant_prevu || 0,
+      });
+    }
+    return acc;
+  }, []);
 
   return (
-    <div className="h-[400px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="periode" />
-          <YAxis
-            tickFormatter={(value) =>
-              new Intl.NumberFormat("fr-FR", {
-                notation: "compact",
-                compactDisplay: "short",
-              }).format(value)
-            }
-          />
-          <Tooltip
-            formatter={(value: number) =>
-              new Intl.NumberFormat("fr-FR", {
-                style: "currency",
-                currency: "XOF",
-              }).format(value)
-            }
-          />
-          <Legend />
-          <Bar dataKey="montant_prevu" name={t("PrevisionsCP.chart.montantPrevu")} fill="#8884d8" />
-          <Bar dataKey="montant_demande" name={t("PrevisionsCP.chart.montantDemande")} fill="#82ca9d" />
-          <Bar dataKey="montant_mobilise" name={t("PrevisionsCP.chart.montantMobilise")} fill="#ffc658" />
-          <Bar dataKey="montant_consomme" name={t("PrevisionsCP.chart.montantConsomme")} fill="#ff8042" />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Evolution des montants par période</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="h-[400px]">
+            <ResponsiveContainer
+              width="100%"
+              height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periode" />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  labelFormatter={(label) => `Période: ${label}`}
+                />
+                <Legend />
+                <Bar
+                  dataKey="montant_prevu"
+                  name="Prévu"
+                  fill="#4338ca"
+                />
+                <Bar
+                  dataKey="montant_demande"
+                  name="Demandé"
+                  fill="#f59e0b"
+                />
+                <Bar
+                  dataKey="montant_mobilise"
+                  name="Mobilisé"
+                  fill="#10b981"
+                />
+                <Bar
+                  dataKey="montant_consomme"
+                  name="Consommé"
+                  fill="#6366f1"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Répartition par ministère</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="h-[400px]">
+            <ResponsiveContainer
+              width="100%"
+              height="100%">
+              <BarChart
+                data={ministryData}
+                layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  type="number"
+                  tickFormatter={(value) => formatCurrency(value)}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="ministere"
+                  width={150}
+                />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  labelFormatter={(label) => `Ministère: ${label}`}
+                />
+                <Legend />
+                <Bar
+                  dataKey="montant"
+                  name="Montant prévu"
+                  fill="#4338ca"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};

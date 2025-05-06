@@ -328,7 +328,7 @@
       "failed": "فاشل",
       "pending": "قيد الانتظار"
     },
-    "settings": {
+    "settings2": {
       "title": "الإعدادات",
       "subtitle": "إعدادات النظام",
       "basicData": "البيانات الأساسية",
@@ -406,7 +406,7 @@
       "categoryRequired": "الفئة مطلوبة"
     },
     "navigation": {
-      "dashboard": "لوحة المعلومات",
+      "dashboard": "لوحة القيادة",
       "budgets": "الميزانيات",
       "programs": "البرامج",
       "portfolios": "المحافظ",
@@ -414,24 +414,26 @@
       "operations": "العمليات",
       "engagements": "الالتزامات",
       "payments": "المدفوعات",
-      "forecastedExpenses": "المصروفات المتوقعة",
-      "previsionsCP": "توقعات CP",
+      "forecastedExpenses": "النفقات المتوقعة",
+      "previsionsCP": "توقعات الدفع",
       "reports": "التقارير",
       "audit": "التدقيق",
       "settings": "الإعدادات",
       "help": "المساعدة",
-      "parameters": "المعلمات",
+      "parameters": "المعايير",
       "profile": "الملف الشخصي",
       "security": "الأمان",
-      "localization": "التعريب",
+      "localization": "التوطين",
       "basicData": "البيانات الأساسية",
       "modules": "الوحدات",
-      "users": "المستخدمين",
+      "users": "المستخدمون",
       "roles": "الأدوار",
       "fiscalYears": "السنوات المالية",
       "translation": "الترجمة",
       "chat": "المساعد الذكي",
-      "controlsAudits": "الرقابة والتدقيق"
+      "controlsAudits": "الضوابط والتدقيق",
+      "creditPayments": "اعتمادات الدفع",
+      "requests": "الطلبات"
     }
   },
   "common": {
@@ -839,7 +841,7 @@
     "categoryRequired": "الفئة مطلوبة"
   },
   "navigation": {
-    "dashboard": "لوحة المعلومات",
+    "dashboard": "لوحة القيادة",
     "budgets": "الميزانيات",
     "programs": "البرامج",
     "portfolios": "المحافظ",
@@ -847,24 +849,26 @@
     "operations": "العمليات",
     "engagements": "الالتزامات",
     "payments": "المدفوعات",
-    "forecastedExpenses": "المصروفات المتوقعة",
-    "previsionsCP": "توقعات CP",
+    "forecastedExpenses": "النفقات المتوقعة",
+    "previsionsCP": "توقعات الدفع",
     "reports": "التقارير",
     "audit": "التدقيق",
     "settings": "الإعدادات",
     "help": "المساعدة",
-    "parameters": "المعلمات",
+    "parameters": "المعايير",
     "profile": "الملف الشخصي",
     "security": "الأمان",
-    "localization": "التعريب",
+    "localization": "التوطين",
     "basicData": "البيانات الأساسية",
     "modules": "الوحدات",
-    "users": "المستخدمين",
+    "users": "المستخدمون",
     "roles": "الأدوار",
     "fiscalYears": "السنوات المالية",
     "translation": "الترجمة",
     "chat": "المساعد الذكي",
-    "controlsAudits": "الرقابة والتدقيق"
+    "controlsAudits": "الضوابط والتدقيق",
+    "creditPayments": "اعتمادات الدفع",
+    "requests": "الطلبات"
   },
   "PrevisionsCP": {
     "title": "توقعات وتعبئة CP",

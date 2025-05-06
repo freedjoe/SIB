@@ -14,10 +14,9 @@ interface BudgetChartProps {
   title: string;
   data: BudgetTitle[];
   className?: string;
-  showLegend?: boolean;
 }
 
-export function BudgetChart({ title, data, className, showLegend = true }: BudgetChartProps) {
+export function BudgetChart({ title, data, className }: BudgetChartProps) {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState<BudgetTitle[]>([]);
 
@@ -37,7 +36,9 @@ export function BudgetChart({ title, data, className, showLegend = true }: Budge
       </CardHeader>
       <CardContent>
         <div className="h-[240px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer
+            width="100%"
+            height="100%">
             <PieChart>
               <Pie
                 data={chartData}
@@ -48,10 +49,13 @@ export function BudgetChart({ title, data, className, showLegend = true }: Budge
                 paddingAngle={2}
                 dataKey="value"
                 animationBegin={0}
-                animationDuration={800}
-              >
+                animationDuration={800}>
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    stroke="transparent"
+                  />
                 ))}
               </Pie>
               <RechartsTooltip
@@ -68,17 +72,6 @@ export function BudgetChart({ title, data, className, showLegend = true }: Budge
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {showLegend && (
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            {chartData.map((item, index) => (
-              <div key={index} className="flex items-center text-sm">
-                <div className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: item.color }} />
-                <span className="text-muted-foreground">{item.name}</span>
-                <span className="ml-auto font-medium">{formatCurrency(item.value)}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

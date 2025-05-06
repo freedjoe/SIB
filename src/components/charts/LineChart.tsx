@@ -1,8 +1,8 @@
 import React from "react";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ChartOptions } from "chart.js";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ChartOptions } from "chart.js";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 interface LineChartProps {
   data: {
@@ -55,7 +55,10 @@ export const LineChart: React.FC<LineChartProps> = ({ data, options, height = 30
 
   return (
     <div style={{ height }}>
-      <Line data={data} options={options || defaultOptions} />
+      <Line
+        data={data}
+        options={options || defaultOptions}
+      />
     </div>
   );
 };

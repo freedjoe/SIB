@@ -473,7 +473,9 @@
       "fiscalYears": "Années fiscales",
       "translation": "Traduction",
       "chat": "Assistant IA",
-      "controlsAudits": "Contrôles & Audits"
+      "controlsAudits": "Contrôles & Audits",
+      "creditPayments": "Crédits de paiement",
+      "requests": "Demandes"
     }
   },
   "common": {
@@ -948,7 +950,9 @@
     "fiscalYears": "Années fiscales",
     "translation": "Traduction",
     "chat": "Assistant IA",
-    "controlsAudits": "Contrôles & Audits"
+    "controlsAudits": "Contrôles & Audits",
+    "creditPayments": "Crédits de paiement",
+    "requests": "Demandes"
   },
   "PrevisionsCP": {
     "title": "Prévisions et mobilisation des CP",

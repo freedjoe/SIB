@@ -46,6 +46,122 @@ import { cn, formatCurrency } from "@/lib/utils";
 // Import our custom React Query hooks
 import { usePrevisionsCP, useEngagements, useOperations, useMinistries, useSupabaseMutation } from "@/hooks/supabase";
 
+// Mock data for testing and visualization
+const MOCK_MINISTRIES = [
+  { id: "min1", name: "Ministère de l'Éducation Nationale" },
+  { id: "min2", name: "Ministère de la Santé" },
+  { id: "min3", name: "Ministère des Finances" },
+  { id: "min4", name: "Ministère de l'Intérieur" },
+];
+
+const MOCK_OPERATIONS = [
+  {
+    id: "op1",
+    name: "Construction d'écoles primaires",
+    ministry_id: "min1",
+    programme_name: "Programme d'éducation de base",
+  },
+  {
+    id: "op2",
+    name: "Équipement des centres de santé",
+    ministry_id: "min2",
+    programme_name: "Programme de santé publique",
+  },
+  {
+    id: "op3",
+    name: "Modernisation des systèmes IT",
+    ministry_id: "min3",
+    programme_name: "Programme de modernisation",
+  },
+  {
+    id: "op4",
+    name: "Sécurité publique",
+    ministry_id: "min4",
+    programme_name: "Programme de sécurité",
+  },
+];
+
+const MOCK_ENGAGEMENTS = [
+  {
+    id: "eng1",
+    name: "Construction École Alger Centre",
+    operation_id: "op1",
+    montant_initial: 50000000,
+  },
+  {
+    id: "eng2",
+    name: "Équipement CHU Mustapha",
+    operation_id: "op2",
+    montant_initial: 75000000,
+  },
+  {
+    id: "eng3",
+    name: "Déploiement système ERP",
+    operation_id: "op3",
+    montant_initial: 30000000,
+  },
+  {
+    id: "eng4",
+    name: "Modernisation commissariats",
+    operation_id: "op4",
+    montant_initial: 45000000,
+  },
+];
+
+const generateRandomAmount = (min: number, max: number) => Math.round(Math.random() * (max - min) + min);
+
+const generateMockPrevisions = () => {
+  const currentYear = new Date().getFullYear();
+  const previsionsCP: PrevisionCP[] = [];
+
+  const generatePrevisionsForEngagement = (engagement: (typeof MOCK_ENGAGEMENTS)[0]) => {
+    const operation = MOCK_OPERATIONS.find((op) => op.id === engagement.operation_id);
+    const ministry = MOCK_MINISTRIES.find((min) => min.id === operation?.ministry_id);
+    const baseAmount = engagement.montant_initial / 4; // Split over quarters
+
+    ["Q1", "Q2", "Q3", "Q4"].forEach((quarter) => {
+      const prevu = generateRandomAmount(baseAmount * 0.8, baseAmount * 1.2);
+      const demande = generateRandomAmount(prevu * 0.7, prevu);
+      const mobilise = generateRandomAmount(demande * 0.6, demande);
+      const consomme = generateRandomAmount(mobilise * 0.5, mobilise);
+
+      const getStatus = () => {
+        if (mobilise === 0) return "prévu";
+        if (mobilise < prevu) return "partiellement mobilisé";
+        if (mobilise >= prevu) return "mobilisé";
+        return "en retard";
+      };
+
+      previsionsCP.push({
+        id: `prev-${engagement.id}-${quarter}`,
+        engagement_id: engagement.id,
+        engagement_name: engagement.name,
+        operation_id: operation?.id || "",
+        operation_name: operation?.name || "",
+        programme_name: operation?.programme_name || "",
+        ministere_id: ministry?.id || "",
+        ministere_name: ministry?.name || "",
+        exercice: currentYear,
+        periode: `2025-${quarter}`,
+        montant_prevu: prevu,
+        montant_demande: demande,
+        montant_mobilise: mobilise,
+        montant_consomme: consomme,
+        date_prevu: new Date(2025, ["Q1", "Q2", "Q3", "Q4"].indexOf(quarter) * 3, 1).toISOString(),
+        date_demande: demande ? new Date(2025, ["Q1", "Q2", "Q3", "Q4"].indexOf(quarter) * 3, 15).toISOString() : null,
+        date_mobilise: mobilise ? new Date(2025, ["Q1", "Q2", "Q3", "Q4"].indexOf(quarter) * 3, 28).toISOString() : null,
+        statut: getStatus(),
+        notes: `Notes pour la prévision ${quarter} de l'engagement ${engagement.name}. Année fiscale 2025.`,
+      });
+    });
+  };
+
+  MOCK_ENGAGEMENTS.forEach(generatePrevisionsForEngagement);
+  return previsionsCP;
+};
+
+const MOCK_PREVISIONS_CP = generateMockPrevisions();
+
 // BlurLoader component to blur content while loading
 interface BlurLoaderProps {
   isLoading: boolean;
@@ -60,12 +176,34 @@ const BlurLoader = ({ isLoading, children, className }: BlurLoaderProps) => {
         "transition-all duration-300",
         isLoading ? "opacity-50 blur-[2px] pointer-events-none animate-pulse" : "opacity-100 blur-0",
         className
-      )}
-    >
+      )}>
       {children}
     </div>
   );
 };
+
+interface PrevisionCPChartProps {
+  previsions: PrevisionCP[];
+}
+
+interface Ministry {
+  id: string;
+  name: string;
+}
+
+interface Operation {
+  id: string;
+  name: string;
+  ministry_id: string;
+  programme_name: string;
+}
+
+interface Engagement {
+  id: string;
+  name: string;
+  operation_id: string;
+  montant_initial: number;
+}
 
 const PrevisionsCP = () => {
   const { t } = useTranslation();
@@ -94,7 +232,7 @@ const PrevisionsCP = () => {
 
   // Use our custom React Query hooks instead of direct React Query usage
   const {
-    data: previsionsCP = [],
+    data: realPrevisionsCP = [],
     isLoading: isLoadingPrevisions,
     refetch: refetchPrevisions,
   } = usePrevisionsCP(
@@ -123,8 +261,11 @@ const PrevisionsCP = () => {
     }
   );
 
+  // Use mock data if there's no real data
+  const previsionsCP = realPrevisionsCP.length > 0 ? realPrevisionsCP : MOCK_PREVISIONS_CP;
+
   // Use our custom React Query hooks for related data
-  const { data: engagements = [], isLoading: isLoadingEngagements } = useEngagements({
+  const { data: engagements = [] as Engagement[], isLoading: isLoadingEngagements } = useEngagements({
     filter: (query) => {
       let filteredQuery = query;
 
@@ -137,7 +278,7 @@ const PrevisionsCP = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const { data: operations = [], isLoading: isLoadingOperations } = useOperations({
+  const { data: operations = [] as Operation[], isLoading: isLoadingOperations } = useOperations({
     filter: (query) => {
       let filteredQuery = query;
 
@@ -150,7 +291,7 @@ const PrevisionsCP = () => {
     staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  const { data: ministries = [], isLoading: isLoadingMinistries } = useMinistries({
+  const { data: ministries = [] as Ministry[], isLoading: isLoadingMinistries } = useMinistries({
     staleTime: 30 * 60 * 1000, // 30 minutes - ministries change less frequently
   });
 
@@ -305,21 +446,24 @@ const PrevisionsCP = () => {
         type: "update",
         id: data.id,
         data: {
-          montant_demande: data.montant_demande,
-          date_demande: new Date().toISOString(),
-          statut: "demandé",
-          notes: data.notes,
+          ...data,
+          // Only update dates based on status transitions
+          date_demande:
+            data.statut === "demandé" && selectedPrevision?.statut === "prévu" ? new Date().toISOString() : selectedPrevision?.date_demande,
+          date_mobilise: ["mobilisé", "partiellement mobilisé"].includes(data.statut || "")
+            ? new Date().toISOString()
+            : selectedPrevision?.date_mobilise,
         },
       });
 
       toast({
-        title: t("PrevisionsCP.toast.mobilization.title"),
-        description: t("PrevisionsCP.toast.mobilization.description"),
+        title: "Statut mis à jour",
+        description: `La prévision a été mise à jour avec le statut "${data.statut}"`,
       });
 
       setIsMobilizationDialogOpen(false);
     } catch (error) {
-      console.error("Error requesting mobilization:", error);
+      console.error("Error updating prevision:", error);
       toast({
         title: t("PrevisionsCP.toast.error.title"),
         description: t("PrevisionsCP.toast.error.description"),
@@ -354,31 +498,41 @@ const PrevisionsCP = () => {
     switch (status) {
       case "prévu":
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-400">
             Prévu
           </Badge>
         );
       case "demandé":
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-400">
             Demandé
           </Badge>
         );
       case "mobilisé":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-400">
             Mobilisé
           </Badge>
         );
       case "en retard":
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-400">
             En retard
           </Badge>
         );
       case "partiellement mobilisé":
         return (
-          <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border-purple-400">
             Partiellement mobilisé
           </Badge>
         );
@@ -435,7 +589,9 @@ const PrevisionsCP = () => {
 
   return (
     <Dashboard>
-      <DashboardHeader title="Prévisions de Crédits de Paiement" description="Planifiez et suivez les prévisions de crédits de paiement (CP)">
+      <DashboardHeader
+        title="Prévisions de Crédits de Paiement"
+        description="Planifiez et suivez les prévisions de crédits de paiement (CP)">
         <div className="flex gap-2">
           <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
@@ -452,7 +608,9 @@ const PrevisionsCP = () => {
       {alerts.length > 0 && (
         <DashboardSection>
           {alerts.map((alert) => (
-            <Alert key={alert.id} variant={alert.variant}>
+            <Alert
+              key={alert.id}
+              variant={alert.variant}>
               <alert.icon className="h-4 w-4" />
               <AlertTitle>{alert.title}</AlertTitle>
               <AlertDescription>{alert.description}</AlertDescription>
@@ -497,7 +655,9 @@ const PrevisionsCP = () => {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="prevision-search-filter" className="mb-2 block">
+              <Label
+                htmlFor="prevision-search-filter"
+                className="mb-2 block">
                 Recherche
               </Label>
               <div className="relative">
@@ -512,16 +672,24 @@ const PrevisionsCP = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="prevision-year-filter" className="mb-2 block">
+              <Label
+                htmlFor="prevision-year-filter"
+                className="mb-2 block">
                 Année
               </Label>
-              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                <SelectTrigger id="prevision-year-filter" className="w-[120px]">
+              <Select
+                value={selectedYear.toString()}
+                onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger
+                  id="prevision-year-filter"
+                  className="w-[120px]">
                   <SelectValue placeholder="Année" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableYears.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
+                    <SelectItem
+                      key={year}
+                      value={year.toString()}>
                       {year}
                     </SelectItem>
                   ))}
@@ -529,11 +697,17 @@ const PrevisionsCP = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="prevision-trimester-filter" className="mb-2 block">
+              <Label
+                htmlFor="prevision-trimester-filter"
+                className="mb-2 block">
                 Trimestre
               </Label>
-              <Select value={selectedTrimester} onValueChange={setSelectedTrimester}>
-                <SelectTrigger id="prevision-trimester-filter" className="w-[140px]">
+              <Select
+                value={selectedTrimester}
+                onValueChange={setSelectedTrimester}>
+                <SelectTrigger
+                  id="prevision-trimester-filter"
+                  className="w-[140px]">
                   <SelectValue placeholder="Trimestre" />
                 </SelectTrigger>
                 <SelectContent>
@@ -546,11 +720,17 @@ const PrevisionsCP = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="prevision-status-filter" className="mb-2 block">
+              <Label
+                htmlFor="prevision-status-filter"
+                className="mb-2 block">
                 Statut
               </Label>
-              <Select value={activeTab} onValueChange={setActiveTab}>
-                <SelectTrigger id="prevision-status-filter" className="w-[180px]">
+              <Select
+                value={activeTab}
+                onValueChange={setActiveTab}>
+                <SelectTrigger
+                  id="prevision-status-filter"
+                  className="w-[180px]">
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -568,242 +748,46 @@ const PrevisionsCP = () => {
       </Card>
 
       <DashboardSection>
-        <Tabs defaultValue="list" className="w-full">
+        <Tabs
+          defaultValue="list"
+          className="w-full">
           <div className="flex justify-between items-center mb-4">
             <TabsList>
-              <TabsTrigger value="list" onClick={() => setViewMode("list")}>
+              <TabsTrigger
+                value="list"
+                onClick={() => setViewMode("list")}>
                 Liste
               </TabsTrigger>
-              <TabsTrigger value="chart" onClick={() => setViewMode("chart")}>
+              <TabsTrigger
+                value="chart"
+                onClick={() => setViewMode("chart")}>
                 Graphiques
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="list" className="animate-fade-in">
+          <TabsContent
+            value="list"
+            className="animate-fade-in">
             <DataLoadingWrapper isLoading={loading}>
-              {paginatedPrevisionsCP.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="py-3 px-4 text-left text-sm font-medium">Engagement</th>
-                        <th className="py-3 px-4 text-left text-sm font-medium">Période</th>
-                        <th className="py-3 px-4 text-right text-sm font-medium">Montant prévu</th>
-                        <th className="py-3 px-4 text-right text-sm font-medium">Montant mobilisé</th>
-                        <th className="py-3 px-4 text-center text-sm font-medium">Statut</th>
-                        <th className="py-3 px-4 text-center text-sm font-medium">Progression</th>
-                        <th className="py-3 px-4 text-right text-sm font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedPrevisionsCP.map((prevision) => (
-                        <tr key={prevision.id} className="border-b hover:bg-muted/30 transition-colors">
-                          <td className="py-3 px-4">
-                            <div>
-                              <div className="font-medium">{prevision.engagement_name}</div>
-                              <div className="text-xs text-muted-foreground">{prevision.operation_name}</div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="text-sm">
-                              {prevision.exercice} - {prevision.periode}
-                            </div>
-                            {prevision.date_prevu && (
-                              <div className="text-xs text-muted-foreground">{format(new Date(prevision.date_prevu), "dd/MM/yyyy")}</div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right">{formatCurrency(prevision.montant_prevu)}</td>
-                          <td className="py-3 px-4 text-right">{formatCurrency(prevision.montant_mobilise || 0)}</td>
-                          <td className="py-3 px-4 text-center">{getStatusBadgeVariant(prevision.statut)}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <Progress value={getMobilizationPercentage(prevision.montant_prevu, prevision.montant_mobilise || 0)} className="h-2" />
-                              <span className="text-xs">{getMobilizationPercentage(prevision.montant_prevu, prevision.montant_mobilise || 0)}%</span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="icon" onClick={() => handleViewPrevision(prevision)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleEditPrevision(prevision)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  if (window.confirm(t("PrevisionsCP.confirmDelete"))) {
-                                    handleDeletePrevision(prevision.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  Aucune prévision trouvée pour les critères sélectionnés.
-                  <div className="mt-4">
-                    <Button onClick={handleAddNewPrevision}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Nouvelle prévision
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Pagination Controls */}
-              {filteredPrevisionsCP.length > 0 && (
-                <div className="flex items-center justify-between px-2 py-4 mt-4">
-                  <div className="flex-1 text-sm text-muted-foreground">
-                    Affichage de {paginatedPrevisionsCP.length > 0 ? currentPage * itemsPerPage + 1 : 0} à{" "}
-                    {Math.min((currentPage + 1) * itemsPerPage, filteredPrevisionsCP.length)} sur {filteredPrevisionsCP.length} prévisions
-                  </div>
-                  <div className="flex items-center space-x-6 lg:space-x-8">
-                    {/* Items per page */}
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium">Éléments par page</p>
-                      <Select
-                        value={String(itemsPerPage)}
-                        onValueChange={(value) => {
-                          setItemsPerPage(Number(value));
-                          setCurrentPage(0); // Reset to first page when changing items per page
-                        }}
-                      >
-                        <SelectTrigger className="h-8 w-[70px]">
-                          <SelectValue placeholder={itemsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                          {[10, 20, 30, 50, 100].map((pageSize) => (
-                            <SelectItem key={pageSize} value={String(pageSize)}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Page info */}
-                    <div className="flex items-center text-sm font-medium">
-                      Page {currentPage + 1} sur {Math.max(1, Math.ceil(filteredPrevisionsCP.length / itemsPerPage))}
-                    </div>
-
-                    {/* Navigation buttons */}
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setCurrentPage(0)}
-                        disabled={currentPage === 0}
-                        title="Première page"
-                      >
-                        <span className="sr-only">Aller à la première page</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m11 17-5-5 5-5"></path>
-                          <path d="m18 17-5-5 5-5"></path>
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setCurrentPage(currentPage > 0 ? currentPage - 1 : 0)}
-                        disabled={currentPage === 0}
-                        title="Page précédente"
-                      >
-                        <span className="sr-only">Aller à la page précédente</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m15 18-6-6 6-6"></path>
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          const lastPage = Math.max(0, Math.ceil(filteredPrevisionsCP.length / itemsPerPage) - 1);
-                          setCurrentPage(currentPage < lastPage ? currentPage + 1 : lastPage);
-                        }}
-                        disabled={currentPage >= Math.ceil(filteredPrevisionsCP.length / itemsPerPage) - 1}
-                        title="Page suivante"
-                      >
-                        <span className="sr-only">Aller à la page suivante</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m9 18 6-6-6-6"></path>
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          const lastPage = Math.max(0, Math.ceil(filteredPrevisionsCP.length / itemsPerPage) - 1);
-                          setCurrentPage(lastPage);
-                        }}
-                        disabled={currentPage >= Math.ceil(filteredPrevisionsCP.length / itemsPerPage) - 1}
-                        title="Dernière page"
-                      >
-                        <span className="sr-only">Aller à la dernière page</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m13 17 5-5-5-5"></path>
-                          <path d="m6 17 5-5-5-5"></path>
-                        </svg>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <PrevisionsCPTable
+                previsionsCP={paginatedPrevisionsCP}
+                formatCurrency={formatCurrency}
+                onView={handleViewPrevision}
+                onEdit={handleEditPrevision}
+                onDelete={handleDeletePrevision}
+                onMobilize={handleMobilizePrevision}
+                onRefresh={refetchPrevisions}
+                onAddNew={handleAddNewPrevision}
+              />
             </DataLoadingWrapper>
           </TabsContent>
 
-          <TabsContent value="chart" className="animate-fade-in">
+          <TabsContent
+            value="chart"
+            className="animate-fade-in">
             <BlurLoader isLoading={loading}>
-              <PrevisionCPChart previsionsCP={previsionsCP} />
+              <PrevisionCPChart previsions={previsionsCP as PrevisionCP[]} />
             </BlurLoader>
           </TabsContent>
         </Tabs>
@@ -828,7 +812,9 @@ const PrevisionsCP = () => {
       />
 
       {/* View Prevision Dialog */}
-      <Dialog open={isViewPrevisionOpen} onOpenChange={setIsViewPrevisionOpen}>
+      <Dialog
+        open={isViewPrevisionOpen}
+        onOpenChange={setIsViewPrevisionOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex justify-between items-start gap-4">
@@ -905,7 +891,9 @@ const PrevisionsCP = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                     <div className="flex flex-col items-center">
                       <div className="w-40 h-40 relative flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                        <svg
+                          className="w-full h-full"
+                          viewBox="0 0 100 100">
                           <circle
                             className="text-gray-200 dark:text-gray-700 stroke-current"
                             strokeWidth="10"
@@ -939,7 +927,9 @@ const PrevisionsCP = () => {
                     </div>
                     <div className="flex flex-col items-center">
                       <div className="w-40 h-40 relative flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                        <svg
+                          className="w-full h-full"
+                          viewBox="0 0 100 100">
                           <circle
                             className="text-gray-200 dark:text-gray-700 stroke-current"
                             strokeWidth="10"
@@ -1081,8 +1071,7 @@ const PrevisionsCP = () => {
                     description: "Le rapport détaillé de la prévision a été généré avec succès",
                   });
                 }, 1500);
-              }}
-            >
+              }}>
               {generatingPdf ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
@@ -1098,7 +1087,9 @@ const PrevisionsCP = () => {
       </Dialog>
 
       {/* PDF Preview Dialog */}
-      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+      <Dialog
+        open={isPdfPreviewOpen}
+        onOpenChange={setIsPdfPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Rapport détaillé - Prévision CP</DialogTitle>
@@ -1162,8 +1153,7 @@ const PrevisionsCP = () => {
                         className="h-2 bg-blue-500 rounded-full"
                         style={{
                           width: `${getMobilizationPercentage(selectedPrevision?.montant_prevu || 0, selectedPrevision?.montant_mobilise || 0)}%`,
-                        }}
-                      ></div>
+                        }}></div>
                     </div>
                   </div>
                   <div>
@@ -1175,8 +1165,7 @@ const PrevisionsCP = () => {
                         className="h-2 bg-green-500 rounded-full"
                         style={{
                           width: `${getConsumptionPercentage(selectedPrevision?.montant_mobilise || 0, selectedPrevision?.montant_consomme || 0)}%`,
-                        }}
-                      ></div>
+                        }}></div>
                     </div>
                   </div>
                 </div>
@@ -1226,7 +1215,9 @@ const PrevisionsCP = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsPdfPreviewOpen(false)}>
               Fermer
             </Button>
             <Button
@@ -1236,8 +1227,7 @@ const PrevisionsCP = () => {
                   title: "Rapport téléchargé",
                   description: "Le rapport détaillé a été téléchargé avec succès",
                 });
-              }}
-            >
+              }}>
               Télécharger le PDF
             </Button>
           </DialogFooter>

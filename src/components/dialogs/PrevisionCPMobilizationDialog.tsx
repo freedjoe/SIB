@@ -1,16 +1,12 @@
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
-import { PrevisionCP } from "@/types/prevision_cp";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PrevisionCP, PrevisionCPStatus } from "@/types/prevision_cp";
+import { AlertTriangle, Info } from "lucide-react";
 
 interface PrevisionCPMobilizationDialogProps {
   open: boolean;
@@ -19,132 +15,149 @@ interface PrevisionCPMobilizationDialogProps {
   onSubmit: (data: Partial<PrevisionCP>) => void;
 }
 
-// Form schema
-const formSchema = z.object({
-  montant_demande: z.number().min(0),
-  notes: z.string().optional(),
-});
-
 export function PrevisionCPMobilizationDialog({ open, onOpenChange, prevision, onSubmit }: PrevisionCPMobilizationDialogProps) {
-  const { t } = useTranslation();
+  const [montantMobilise, setMontantMobilise] = useState<number>(prevision?.montant_mobilise || 0);
+  const [selectedStatus, setSelectedStatus] = useState<PrevisionCPStatus>(prevision?.statut || "prévu");
 
-  // Initialize form with better defaults and set mode to onSubmit for better performance
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    mode: "onSubmit", // Only validate on submit to reduce lag
-    defaultValues: {
-      montant_demande: prevision?.montant_prevu || 0,
-      notes: prevision?.notes || "",
-    },
-  });
+  // Calculate if there will be a delay
+  const isDelayed = prevision?.date_demande ? new Date().getTime() - new Date(prevision.date_demande).getTime() > 30 * 24 * 60 * 60 * 1000 : false;
 
-  // Reset form when prevision changes or dialog opens
-  useEffect(() => {
-    if (open && prevision) {
-      const montantRestant = prevision.montant_prevu - (prevision.montant_mobilise || 0);
-      form.reset({
-        montant_demande: montantRestant > 0 ? montantRestant : 0,
-        notes: prevision.notes || "",
-      });
+  // Get available next statuses based on current status
+  const getAvailableStatuses = () => {
+    const currentStatus = prevision?.statut;
+    switch (currentStatus) {
+      case "prévu":
+        return ["prévu", "demandé"];
+      case "demandé":
+        return ["demandé", "mobilisé", "partiellement mobilisé", "en retard"];
+      case "partiellement mobilisé":
+        return ["partiellement mobilisé", "mobilisé", "en retard"];
+      case "mobilisé":
+        return ["mobilisé", "en retard"];
+      case "en retard":
+        return ["en retard", "mobilisé", "partiellement mobilisé"];
+      default:
+        return ["prévu"];
     }
-  }, [prevision, open, form]);
+  };
 
-  // Handle form submission
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+  // Get status description
+  const getStatusDescription = (status: PrevisionCPStatus) => {
+    switch (status) {
+      case "prévu":
+        return "La prévision est planifiée mais n'a pas encore été demandée";
+      case "demandé":
+        return "Une demande de mobilisation a été effectuée";
+      case "partiellement mobilisé":
+        return "Une partie du montant demandé a été mobilisée";
+      case "mobilisé":
+        return "Le montant a été entièrement mobilisé";
+      case "en retard":
+        return "La demande est en retard (plus de 30 jours)";
+      default:
+        return "";
+    }
+  };
+
+  const handleSubmit = () => {
     if (!prevision) return;
 
     onSubmit({
-      id: prevision.id,
-      montant_demande: values.montant_demande,
-      notes: values.notes,
-      // Keep other fields from original prevision
-      statut: "demandé",
+      ...prevision,
+      montant_mobilise: montantMobilise,
+      statut: selectedStatus,
+      date_demande: selectedStatus === "demandé" && prevision.statut === "prévu" ? new Date().toISOString() : prevision.date_demande,
+      date_mobilise: ["mobilisé", "partiellement mobilisé"].includes(selectedStatus) ? new Date().toISOString() : prevision.date_mobilise,
     });
-
-    onOpenChange(false);
   };
 
-  // Early return if no prevision is provided
-  if (!prevision) {
-    return null;
-  }
+  if (!prevision) return null;
 
-  // Calculate remaining amount
-  const montantRestant = prevision.montant_prevu - (prevision.montant_mobilise || 0);
+  const availableStatuses = getAvailableStatuses();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("PrevisionsCP.dialog.mobilization.title")}</DialogTitle>
-          <DialogDescription>{t("PrevisionsCP.dialog.mobilization.description")}</DialogDescription>
+          <DialogTitle>Modification de la prévision</DialogTitle>
+          <DialogDescription>
+            Prévision {prevision.exercice} - {prevision.periode} pour {prevision.operation_name}
+          </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/40 rounded-lg">
-              <div>
-                <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantPrevu")}</FormLabel>
-                <div className="text-lg font-semibold">{prevision.montant_prevu.toLocaleString()} DZD</div>
-              </div>
-              <div>
-                <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantRestant")}</FormLabel>
-                <div className="text-lg font-semibold">{montantRestant.toLocaleString()} DZD</div>
-              </div>
+
+        {isDelayed && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>Cette demande a dépassé le délai de 30 jours.</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Montant prévu</Label>
+            <Input
+              type="text"
+              value={prevision.montant_prevu.toLocaleString("fr-DZ")}
+              disabled
+            />
+          </div>
+
+          {prevision.montant_demande > 0 && (
+            <div className="space-y-2">
+              <Label>Montant demandé</Label>
+              <Input
+                type="text"
+                value={prevision.montant_demande.toLocaleString("fr-DZ")}
+                disabled
+              />
             </div>
+          )}
 
-            <FormField
-              control={form.control}
-              name="montant_demande"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("PrevisionsCP.dialog.mobilization.montantDemande")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value === "" ? 0 : parseFloat(e.target.value);
-                        field.onChange(value);
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {montantRestant > 0
-                      ? t("PrevisionsCP.dialog.mobilization.amountAvailable", { amount: montantRestant })
-                      : t("PrevisionsCP.dialog.mobilization.noAmountAvailable")}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label>Montant à mobiliser</Label>
+            <Input
+              type="number"
+              value={montantMobilise}
+              onChange={(e) => setMontantMobilise(Number(e.target.value))}
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("PrevisionsCP.dialog.mobilization.notes")}</FormLabel>
-                  <FormControl>
-                    <Textarea value={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="space-y-2">
+            <Label>Statut</Label>
+            <Select
+              value={selectedStatus}
+              onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez un statut" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableStatuses.map((status) => (
+                  <SelectItem
+                    key={status}
+                    value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <DialogFooter className="mt-4 pt-2 border-t">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button type="submit" disabled={form.watch("montant_demande") <= 0}>
-                {t("PrevisionsCP.dialog.mobilization.submit")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>{getStatusDescription(selectedStatus)}</AlertDescription>
+          </Alert>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}>
+            Annuler
+          </Button>
+          <Button onClick={handleSubmit}>Enregistrer les modifications</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

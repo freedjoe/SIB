@@ -36,12 +36,16 @@ import { toast } from "@/components/ui/use-toast";
 import { DataLoadingWrapper } from "@/components/ui-custom/DataLoadingWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { DelayedOperations } from "@/components/stats/DelayedOperations";
+import { StateRevenues } from "@/components/stats/StateRevenues";
+import { BudgetForecasts } from "@/components/stats/BudgetForecasts";
+import { ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
 
 // Mock data for fiscal years with different values for each year
 const fiscalYears = [
   {
     id: "fy1",
-    year: 2024,
+    year: 2025,
     status: "active",
     totalBudget: 5000000000,
     allocated: 3100000000,
@@ -90,10 +94,18 @@ const fiscalYears = [
         progress: 38,
       },
     ],
+    operations: [
+      { sector: "Infrastructure", count: 12, totalAmount: 450000000, averageDelay: 45 },
+      { sector: "Education", count: 8, totalAmount: 280000000, averageDelay: 30 },
+      { sector: "Health", count: 15, totalAmount: 520000000, averageDelay: 60 },
+      { sector: "Agriculture", count: 6, totalAmount: 180000000, averageDelay: 25 },
+    ],
+    totalDelayed: 41,
+    totalAmount: 1430000000,
   },
   {
     id: "fy2",
-    year: 2023,
+    year: 2024,
     status: "closed",
     totalBudget: 4500000000,
     allocated: 4200000000,
@@ -145,7 +157,7 @@ const fiscalYears = [
   },
   {
     id: "fy3",
-    year: 2022,
+    year: 2023,
     status: "closed",
     totalBudget: 4200000000,
     allocated: 4200000000,
@@ -197,7 +209,7 @@ const fiscalYears = [
   },
   {
     id: "fy4",
-    year: 2025,
+    year: 2022,
     status: "planning",
     totalBudget: 5500000000,
     allocated: 1000000000,
@@ -247,6 +259,55 @@ const fiscalYears = [
       },
     ],
   },
+];
+
+// Add new mock data for state revenues
+const stateRevenuesData = [
+  {
+    id: "fy1",
+    year: 2024,
+    categories: [
+      { name: "Tax Revenue", amount: 3200000000, growth: 5.2 },
+      { name: "Non-Tax Revenue", amount: 850000000, growth: 3.8 },
+      { name: "Oil Revenue", amount: 1500000000, growth: 7.5 },
+      { name: "Other Sources", amount: 450000000, growth: 2.1 },
+    ],
+    total: 6000000000,
+    yearOverYearGrowth: 4.8,
+  },
+  // Add similar data for other fiscal years...
+];
+
+// Add new mock data for multi-year forecasts
+const budgetForecasts = [
+  {
+    id: "fy1",
+    baseYear: 2024,
+    forecasts: [
+      {
+        year: 2025,
+        revenue: 6300000000,
+        expenditure: 6100000000,
+        gdpGrowth: 3.2,
+        inflationRate: 2.8,
+      },
+      {
+        year: 2026,
+        revenue: 6650000000,
+        expenditure: 6400000000,
+        gdpGrowth: 3.5,
+        inflationRate: 2.6,
+      },
+      {
+        year: 2027,
+        revenue: 7000000000,
+        expenditure: 6800000000,
+        gdpGrowth: 3.8,
+        inflationRate: 2.5,
+      },
+    ],
+  },
+  // Add similar data for other fiscal years...
 ];
 
 // Mock data for approvals and recent activities
@@ -422,15 +483,42 @@ const getPriorityBadge = (priority: string) => {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const [selectedYear, setSelectedYear] = useState(fiscalYears[0].id);
+  const [loading, setLoading] = useState(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [loading, setLoading] = useState(false); // Add this if not already present
 
+  // Get the current fiscal year data
+  const currentFiscalYear = fiscalYears.find((year) => year.id === selectedYear) || fiscalYears[0];
+
+  // Get the current revenue data
+  const currentRevenueData = stateRevenuesData.find((data) => data.year === currentFiscalYear.year) || stateRevenuesData[0];
+
+  // Get the current forecast data
+  const currentForecastData = budgetForecasts.find((data) => data.baseYear === currentFiscalYear.year) || budgetForecasts[0];
+
+  // Handle fiscal year change
+  const handleFiscalYearChange = (yearId: string) => {
+    setLoading(true);
+    setSelectedYear(yearId);
+    // Add a small delay to simulate data loading
+    setTimeout(() => setLoading(false), 500);
+  };
+
+  // Fix the useEffect that was incorrectly returning a component
   useEffect(() => {
+    // Just update loading state, don't return anything
     if (loading) {
-      return <PageLoadingSpinner message="Chargement du tableau de bord..." />;
+      // You can put any loading state logic here
+      const timer = setTimeout(() => setLoading(false), 500);
+      // Return cleanup function if needed
+      return () => clearTimeout(timer);
     }
   }, [loading]);
+
+  // Separate loading render logic
+  if (loading) {
+    return <PageLoadingSpinner message="Chargement du tableau de bord..." />;
+  }
 
   const handleGenerateReport = () => {
     setGeneratingPdf(true);
@@ -456,37 +544,44 @@ export default function DashboardPage() {
     setIsPdfPreviewOpen(false);
   };
 
-  // Get the selected fiscal year details
-  const currentFiscalYear = fiscalYears.find((year) => year.id === selectedYear) || fiscalYears[0];
-
   return (
     <DataLoadingWrapper
-      loading={loading}
-      skeleton={
+      isLoading={loading}
+      skeletonComponent={
         <div className="flex items-center justify-center min-h-screen">
           <Skeleton className="h-10 w-10 rounded-full" />
           <span className="ml-4 text-lg text-muted-foreground">Chargement des exercices budgétaires...</span>
         </div>
       }
-    >
+      loadingMessage="Chargement du tableau de bord..."
+      showSpinner={true}>
       <Dashboard>
-        <DashboardHeader title={t("dashboard.title")} description={t("dashboard.welcome")}>
+        <DashboardHeader
+          title={t("dashboard.title")}
+          description={t("dashboard.welcome")}>
           <div className="flex items-center gap-3">
             <div className="w-52">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <Select
+                value={selectedYear}
+                onValueChange={handleFiscalYearChange}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("dashboard.selectFiscalYear")} />
                 </SelectTrigger>
                 <SelectContent>
                   {fiscalYears.map((year) => (
-                    <SelectItem key={year.id} value={year.id}>
+                    <SelectItem
+                      key={year.id}
+                      value={year.id}>
                       {t("dashboard.fiscalYear")} {year.year}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button className="shadow-subtle" onClick={handleGenerateReport} disabled={generatingPdf}>
+            <Button
+              className="shadow-subtle"
+              onClick={handleGenerateReport}
+              disabled={generatingPdf}>
               <BarChart3 className="mr-2 h-4 w-4" />
               {generatingPdf ? t("dashboard.generatingReport", "Génération du rapport...") : t("dashboard.detailedReport", "Rapport détaillé")}
             </Button>
@@ -528,12 +623,102 @@ export default function DashboardPage() {
 
         <DashboardSection>
           <DashboardGrid columns={2}>
-            <BudgetChart title={t("dashboard.byMinistry")} data={currentFiscalYear.budgetData} className="h-full" />
-            <BudgetChart title={t("dashboard.engagementStatus")} data={currentFiscalYear.engagementData} className="h-full" />
+            <BudgetChart
+              title={t("dashboard.byMinistry")}
+              data={currentFiscalYear.budgetData}
+              className="h-full"
+            />
+            <BudgetChart
+              title={t("dashboard.engagementStatus")}
+              data={currentFiscalYear.engagementData}
+              className="h-full"
+            />
           </DashboardGrid>
         </DashboardSection>
 
-        <DashboardSection title={t("dashboard.programExecution")} description={t("dashboard.programExecutionDescription")}>
+        <DashboardSection>
+          <Card className="budget-card">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">{t("dashboard.ministryRequests", "Demandes des ministères")}</CardTitle>
+              <CardDescription>{t("dashboard.ministryRequestsDescription", "Demandes hors budget par type")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={[
+                        { name: "Réévaluation", value: 850000000, color: "#0ea5e9" },
+                        { name: "CP Supplémentaires", value: 1200000000, color: "#8b5cf6" },
+                        { name: "Nouveaux Projets", value: 2100000000, color: "#14b8a6" },
+                        { name: "AP Supplémentaires", value: 750000000, color: "#f43f5e" },
+                        { name: "Autres Demandes", value: 450000000, color: "#fb923c" },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value">
+                      {[
+                        { name: "Réévaluation", value: 850000000, color: "#0ea5e9" },
+                        { name: "CP Supplémentaires", value: 1200000000, color: "#8b5cf6" },
+                        { name: "Nouveaux Projets", value: 2100000000, color: "#14b8a6" },
+                        { name: "AP Supplémentaires", value: 750000000, color: "#f43f5e" },
+                        { name: "Autres Demandes", value: 450000000, color: "#fb923c" },
+                      ].map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          stroke="transparent"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      wrapperStyle={{ outline: "none" }}
+                      contentStyle={{
+                        background: "rgba(255, 255, 255, 0.9)",
+                        border: "none",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                        padding: "8px 12px",
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </DashboardSection>
+
+        <DashboardSection>
+          <DashboardGrid columns={2}>
+            <DelayedOperations
+              operations={currentFiscalYear.operations}
+              totalDelayed={currentFiscalYear.totalDelayed}
+              totalAmount={currentFiscalYear.totalAmount}
+            />
+            <StateRevenues
+              categories={currentRevenueData.categories}
+              total={currentRevenueData.total}
+              yearOverYearGrowth={currentRevenueData.yearOverYearGrowth}
+            />
+          </DashboardGrid>
+        </DashboardSection>
+
+        <DashboardSection>
+          <BudgetForecasts
+            baseYear={currentForecastData.baseYear}
+            forecasts={currentForecastData.forecasts}
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title={t("dashboard.programExecution")}
+          description={t("dashboard.programExecutionDescription")}>
           <Card className="budget-card">
             <CardHeader>
               <CardTitle className="text-base font-medium">{t("dashboard.mainPrograms")}</CardTitle>
@@ -541,7 +726,9 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-6">
                 {currentFiscalYear.programmesData.map((program, index) => (
-                  <div key={index} className="space-y-2">
+                  <div
+                    key={index}
+                    className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{program.name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -549,13 +736,15 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Progress value={program.progress} className="h-2" />
+                      <Progress
+                        value={program.progress}
+                        className="h-2"
+                      />
                       <span
                         className={cn(
                           "text-xs font-medium",
                           program.progress < 40 ? "text-budget-danger" : program.progress < 70 ? "text-budget-warning" : "text-budget-success"
-                        )}
-                      >
+                        )}>
                         {program.progress}%
                       </span>
                     </div>
@@ -567,12 +756,16 @@ export default function DashboardPage() {
         </DashboardSection>
 
         <DashboardGrid columns={2}>
-          <DashboardSection title="Approbations en attente" description="Engagements nécessitant une approbation">
+          <DashboardSection
+            title="Approbations en attente"
+            description="Engagements nécessitant une approbation">
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   {pendingApprovals.map((approval, index) => (
-                    <div key={index} className="flex items-start space-x-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
+                    <div
+                      key={index}
+                      className="flex items-start space-x-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
                       <div className="flex-1">
                         <div className="flex justify-between">
                           <h4 className="text-sm font-medium">{approval.name}</h4>
@@ -592,19 +785,26 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center">
                   Voir toutes les approbations
                 </Button>
               </CardFooter>
             </Card>
           </DashboardSection>
 
-          <DashboardSection title="Activités récentes" description="Dernières actions effectuées sur la plateforme">
+          <DashboardSection
+            title="Activités récentes"
+            description="Dernières actions effectuées sur la plateforme">
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   {recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
+                    <div
+                      key={index}
+                      className="flex items-start gap-4 pb-4 last:pb-0 border-b last:border-b-0 border-border">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">{getStatusIcon(activity.status)}</div>
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between">
@@ -622,7 +822,10 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center">
                   Voir toutes les activités
                 </Button>
               </CardFooter>
@@ -631,7 +834,9 @@ export default function DashboardPage() {
         </DashboardGrid>
 
         {/* PDF Report Preview Dialog */}
-        <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+        <Dialog
+          open={isPdfPreviewOpen}
+          onOpenChange={setIsPdfPreviewOpen}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
               <X className="h-4 w-4" />
@@ -741,10 +946,14 @@ export default function DashboardPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsPdfPreviewOpen(false)}>
                 {t("common.close")}
               </Button>
-              <Button onClick={handleDownloadPdf} className="gap-2">
+              <Button
+                onClick={handleDownloadPdf}
+                className="gap-2">
                 <Download className="h-4 w-4" />
                 {t("dashboard.downloadPdf")}
               </Button>

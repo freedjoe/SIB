@@ -31,31 +31,41 @@ export function PrevisionsCPTable({
     switch (status) {
       case "prévu":
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 border-blue-300">
             Prévu
           </Badge>
         );
       case "demandé":
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 border-yellow-300">
             Demandé
           </Badge>
         );
       case "mobilisé":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 border-green-300">
             Mobilisé
           </Badge>
         );
       case "en retard":
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 border-red-300">
             En retard
           </Badge>
         );
       case "partiellement mobilisé":
         return (
-          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-800 border-purple-300">
             Partiellement mobilisé
           </Badge>
         );
@@ -77,21 +87,53 @@ export function PrevisionsCPTable({
   const columns: ColumnDef<PrevisionCP, unknown>[] = [
     {
       accessorKey: "id",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="ID"
+        />
+      ),
       cell: ({ row }) => <div className="font-medium">{row.getValue("id")}</div>,
       filterFn: "includesString",
     },
     {
       accessorKey: "exercice",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Exercice" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Exercice"
+        />
+      ),
       cell: ({ row }) => row.getValue("exercice"),
       filterFn: "includesString",
     },
     {
+      accessorKey: "periode",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Période"
+        />
+      ),
+      cell: ({ row }) => {
+        const periode = row.getValue("periode") as string;
+        const [_, trimester] = periode.split("-");
+        return `Trimestre ${trimester.replace("Q", "")}`;
+      },
+      filterFn: "includesString",
+    },
+    {
       accessorKey: "operation_name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Opération" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Opération"
+        />
+      ),
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.getValue("operation_name")}>
+        <div
+          className="max-w-[200px] truncate"
+          title={row.getValue("operation_name")}>
           {row.getValue("operation_name")}
         </div>
       ),
@@ -99,9 +141,16 @@ export function PrevisionsCPTable({
     },
     {
       accessorKey: "engagement_name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Engagement" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Engagement"
+        />
+      ),
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.getValue("engagement_name")}>
+        <div
+          className="max-w-[200px] truncate"
+          title={row.getValue("engagement_name")}>
           {row.getValue("engagement_name")}
         </div>
       ),
@@ -109,13 +158,23 @@ export function PrevisionsCPTable({
     },
     {
       accessorKey: "montant_prevu",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Montant prévu" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Montant prévu"
+        />
+      ),
       cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue("montant_prevu"))}</div>,
       filterFn: "includesString",
     },
     {
       accessorKey: "montant_mobilise",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Mobilisé" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Mobilisé"
+        />
+      ),
       cell: ({ row }) => {
         const prevu = row.getValue("montant_prevu") as number;
         const mobilise = row.getValue("montant_mobilise") as number;
@@ -125,7 +184,10 @@ export function PrevisionsCPTable({
           <div className="flex items-center gap-2">
             <div className="text-right flex-1">{formatCurrency(mobilise)}</div>
             <div className="w-16 flex items-center">
-              <Progress value={percentage} className="h-2" />
+              <Progress
+                value={percentage}
+                className="h-2"
+              />
               <span className="ml-2 text-xs">{percentage}%</span>
             </div>
           </div>
@@ -135,7 +197,12 @@ export function PrevisionsCPTable({
     },
     {
       accessorKey: "montant_consomme",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Consommé" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Consommé"
+        />
+      ),
       cell: ({ row }) => {
         const mobilise = row.getValue("montant_mobilise") as number;
         const consomme = row.getValue("montant_consomme") as number;
@@ -145,7 +212,10 @@ export function PrevisionsCPTable({
           <div className="flex items-center gap-2">
             <div className="text-right flex-1">{formatCurrency(consomme)}</div>
             <div className="w-16 flex items-center">
-              <Progress value={percentage} className="h-2" />
+              <Progress
+                value={percentage}
+                className="h-2"
+              />
               <span className="ml-2 text-xs">{percentage}%</span>
             </div>
           </div>
@@ -155,7 +225,12 @@ export function PrevisionsCPTable({
     },
     {
       accessorKey: "statut",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="Statut"
+        />
+      ),
       cell: ({ row }) => getStatusBadge(row.getValue("statut")),
       filterFn: "includesString",
     },
@@ -166,11 +241,12 @@ export function PrevisionsCPTable({
 
   if (onMobilize) {
     customActions.push({
-      label: "Mobiliser",
+      label: "Gérer le statut",
       icon: <FileText className="h-4 w-4" />,
       variant: "ghost" as const,
       actionType: "mobilize",
-      condition: (prevision: PrevisionCP) => prevision.statut === "prévu" || prevision.statut === "demandé",
+      // Allow status changes for any status except completely mobilized
+      condition: (prevision: PrevisionCP) => prevision.statut !== "mobilisé",
     });
   }
 

@@ -46,6 +46,9 @@ import { SettingsProvider } from "./contexts/SettingsContext";
 import "./i18n/config"; // Import the i18n configuration
 import { queryClient, prefetchCollection } from "./lib/reactQuery";
 import { PageLoadingSpinner } from "./components/ui-custom/PageLoadingSpinner";
+import { DelayedOperations } from "@/components/stats/DelayedOperations";
+import { StateRevenues } from "@/components/stats/StateRevenues";
+import { BudgetForecasts } from "@/components/stats/BudgetForecasts";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,7 +60,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user && !adminLoggedIn) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate
+        to="/auth"
+        replace
+      />
+    );
   }
 
   return <>{children}</>;
@@ -98,51 +106,164 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* For /auth route, check if logged in */}
-      <Route path="/auth" element={user || localStorage.getItem("adminLoggedIn") === "true" ? <Navigate to="/" replace /> : <Auth />} />
+      <Route
+        path="/auth"
+        element={
+          user || localStorage.getItem("adminLoggedIn") === "true" ? (
+            <Navigate
+              to="/"
+              replace
+            />
+          ) : (
+            <Auth />
+          )
+        }
+      />
 
       <Route
         element={
           <ProtectedRoute>
             <AppLayout />
           </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/fiscal-years" element={<FiscalYears />} />
-        <Route path="/programs" element={<Programs />} />
-        <Route path="/portfolios" element={<Portfolios />} />
-        <Route path="/actions" element={<Actions />} />
-        <Route path="/operations" element={<Operations />} />
-        <Route path="/engagements" element={<Engagements />} />
-        <Route path="/payments" element={<Payments />} />
-        <Route path="/credit-payments" element={<CreditPayments />} />
-        <Route path="/forecasted-expenses" element={<ForecastedExpenses />} />
-        <Route path="/previsions-cp" element={<PrevisionsCP />} />
-        <Route path="/requests" element={<Requests />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/audit" element={<Audit />} />
-        <Route path="/settings/profile" element={<Profile />} />
-        <Route path="/settings/security" element={<Security />} />
-        <Route path="/settings/localization" element={<Localization />} />
-        <Route path="/settings/translation" element={<Translation />} />
-        <Route path="/settings/basic-data" element={<BasicData />} />
-        <Route path="/settings/basic-data/ministries" element={<Ministries />} />
-        <Route path="/settings/basic-data/wilayas" element={<Wilayas />} />
-        <Route path="/settings/basic-data/entreprises" element={<Entreprises />} />
-        <Route path="/settings/basic-data/budget-titles" element={<BudgetTitles />} />
-        <Route path="/settings/basic-data/nomenclature" element={<Nomenclature />} />
-        <Route path="/settings/basic-data/report-types" element={<ReportTypes />} />
-        <Route path="/settings/users" element={<Users />} />
-        <Route path="/settings/roles" element={<Roles />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/help/presentation" element={<HelpPresentation />} />
-        <Route path="/help/guide" element={<HelpGuide />} />
-        <Route path="/help/faq" element={<HelpFAQ />} />
-        <Route path="/help/support" element={<HelpSupport />} />
+        }>
+        <Route
+          path="/"
+          element={<DashboardPage />}
+        />
+        <Route
+          path="/chat"
+          element={<Chat />}
+        />
+        <Route
+          path="/fiscal-years"
+          element={<FiscalYears />}
+        />
+        <Route
+          path="/programs"
+          element={<Programs />}
+        />
+        <Route
+          path="/portfolios"
+          element={<Portfolios />}
+        />
+        <Route
+          path="/actions"
+          element={<Actions />}
+        />
+        <Route
+          path="/operations"
+          element={<Operations />}
+        />
+        <Route
+          path="/engagements"
+          element={<Engagements />}
+        />
+        <Route
+          path="/payments"
+          element={<Payments />}
+        />
+        <Route
+          path="/credit-payments"
+          element={<CreditPayments />}
+        />
+        <Route
+          path="/forecasted-expenses"
+          element={<ForecastedExpenses />}
+        />
+        <Route
+          path="/previsions-cp"
+          element={<PrevisionsCP />}
+        />
+        <Route
+          path="/requests"
+          element={<Requests />}
+        />
+        <Route
+          path="/reports"
+          element={<Reports />}
+        />
+        <Route
+          path="/audit"
+          element={<Audit />}
+        />
+        <Route
+          path="/settings/profile"
+          element={<Profile />}
+        />
+        <Route
+          path="/settings/security"
+          element={<Security />}
+        />
+        <Route
+          path="/settings/localization"
+          element={<Localization />}
+        />
+        <Route
+          path="/settings/translation"
+          element={<Translation />}
+        />
+        <Route
+          path="/settings/basic-data"
+          element={<BasicData />}
+        />
+        <Route
+          path="/settings/basic-data/ministries"
+          element={<Ministries />}
+        />
+        <Route
+          path="/settings/basic-data/wilayas"
+          element={<Wilayas />}
+        />
+        <Route
+          path="/settings/basic-data/entreprises"
+          element={<Entreprises />}
+        />
+        <Route
+          path="/settings/basic-data/budget-titles"
+          element={<BudgetTitles />}
+        />
+        <Route
+          path="/settings/basic-data/nomenclature"
+          element={<Nomenclature />}
+        />
+        <Route
+          path="/settings/basic-data/report-types"
+          element={<ReportTypes />}
+        />
+        <Route
+          path="/settings/users"
+          element={<Users />}
+        />
+        <Route
+          path="/settings/roles"
+          element={<Roles />}
+        />
+        <Route
+          path="/help"
+          element={<Help />}
+        />
+        <Route
+          path="/help/presentation"
+          element={<HelpPresentation />}
+        />
+        <Route
+          path="/help/guide"
+          element={<HelpGuide />}
+        />
+        <Route
+          path="/help/faq"
+          element={<HelpFAQ />}
+        />
+        <Route
+          path="/help/support"
+          element={<HelpSupport />}
+        />
       </Route>
 
-      <Route path="*" element={<NotFound />} />
+      <Route
+        path="*"
+        element={<NotFound />}
+      />
     </Routes>
   );
 };
@@ -154,8 +275,7 @@ const App = () => (
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
-        }}
-      >
+        }}>
         <SettingsProvider>
           <AuthProvider>
             <Toaster />
