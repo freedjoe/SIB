@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>Système d'Information Budgétaire de l'État Algérien</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --secondary: #4f46e5;
+        --accent: #8b5cf6;
+        --light: #f8fafc;
+        --dark: #0f172a;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --text: #334155;
+        --background: #f1f5f9;
+        --card: #ffffff;
+        --border: #e2e8f0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: var(--background);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+        background-size: cover;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      header p {
+        font-size: 1.2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .intro {
+        background-color: var(--card);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .intro h2 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0.5rem;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+      }
+
+      .card {
+        background-color: var(--card);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+      }
+
+      .card h3 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .card h3 .icon {
+        margin-right: 0.5rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 2rem;
+        height: 2rem;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        font-size: 1rem;
+      }
+
+      .card-content {
+        margin-top: 1rem;
+      }
+
+      .card-content h4 {
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+      }
+
+      ul {
+        list-style-type: none;
+        padding-left: 0.5rem;
+      }
+
+      li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      li::before {
+        content: "•";
+        color: var(--accent);
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      .workflow {
+        margin-top: 3rem;
+        background-color: var(--card);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .workflow h2 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0.5rem;
+      }
+
+      .workflow-diagram {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .workflow-step {
+        flex: 1;
+        min-width: 150px;
+        padding: 1rem;
+        text-align: center;
+        position: relative;
+      }
+
+      .workflow-step::after {
+        content: "→";
+        position: absolute;
+        right: -1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: var(--accent);
+      }
+
+      .workflow-step:last-child::after {
+        display: none;
+      }
+
+      .workflow-icon {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 3rem;
+        height: 3rem;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        margin-top: 3rem;
+        background-color: var(--dark);
+        color: white;
+      }
+
+      @media (max-width: 768px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+
+        .workflow-step {
+          width: 100%;
+          margin-bottom: 2rem;
+        }
+
+        .workflow-step::after {
+          content: "↓";
+          position: absolute;
+          bottom: -2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          right: auto;
+          top: auto;
+        }
+      }
+
+      /* Nouveau style pour le workflow circulaire */
+      .workflow-circle-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: 3rem auto;
+        aspect-ratio: 1;
+      }
+
+      .workflow-circle {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        animation: rotate 60s linear infinite;
+      }
+
+      .workflow-item {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        transform-origin: center;
+        transition: all 0.3s ease;
+      }
+
+      .workflow-item:hover {
+        transform: scale(1.1);
+        z-index: 10;
+      }
+
+      .workflow-item-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: var(--card);
+        border-radius: 1rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .workflow-item-inner:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+      }
+
+      .workflow-icon-circle {
+        width: 40px;
+        height: 40px;
+        background: var(--primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+
+      .workflow-item-title {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .workflow-item-subtitle {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        line-height: 1.2;
+      }
+
+      .workflow-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150px;
+        height: 150px;
+        background: var(--card);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+      }
+
+      .workflow-center-content {
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .workflow-center-title {
+        font-weight: bold;
+        color: var(--primary);
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .workflow-center-subtitle {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .workflow-arrow {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Système d'Information Budgétaire</h1>
+      <p>Une solution intégrée pour la gestion budgétaire basée sur les principes de la LOLF</p>
+    </header>
+
+    <div class="container">
+      <section class="intro">
+        <h2>Présentation du Système</h2>
+        <p>
+          Le Système d'Information Budgétaire (SGB) est une plateforme complète développée pour moderniser et optimiser la gestion des finances
+          publiques algériennes selon les principes de la Loi Organique relative aux Lois de Finances (LOLF). Cette solution intégrée assure la
+          traçabilité, la transparence et l'efficacité dans tout le cycle budgétaire, depuis la programmation jusqu'à l'exécution et l'évaluation.
+        </p>
+        <p>
+          Le système est composé de modules interconnectés qui couvrent l'ensemble du processus budgétaire, offrant ainsi une vision globale et
+          cohérente des finances publiques.
+        </p>
+      </section>
+
+      <div class="cards">
+        <div class="card">
+          <h3><span class="icon">D</span>Dashboard</h3>
+          <div class="card-content">
+            <p>Le tableau de bord offre une vue synthétique de l'exécution budgétaire pour faciliter la prise de décision.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Visualiser l'état global du budget à travers des KPIs clés</li>
+              <li>Suivre l'exécution budgétaire en temps réel</li>
+              <li>Identifier rapidement les écarts ou anomalies</li>
+              <li>Faciliter les décisions stratégiques basées sur des données consolidées</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">P</span>Portefeuilles</h3>
+          <div class="card-content">
+            <p>Les portefeuilles regroupent les programmes sous une vision stratégique pour une gestion consolidée.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Structurer les programmes par ministère ou mission stratégique</li>
+              <li>Établir une vision consolidée par grand domaine d'intervention</li>
+              <li>Faciliter le pilotage ministériel des politiques publiques</li>
+              <li>Permettre une analyse comparative entre portefeuilles</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">P</span>Programmes</h3>
+          <div class="card-content">
+            <p>Gestion des unités fondamentales d'allocation des crédits selon la logique LOLF.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Structurer les activités gouvernementales en ensembles cohérents</li>
+              <li>Servir de cadre pour les décisions d'allocation de ressources</li>
+              <li>Constituer le niveau central de la gestion par performance</li>
+              <li>Permettre une vision consolidée pour les décideurs politiques</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">A</span>Actions</h3>
+          <div class="card-content">
+            <p>Déclinaison opérationnelle des programmes précisant l'utilisation des crédits.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Constituer l'unité opérationnelle pour suivre l'utilisation des crédits</li>
+              <li>Lier les ressources financières aux activités concrètes</li>
+              <li>Servir de cadre pour les décisions d'engagement</li>
+              <li>Permettre le suivi du taux d'exécution physique et financier</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">O</span>Opérations</h3>
+          <div class="card-content">
+            <p>Gestion détaillée des projets et investissements de l'État.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Gérer le cycle de vie complet des projets d'investissement</li>
+              <li>Assurer le suivi financier détaillé (AE/CP)</li>
+              <li>Monitorer l'avancement physique des projets</li>
+              <li>Géolocaliser les projets pour faciliter la répartition géographique</li>
+              <li>Tracer les étapes depuis la planification jusqu'à la réception finale</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">E</span>Engagements</h3>
+          <div class="card-content">
+            <p>Élément central de l'exécution budgétaire gérant les engagements juridiques.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Gérer tous les types d'engagements (marchés, contrats, etc.)</li>
+              <li>Assurer le workflow d'approbation complet</li>
+              <li>Contrôler la disponibilité des crédits (AE)</li>
+              <li>Permettre les réévaluations des engagements en cours</li>
+              <li>Transformer les intentions budgétaires en obligations juridiques</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">P</span>Paiements</h3>
+          <div class="card-content">
+            <p>Gestion de l'ensemble du cycle de vie des paiements et demandes de paiement.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Gérer les demandes et l'exécution des paiements</li>
+              <li>Assurer le workflow de validation conforme à la LOLF</li>
+              <li>Consommer les crédits de paiement (CP) alloués</li>
+              <li>Maintenir la traçabilité des transactions financières</li>
+              <li>Respecter le principe de séparation ordonnateur/comptable</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">CP</span>Crédits de Paiement</h3>
+          <div class="card-content">
+            <p>Gestion des demandes et allocations des crédits nécessaires pour les paiements.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Gérer les demandes de crédits de paiement</li>
+              <li>Allouer les CP selon les besoins financiers réels</li>
+              <li>Assurer la traçabilité et le suivi des CP</li>
+              <li>Soutenir la soutenabilité budgétaire</li>
+              <li>Contrôler les plafonds et disponibilités des crédits</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">P</span>Prévision CP</h3>
+          <div class="card-content">
+            <p>Planification et suivi des besoins en crédits de paiement par période.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Gérer les prévisions des Crédits de Paiement</li>
+              <li>Suivre la mobilisation des fonds</li>
+              <li>Planifier les besoins en CP par période (trimestre/année)</li>
+              <li>Contrôler l'exécution budgétaire selon les prévisions</li>
+              <li>Générer des alertes sur les écarts de mobilisation</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="icon">D</span>Demandes</h3>
+          <div class="card-content">
+            <p>Point d'entrée pour la saisie et le suivi des demandes de financement émanant des ministères.</p>
+            <h4>Objectifs :</h4>
+            <ul>
+              <li>Centraliser toutes les demandes de crédits (AE/CP)</li>
+              <li>Gérer le workflow complet de validation des demandes</li>
+              <li>Classer les demandes par priorité et catégorie</li>
+              <li>Assurer la transparence et la traçabilité des demandes</li>
+              <li>Servir de point de départ au processus budgétaire</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <section class="workflow">
+        <h2>Cycle Budgétaire LOLF</h2>
+        <p class="mb-8">
+          Le cycle budgétaire LOLF suit un processus circulaire et continu, où chaque étape alimente la suivante dans une logique d'amélioration
+          continue.
+        </p>
+
+        <div class="workflow-circle-container">
+          <div class="workflow-circle"></div>
+
+          <!-- Centre du cercle -->
+          <div class="workflow-center">
+            <div class="workflow-center-content">
+              <div class="workflow-center-title">Cycle LOLF</div>
+              <div class="workflow-center-subtitle">Processus continu d'exécution budgétaire</div>
+            </div>
+          </div>
+
+          <!-- Items du workflow positionnés en cercle -->
+          <div
+            class="workflow-item"
+            style="top: 0; left: 50%; transform: translate(-50%, -10%)">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">1</div>
+              <div class="workflow-item-title">Portefeuilles</div>
+              <div class="workflow-item-subtitle">Vision stratégique</div>
+            </div>
+          </div>
+
+          <div
+            class="workflow-item"
+            style="top: 15%; right: 15%">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">2</div>
+              <div class="workflow-item-title">Programmes</div>
+              <div class="workflow-item-subtitle">Allocation stratégique</div>
+            </div>
+          </div>
+
+          <div
+            class="workflow-item"
+            style="bottom: 15%; right: 15%">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">3</div>
+              <div class="workflow-item-title">Opérations</div>
+              <div class="workflow-item-subtitle">Concrétisation des projets</div>
+            </div>
+          </div>
+
+          <div
+            class="workflow-item"
+            style="bottom: 0; left: 50%; transform: translate(-50%, 10%)">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">4</div>
+              <div class="workflow-item-title">Engagements</div>
+              <div class="workflow-item-subtitle">Obligation juridique</div>
+            </div>
+          </div>
+
+          <div
+            class="workflow-item"
+            style="bottom: 15%; left: 15%">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">5</div>
+              <div class="workflow-item-title">Paiements</div>
+              <div class="workflow-item-subtitle">Exécution financière</div>
+            </div>
+          </div>
+
+          <div
+            class="workflow-item"
+            style="top: 15%; left: 15%">
+            <div class="workflow-item-inner">
+              <div class="workflow-icon-circle">6</div>
+              <div class="workflow-item-title">Demandes</div>
+              <div class="workflow-item-subtitle">Centralisation des besoins</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <p>© 2025 - Système d'Information Budgétaire</p>
+    </footer>
+  </body>
+</html>

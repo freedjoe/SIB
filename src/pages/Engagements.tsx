@@ -1,15 +1,31 @@
 import React, { useState } from "react";
-import { Dashboard, DashboardHeader } from "@/components/layout/Dashboard";
+import { Dashboard, DashboardHeader, DashboardGrid, DashboardSection } from "@/components/layout/Dashboard";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Plus, FileEdit, Trash2, Search, Eye, Check, X, ArrowUpDown } from "lucide-react";
+import {
+  Plus,
+  FileEdit,
+  Trash2,
+  Search,
+  Eye,
+  Check,
+  X,
+  ArrowUpDown,
+  BarChart3,
+  CoinsIcon,
+  TrendingUp,
+  TrendingDown,
+  PiggyBank,
+  Wallet,
+  Download,
+} from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ReevaluationDialog } from "@/components/dialogs/ReevaluationDialog";
@@ -21,6 +37,8 @@ import { useEngagements, useOperations, useMinistries, useEngagementMutation } f
 import { Engagement, Operation, Ministry } from "@/types/database.types";
 import { formatCurrency } from "@/lib/utils";
 import { PageLoadingSpinner } from "@/components/ui-custom/PageLoadingSpinner";
+import { StatCard } from "@/components/ui-custom/StatCard";
+import { CircularProgressIndicator } from "@/components/ui/ui-custom/CircularProgressIndicator";
 
 export default function Engagements() {
   const { t } = useTranslation();
@@ -33,7 +51,52 @@ export default function Engagements() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isReevaluationDialogOpen, setIsReevaluationDialogOpen] = useState(false);
   const [selectedEngagementForReevaluation, setSelectedEngagementForReevaluation] = useState<Engagement | null>(null);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("fy1");
   const [currentEngagement, setCurrentEngagement] = useState<Engagement | null>(null);
+
+  // Fiscal year data for mini dashboard
+  const fiscalYears = [
+    {
+      id: "fy1",
+      year: 2025,
+      status: "active",
+      engagementCount: 35,
+      totalEngagementAmount: 2750000000,
+      approvedCount: 20,
+      pendingCount: 8,
+      rejectedCount: 4,
+      liquidatedCount: 3,
+      engagementRate: 62,
+    },
+    {
+      id: "fy2",
+      year: 2024,
+      status: "closed",
+      engagementCount: 42,
+      totalEngagementAmount: 2450000000,
+      approvedCount: 37,
+      pendingCount: 0,
+      rejectedCount: 3,
+      liquidatedCount: 2,
+      engagementRate: 93,
+    },
+    {
+      id: "fy3",
+      year: 2023,
+      status: "closed",
+      engagementCount: 38,
+      totalEngagementAmount: 2100000000,
+      approvedCount: 34,
+      pendingCount: 0,
+      rejectedCount: 2,
+      liquidatedCount: 2,
+      engagementRate: 89,
+    },
+  ];
+
+  // Get current fiscal year data
+  const currentFiscalYear = fiscalYears.find((fy) => fy.id === selectedFiscalYear) || fiscalYears[0];
+
   const [newEngagement, setNewEngagement] = useState<Partial<Engagement>>({
     operation_id: "",
     reference: "",
@@ -506,6 +569,63 @@ export default function Engagements() {
         description={t("engagements.description")}
       />
 
+      {/* Mini Engagements Dashboard */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">{t("engagements.dashboard", "Tableau de bord des engagements")}</h2>
+          <Select
+            value={selectedFiscalYear}
+            onValueChange={setSelectedFiscalYear}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t("dashboard.selectFiscalYear")} />
+            </SelectTrigger>
+            <SelectContent>
+              {fiscalYears.map((year) => (
+                <SelectItem
+                  key={year.id}
+                  value={year.id}>
+                  {t("dashboard.fiscalYear")} {year.year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <DashboardGrid columns={4}>
+          <StatCard
+            title={t("engagements.totalEngagements")}
+            value={currentFiscalYear.engagementCount.toString()}
+            description={t("engagements.countDescription", "Total pour l'exercice")}
+            icon={<FileEdit className="h-4 w-4" />}
+            trend={{ value: 5.2, isPositive: true }}
+          />
+          <StatCard
+            title={t("engagements.totalAmount")}
+            value={formatCurrency(currentFiscalYear.totalEngagementAmount)}
+            description={t("engagements.amountDescription", "Montant total engagé")}
+            icon={<CoinsIcon className="h-4 w-4" />}
+            trend={{ value: 8.3, isPositive: true }}
+          />
+          <StatCard
+            title={t("engagements.approvedCount", "Engagements approuvés")}
+            value={`${currentFiscalYear.approvedCount} / ${currentFiscalYear.engagementCount}`}
+            description={`${Math.round((currentFiscalYear.approvedCount / currentFiscalYear.engagementCount) * 100)}% ${t(
+              "dashboard.ofTotal",
+              "du total"
+            )}`}
+            icon={<Wallet className="h-4 w-4" />}
+            trend={{ value: 12.5, isPositive: true }}
+          />
+          <StatCard
+            title={t("engagements.engagementRate", "Taux d'engagement")}
+            value={`${currentFiscalYear.engagementRate}%`}
+            description={t("engagements.utilizationRate", "Taux d'utilisation du budget")}
+            icon={<TrendingUp className="h-4 w-4" />}
+            trend={{ value: 4.8, isPositive: true }}
+          />
+        </DashboardGrid>
+      </div>
+
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -678,158 +798,373 @@ export default function Engagements() {
           value="stats"
           className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{engagementsData.length}</div>
-                <p className="text-muted-foreground">{t("engagements.totalEngagements")}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{formatCurrency(engagementsData.reduce((sum, eng) => sum + eng.amount, 0))}</div>
-                <p className="text-muted-foreground">{t("engagements.totalAmount")}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{pendingApprovals.length}</div>
-                <p className="text-muted-foreground">{t("engagements.pendingApprovals")}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">
-                  {engagementsData.filter((eng) => eng.status === "approved" || eng.status === "validated" || eng.status === "liquidated").length}
-                </div>
-                <p className="text-muted-foreground">{t("engagements.approvedEngagements")}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t("engagements.totalEngagements")}
+              value={engagementsData.length.toString()}
+              description={`${t("engagements.forYear")} ${currentFiscalYear.year}`}
+              icon={<FileEdit className="h-4 w-4" />}
+              trend={{ value: 5.2, isPositive: true }}
+            />
+            <StatCard
+              title={t("engagements.totalAmount")}
+              value={formatCurrency(engagementsData.reduce((sum, eng) => sum + eng.amount, 0))}
+              description={t("engagements.budgetImpact")}
+              icon={<CoinsIcon className="h-4 w-4" />}
+              trend={{ value: 8.3, isPositive: true }}
+            />
+            <StatCard
+              title={t("engagements.engagementRate")}
+              value={`${currentFiscalYear.engagementRate}%`}
+              description={t("engagements.utilizationRate")}
+              icon={<TrendingUp className="h-4 w-4" />}
+              trend={{ value: 4.8, isPositive: true }}
+            />
+            <StatCard
+              title={t("engagements.averageAmount")}
+              value={formatCurrency(Math.round(engagementsData.reduce((sum, eng) => sum + eng.amount, 0) / engagementsData.length))}
+              description={t("engagements.perEngagement")}
+              icon={<BarChart3 className="h-4 w-4" />}
+              trend={{ value: 1.4, isPositive: false }}
+            />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t("engagements.statusDistribution")}</CardTitle>
+                <CardTitle>{t("engagements.statusDistributionTitle")}</CardTitle>
+                <CardDescription>{t("engagements.statusDistributionDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  {/* Status distribution chart would go here */}
-                  <div className="h-full flex flex-col justify-center items-center">
-                    <div className="grid grid-cols-4 gap-2 w-full">
-                      {["draft", "submitted", "reviewed", "approved", "rejected", "validated", "liquidated"].map((status) => {
-                        const count = engagementsData.filter((e) => e.status === status).length;
-                        const percentage = engagementsData.length > 0 ? Math.round((count / engagementsData.length) * 100) : 0;
-                        return (
-                          <div
-                            key={status}
-                            className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              {getStatusBadge(status)}
-                              <span className="text-sm font-medium">{count}</span>
-                            </div>
-                            <div className="h-4 w-full bg-muted rounded-full mt-1 overflow-hidden">
+                <div className="relative flex items-center justify-center h-[280px] mb-4">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <CircularProgressIndicator
+                      value={currentFiscalYear.engagementRate}
+                      size={180}
+                      strokeWidth={12}
+                      color="primary"
+                      showValue={true}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    {["draft", "submitted", "reviewed"].map((status) => {
+                      const count = engagementsData.filter((e) => e.status === status).length;
+                      const percentage = engagementsData.length > 0 ? Math.round((count / engagementsData.length) * 100) : 0;
+                      return (
+                        <div
+                          key={status}
+                          className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(status)}
+                            <span className="text-sm font-medium">{count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-primary"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
+                            <span className="text-xs text-muted-foreground w-8 text-right">{percentage}%</span>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("engagements.typeDistribution")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  {/* Type distribution chart would go here */}
-                  <div className="h-full flex flex-col justify-center items-center">
-                    <div className="grid grid-cols-3 gap-2 w-full">
-                      {["legal", "provisional", "technical", "multiannual", "carryover", "revaluation"].map((type) => {
-                        const count = engagementsData.filter((e) => e.type === type).length;
-                        const percentage = engagementsData.length > 0 ? Math.round((count / engagementsData.length) * 100) : 0;
-                        return (
-                          <div
-                            key={type}
-                            className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{t(`engagements.type.${type}`)}</Badge>
-                              <span className="text-sm font-medium">{count}</span>
-                            </div>
-                            <div className="h-4 w-full bg-muted rounded-full mt-1 overflow-hidden">
+                  <div className="space-y-3">
+                    {["approved", "rejected", "validated", "liquidated"].map((status) => {
+                      const count = engagementsData.filter((e) => e.status === status).length;
+                      const percentage = engagementsData.length > 0 ? Math.round((count / engagementsData.length) * 100) : 0;
+                      return (
+                        <div
+                          key={status}
+                          className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(status)}
+                            <span className="text-sm font-medium">{count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-secondary"
+                                className="h-full bg-primary"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
+                            <span className="text-xs text-muted-foreground w-8 text-right">{percentage}%</span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("engagements.monthlyDistribution")}</CardTitle>
+                <CardDescription>{t("engagements.monthlyDistributionDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <div className="h-full flex flex-col space-y-6">
+                    {/* Monthly distribution bars */}
+                    {[
+                      { month: "Jan", count: 4, amount: 320000, color: "bg-blue-500" },
+                      { month: "Feb", count: 6, amount: 520000, color: "bg-blue-600" },
+                      { month: "Mar", count: 8, amount: 750000, color: "bg-blue-700" },
+                      { month: "Apr", count: 12, amount: 1150000, color: "bg-blue-800" },
+                      { month: "May", count: 5, amount: 450000, color: "bg-blue-900" },
+                    ].map((month) => (
+                      <div
+                        key={month.month}
+                        className="grid grid-cols-12 items-center gap-2">
+                        <div className="col-span-2 text-sm font-medium">{month.month}</div>
+                        <div className="col-span-7">
+                          <div className="h-6 w-full bg-muted rounded-sm overflow-hidden flex items-center">
+                            <div
+                              className={`h-full ${month.color} text-white text-xs flex items-center justify-end px-2`}
+                              style={{ width: `${(month.count / 12) * 100}%` }}>
+                              {month.count}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-span-3 text-xs font-mono text-right">{formatCurrency(month.amount)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("engagements.typeDistribution")}</CardTitle>
+                <CardDescription>{t("engagements.engagementsByType")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[320px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 h-full">
+                    {["legal", "provisional", "technical", "multiannual", "carryover", "revaluation"].map((type) => {
+                      const count = engagementsData.filter((e) => e.type === type).length;
+                      const amount = engagementsData.filter((e) => e.type === type).reduce((sum, eng) => sum + eng.amount, 0);
+                      const percentage = engagementsData.length > 0 ? Math.round((count / engagementsData.length) * 100) : 0;
+
+                      return (
+                        <div
+                          key={type}
+                          className="flex flex-col border rounded-lg p-3 justify-between">
+                          <div>
+                            <Badge
+                              variant="outline"
+                              className="mb-2">
+                              {t(`engagements.type.${type}`)}
+                            </Badge>
+                            <div className="text-2xl font-bold">{count}</div>
+                            <div className="text-xs text-muted-foreground mb-2">
+                              {percentage}% {t("engagements.ofTotal")}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">{t("engagements.totalValue")}</div>
+                            <div className="text-sm font-mono font-medium">{formatCurrency(amount)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("engagements.consumptionAnalysis")}</CardTitle>
+                <CardDescription>{t("engagements.consumptionAnalysisDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>{t("engagements.overall")}</span>
+                      <span className="font-medium">
+                        {formatCurrency(engagementsData.reduce((sum, eng) => sum + eng.amount * (eng.status === "liquidated" ? 1 : 0.3), 0))}
+                        {" / "}
+                        {formatCurrency(engagementsData.reduce((sum, eng) => sum + eng.amount, 0))}
+                      </span>
+                    </div>
+                    <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        style={{ width: "42%" }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{t("engagements.consumed")}: 42%</span>
+                      <span>{t("engagements.remaining")}: 58%</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">{t("engagements.byStatus")}</h4>
+                      <div className="space-y-3">
+                        {[
+                          { status: "approved", percentage: 65, color: "bg-green-500" },
+                          { status: "validated", percentage: 85, color: "bg-blue-500" },
+                          { status: "liquidated", percentage: 100, color: "bg-purple-500" },
+                        ].map((item) => (
+                          <div
+                            key={item.status}
+                            className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>{getStatusBadge(item.status)}</span>
+                              <span>{item.percentage}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${item.color}`}
+                                style={{ width: `${item.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">{t("engagements.byType")}</h4>
+                      <div className="space-y-3">
+                        {[
+                          { type: "legal", percentage: 55, color: "bg-amber-500" },
+                          { type: "technical", percentage: 40, color: "bg-teal-500" },
+                          { type: "carryover", percentage: 70, color: "bg-indigo-500" },
+                        ].map((item) => (
+                          <div
+                            key={item.type}
+                            className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>{t(`engagements.type.${item.type}`)}</span>
+                              <span>{item.percentage}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${item.color}`}
+                                style={{ width: `${item.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </div>
 
+          <div className="grid grid-cols-1 gap-6 mb-6">
             <Card>
-              <CardHeader>
-                <CardTitle>{t("engagements.monthlyTrends")}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="space-y-1">
+                  <CardTitle>{t("engagements.topBeneficiaries")}</CardTitle>
+                  <CardDescription>{t("engagements.topBeneficiariesDesc")}</CardDescription>
+                </div>
+                <Select defaultValue="amount">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder={t("engagements.sortBy")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="amount">{t("engagements.byAmount")}</SelectItem>
+                    <SelectItem value="count">{t("engagements.byCount")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  {/* Monthly trends chart would go here */}
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">{t("engagements.chartComingSoon")}</p>
-                  </div>
+                <div className="relative overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("engagements.rank")}</TableHead>
+                        <TableHead>{t("engagements.beneficiary")}</TableHead>
+                        <TableHead className="text-right">{t("engagements.count")}</TableHead>
+                        <TableHead className="text-right">{t("engagements.totalAmount")}</TableHead>
+                        <TableHead className="text-right">{t("engagements.averageAmount")}</TableHead>
+                        <TableHead className="text-right">{t("engagements.percentageOfTotal")}</TableHead>
+                        <TableHead>{t("engagements.lastEngagement")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Array.from(
+                        engagementsData.reduce((acc, eng) => {
+                          const vendor = eng.vendor || "Unknown";
+                          if (!acc.has(vendor)) {
+                            acc.set(vendor, {
+                              count: 0,
+                              total: 0,
+                              lastDate: new Date(0),
+                            });
+                          }
+                          const vendorData = acc.get(vendor)!;
+                          vendorData.count += 1;
+                          vendorData.total += eng.amount;
+
+                          // Track the most recent engagement
+                          const engDate = new Date(eng.date);
+                          if (engDate > vendorData.lastDate) {
+                            vendorData.lastDate = engDate;
+                          }
+
+                          return acc;
+                        }, new Map<string, { count: number; total: number; lastDate: Date }>())
+                      )
+                        .sort((a, b) => b[1].total - a[1].total)
+                        .slice(0, 7)
+                        .map(([vendor, data], index) => {
+                          const totalEngagementAmount = engagementsData.reduce((sum, eng) => sum + eng.amount, 0);
+                          const percentage = Math.round((data.total / totalEngagementAmount) * 100);
+
+                          return (
+                            <TableRow key={vendor}>
+                              <TableCell className="font-medium">{index + 1}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center">
+                                  <span className="w-2 h-2 rounded-full bg-primary mr-2"></span>
+                                  {vendor}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">{data.count}</TableCell>
+                              <TableCell className="text-right font-medium">{formatCurrency(data.total)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(data.total / data.count)}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary"
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                  </div>
+                                  <span>{percentage}%</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{formatDate(data.lastDate.toISOString())}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("engagements.topBeneficiaries")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("engagements.beneficiary")}</TableHead>
-                      <TableHead className="text-right">{t("engagements.count")}</TableHead>
-                      <TableHead className="text-right">{t("engagements.totalAmount")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array.from(
-                      engagementsData.reduce((acc, eng) => {
-                        const vendor = eng.vendor || "Unknown";
-                        if (!acc.has(vendor)) {
-                          acc.set(vendor, { count: 0, total: 0 });
-                        }
-                        const vendorData = acc.get(vendor)!;
-                        vendorData.count += 1;
-                        vendorData.total += eng.amount;
-                        return acc;
-                      }, new Map<string, { count: number; total: number }>())
-                    )
-                      .sort((a, b) => b[1].total - a[1].total)
-                      .slice(0, 5)
-                      .map(([vendor, data]) => (
-                        <TableRow key={vendor}>
-                          <TableCell>{vendor}</TableCell>
-                          <TableCell className="text-right">{data.count}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(data.total)}</TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          <div className="flex justify-end">
+            <Button className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              {t("engagements.downloadStats")}
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
