@@ -203,7 +203,9 @@ export default function Wilayas() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>
@@ -228,7 +230,9 @@ export default function Wilayas() {
 
           {(dialogMode === "add" || dialogMode === "edit") && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -266,7 +270,10 @@ export default function Wilayas() {
                       <FormItem>
                         <FormLabel>Nom (Arabe)</FormLabel>
                         <FormControl>
-                          <Input {...field} dir="rtl" />
+                          <Input
+                            {...field}
+                            dir="rtl"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -308,20 +315,21 @@ export default function Wilayas() {
                     <FormItem>
                       <FormLabel>Wilaya Parent</FormLabel>
                       <Select
-                        onValueChange={(value) => field.onChange(value === "null" ? null : value)}
-                        value={field.value === null ? "null" : field.value}
-                      >
+                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                        value={field.value === null ? "none" : field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner une wilaya parent (optionnel)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="null">Aucun</SelectItem>
+                          <SelectItem value="none">Aucun</SelectItem>
                           {wilayaItems
                             .filter((w) => !currentItem || w.id !== currentItem.id) // Prevent selecting self
                             .map((wilaya) => (
-                              <SelectItem key={wilaya.id} value={wilaya.id}>
+                              <SelectItem
+                                key={wilaya.id}
+                                value={wilaya.id}>
                                 {wilaya.name_fr} ({wilaya.code})
                               </SelectItem>
                             ))}
@@ -355,7 +363,9 @@ export default function Wilayas() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit" disabled={wilayaMutation.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={wilayaMutation.isPending}>
                     {wilayaMutation.isPending ? "Enregistrement..." : "Sauvegarder"}
                   </Button>
                 </DialogFooter>
@@ -410,10 +420,15 @@ export default function Wilayas() {
               <p>Êtes-vous sûr de vouloir supprimer cette wilaya ? Cette action est irréversible.</p>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}>
                   Annuler
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={wilayaMutation.isPending}>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={wilayaMutation.isPending}>
                   {wilayaMutation.isPending ? "Suppression..." : "Supprimer"}
                 </Button>
               </DialogFooter>

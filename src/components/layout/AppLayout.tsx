@@ -48,13 +48,20 @@ export function AppLayout() {
             <div className={cn("flex-1 transition-all duration-300 overflow-hidden", searchOpen ? "max-w-2xl" : "max-w-0")}>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9 w-full" placeholder={t("app.common.search")} onBlur={() => setTimeout(() => setSearchOpen(false), 200)} />
+                <Input
+                  className="pl-9 w-full"
+                  placeholder={t("app.common.search")}
+                  onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+                />
               </div>
             </div>
 
             <div className="ml-auto flex items-center gap-4">
               {!searchOpen && (
-                <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}>
                   <Search className="h-5 w-5" />
                 </Button>
               )}
@@ -62,15 +69,22 @@ export function AppLayout() {
               {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative">
                     <Bell className="h-5 w-5" />
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">3</Badge>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-80">
                   <div className="flex items-center justify-between px-4 py-2 border-b">
                     <span className="font-semibold">{t("app.common.notifications")}</span>
-                    <Button variant="ghost" size="sm">
+                    <Button
+                      variant="ghost"
+                      size="sm">
                       {t("app.common.markAllRead")}
                     </Button>
                   </div>
@@ -100,7 +114,10 @@ export function AppLayout() {
                     </div>
                   </div>
                   <div className="p-2 border-t">
-                    <Button variant="outline" className="w-full" onClick={() => navigate("/notifications")}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => navigate("/notifications")}>
                       {t("app.common.viewAll")}
                     </Button>
                   </div>
@@ -112,15 +129,17 @@ export function AppLayout() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                title={theme === "dark" ? t("app.common.lightMode") : t("app.common.darkMode")}
-              >
+                title={theme === "dark" ? t("app.common.lightMode") : t("app.common.darkMode")}>
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
 
               {/* Language Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="font-semibold">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="font-semibold">
                     {languageOptions.find((lang) => lang.value === language)?.flag}
                   </Button>
                 </DropdownMenuTrigger>
@@ -129,8 +148,7 @@ export function AppLayout() {
                     <DropdownMenuItem
                       key={lang.value}
                       className={cn("cursor-pointer", language === lang.value && "bg-accent")}
-                      onClick={() => setLanguage(lang.value as any)}
-                    >
+                      onClick={() => setLanguage(lang.value as any)}>
                       <span className="mr-2">{lang.flag}</span>
                       {lang.label}
                     </DropdownMenuItem>
@@ -141,7 +159,10 @@ export function AppLayout() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="" />
                       <AvatarFallback>AD</AvatarFallback>
@@ -189,7 +210,11 @@ export function AppLayout() {
               <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} SIB. Tous droits réservés.</div>
               <div className="text-xs text-muted-foreground">
                 Développé par{" "}
-                <a href="mailto:noui.djamel@cned.dz" className="hover:underline">
+                <a
+                  href="https://cv.noui.duckdns.org/"
+                  className="hover:underline text-red-500 font-bold"
+                  target="_blank"
+                  rel="noopener noreferrer">
                   NOUI
                 </a>
               </div>

@@ -29,14 +29,11 @@ const OperationsDashboard = ({ operations }: { operations: Operation[] }) => {
   const completionRate = operations.length > 0 ? Math.round(operations.reduce((sum, op) => sum + (op.physical_rate || 0), 0) / operations.length) : 0;
 
   // Count operations by status
-  const statusCounts = operations.reduce(
-    (acc, op) => {
-      const status = op.status || "unknown";
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const statusCounts = operations.reduce((acc, op) => {
+    const status = op.status || "unknown";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   // Prepare status distribution data for visualization
   const statusDistribution = [
@@ -228,7 +225,7 @@ export default function OperationsPage() {
     isLoading: operationsLoading,
     refetch: refetchOperations,
   } = useOperations({
-    select: "*, action:action_id(*), program:program_id(*), wilaya:wilaya_id(*), budget_title:budget_title_id(*), portfolio:portfolio_id(*)",
+    select: "*",
   });
 
   // Fetch wilayas data
@@ -237,13 +234,10 @@ export default function OperationsPage() {
   });
 
   // Convert wilayasData array to a lookup object indexed by ID
-  const wilayasLookup = wilayasData.reduce(
-    (acc, wilaya) => {
-      acc[wilaya.id] = wilaya;
-      return acc;
-    },
-    {} as Record<string, Wilaya>
-  );
+  const wilayasLookup = wilayasData.reduce((acc, wilaya) => {
+    acc[wilaya.id] = wilaya;
+    return acc;
+  }, {} as Record<string, Wilaya>);
 
   // Fetch programs data
   const { data: programsData = [] } = usePrograms({
@@ -251,13 +245,10 @@ export default function OperationsPage() {
   });
 
   // Convert programsData array to a lookup object indexed by ID
-  const programsLookup = programsData.reduce(
-    (acc, program) => {
-      acc[program.id] = program;
-      return acc;
-    },
-    {} as Record<string, Program>
-  );
+  const programsLookup = programsData.reduce((acc, program) => {
+    acc[program.id] = program;
+    return acc;
+  }, {} as Record<string, Program>);
 
   // Fetch portfolios data
   const { data: portfoliosData = [] } = usePortfolios({
@@ -265,13 +256,10 @@ export default function OperationsPage() {
   });
 
   // Convert portfoliosData array to a lookup object indexed by ID
-  const portfoliosLookup = portfoliosData.reduce(
-    (acc, portfolio) => {
-      acc[portfolio.id] = portfolio;
-      return acc;
-    },
-    {} as Record<string, Portfolio>
-  );
+  const portfoliosLookup = portfoliosData.reduce((acc, portfolio) => {
+    acc[portfolio.id] = portfolio;
+    return acc;
+  }, {} as Record<string, Portfolio>);
 
   // Fetch actions data
   const { data: actionsData = [] } = useActions({
@@ -279,13 +267,10 @@ export default function OperationsPage() {
   });
 
   // Convert actionsData array to a lookup object indexed by ID
-  const actionsLookup = actionsData.reduce(
-    (acc, action) => {
-      acc[action.id] = action;
-      return acc;
-    },
-    {} as Record<string, Action>
-  );
+  const actionsLookup = actionsData.reduce((acc, action) => {
+    acc[action.id] = action;
+    return acc;
+  }, {} as Record<string, Action>);
 
   // Fetch budget titles data
   const { data: budgetTitlesData = [] } = useBudgetTitles({

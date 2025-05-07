@@ -92,6 +92,12 @@ export function MainNav() {
       description: "Gestion des opérations",
     },
     {
+      label: t("app.navigation.requests"),
+      href: "/requests",
+      icon: Briefcase,
+      description: "Gestion des demandes des ministères",
+    },
+    {
       label: t("app.navigation.engagements"),
       href: "/engagements",
       icon: PackagePlus,
@@ -123,12 +129,6 @@ export function MainNav() {
       icon: TrendingUp,
       description: "Prévisions des dépenses - CP à mobiliser",
     },*/
-    {
-      label: t("app.navigation.requests"),
-      href: "/requests",
-      icon: Briefcase,
-      description: "Gestion des demandes des ministères",
-    },
     {
       label: t("app.navigation.reports"),
       href: "/reports",

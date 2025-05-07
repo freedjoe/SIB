@@ -136,7 +136,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? t("app.expenses.editExpense") : t("app.expenses.createExpense")}</DialogTitle>
@@ -144,7 +146,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4">
             {/* Program Selection */}
             <FormField
               control={form.control}
@@ -152,7 +156,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("app.expenses.program")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t("app.expenses.selectProgram")} />
@@ -160,7 +166,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                     </FormControl>
                     <SelectContent>
                       {programs.map((program) => (
-                        <SelectItem key={program.id} value={program.id}>
+                        <SelectItem
+                          key={program.id}
+                          value={program.id}>
                           {program.name}
                         </SelectItem>
                       ))}
@@ -178,17 +186,21 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("app.expenses.ministry")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                    defaultValue={field.value || "none"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t("app.expenses.selectMinistry")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {/* This is the line causing the problem - empty string value */}
-                      <SelectItem value="null">{t("app.common.none")}</SelectItem>
+                      {/* Using "none" instead of "null" */}
+                      <SelectItem value="none">{t("app.common.none")}</SelectItem>
                       {ministries.map((ministry) => (
-                        <SelectItem key={ministry.id} value={ministry.id}>
+                        <SelectItem
+                          key={ministry.id}
+                          value={ministry.id}>
                           {ministry.name}
                         </SelectItem>
                       ))}
@@ -208,7 +220,12 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                 <FormItem>
                   <FormLabel>{t("app.expenses.forecastedAmount")}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,7 +241,12 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                   <FormItem>
                     <FormLabel>{t("app.expenses.mobilizedAmount")}</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -239,7 +261,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("app.expenses.period")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t("app.expenses.selectPeriod")} />
@@ -263,7 +287,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("app.expenses.category")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t("app.expenses.selectCategory")} />
@@ -271,7 +297,9 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                     </FormControl>
                     <SelectContent>
                       {ExpenseCategories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
+                        <SelectItem
+                          key={category.value}
+                          value={category.value}>
                           {category.label}
                         </SelectItem>
                       ))}
@@ -294,13 +322,17 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
-                          <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          <Button
+                            variant="outline"
+                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                             {field.value ? format(field.value, "PPP") : <span>{t("app.expenses.pickDate")}</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent
+                        className="w-auto p-0"
+                        align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -325,13 +357,17 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
-                          <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          <Button
+                            variant="outline"
+                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                             {field.value ? format(field.value, "PPP") : <span>{t("app.expenses.pickDate")}</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent
+                        className="w-auto p-0"
+                        align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -355,7 +391,12 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
                 <FormItem>
                   <FormLabel>{t("app.expenses.description")}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder={t("app.expenses.descriptionPlaceholder")} className="min-h-[80px]" {...field} value={field.value || ""} />
+                    <Textarea
+                      placeholder={t("app.expenses.descriptionPlaceholder")}
+                      className="min-h-[80px]"
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -363,7 +404,10 @@ export const ForecastedExpenseDialog: React.FC<ForecastedExpenseDialogProps> = (
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}>
                 {t("app.common.cancel")}
               </Button>
               <Button type="submit">{isEditing ? t("app.common.save") : t("app.common.create")}</Button>

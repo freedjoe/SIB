@@ -227,7 +227,9 @@ export default function Ministries() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -252,7 +254,9 @@ export default function Ministries() {
 
           {(dialogMode === "add" || dialogMode === "edit") && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name_ar"
@@ -260,7 +264,11 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Nom en arabe</FormLabel>
                       <FormControl>
-                        <Input placeholder="الاسم بالعربية" {...field} dir="rtl" />
+                        <Input
+                          placeholder="الاسم بالعربية"
+                          {...field}
+                          dir="rtl"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -273,7 +281,10 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Nom en anglais</FormLabel>
                       <FormControl>
-                        <Input placeholder="Name in English" {...field} />
+                        <Input
+                          placeholder="Name in English"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -286,7 +297,10 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Nom en français</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nom en français" {...field} />
+                        <Input
+                          placeholder="Nom en français"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -299,7 +313,10 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Code</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Code de l'institution" />
+                        <Input
+                          {...field}
+                          placeholder="Code de l'institution"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -312,7 +329,10 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Description de l'institution" />
+                        <Textarea
+                          {...field}
+                          placeholder="Description de l'institution"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -327,7 +347,11 @@ export default function Ministries() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} type="email" placeholder="Email de contact" />
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="Email de contact"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -415,20 +439,21 @@ export default function Ministries() {
                     <FormItem>
                       <FormLabel>Ministère Parent</FormLabel>
                       <Select
-                        onValueChange={(value) => field.onChange(value === "null" ? null : value)}
-                        value={field.value === null ? "null" : field.value}
-                      >
+                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                        value={field.value === null ? "none" : field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner un ministère parent (optionnel)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="null">Aucun</SelectItem>
+                          <SelectItem value="none">Aucun</SelectItem>
                           {ministryItems
                             .filter((m) => !currentItem || m.id !== currentItem.id) // Prevent selecting self
                             .map((ministry) => (
-                              <SelectItem key={ministry.id} value={ministry.id}>
+                              <SelectItem
+                                key={ministry.id}
+                                value={ministry.id}>
                                 {ministry.name_fr}
                               </SelectItem>
                             ))}
@@ -462,7 +487,9 @@ export default function Ministries() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit" disabled={ministryMutation.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={ministryMutation.isPending}>
                     {ministryMutation.isPending ? "Enregistrement..." : "Sauvegarder"}
                   </Button>
                 </DialogFooter>
@@ -484,8 +511,7 @@ export default function Ministries() {
                       currentItem.is_active
                         ? "bg-green-100 text-green-800 border-green-300 text-sm px-3 py-1"
                         : "bg-red-100 text-red-800 border-red-300 text-sm px-3 py-1"
-                    }
-                  >
+                    }>
                     {currentItem.is_active ? "Actif" : "Inactif"}
                   </Badge>
                 </div>
@@ -501,7 +527,9 @@ export default function Ministries() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Arabe</Label>
-                      <p className="text-base font-medium text-foreground" dir="rtl">
+                      <p
+                        className="text-base font-medium text-foreground"
+                        dir="rtl">
                         {currentItem.name_ar}
                       </p>
                     </div>
@@ -580,10 +608,15 @@ export default function Ministries() {
               <p>Êtes-vous sûr de vouloir supprimer cette institution ? Cette action est irréversible.</p>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}>
                   Annuler
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={ministryMutation.isPending}>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={ministryMutation.isPending}>
                   {ministryMutation.isPending ? "Suppression..." : "Supprimer"}
                 </Button>
               </DialogFooter>

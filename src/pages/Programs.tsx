@@ -948,10 +948,10 @@ export default function ProgramsPage() {
                       <SelectValue placeholder="Sélectionner un parent" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Aucun (programme principal)</SelectItem>
+                      <SelectItem value="none">Aucun (programme principal)</SelectItem>
                       {availableParentPrograms
-                        ?.filter((p) => p.type === "program") // Only programs can be parents
-                        .map((program) => (
+                        ?.filter((p) => p.type === "program")
+                        ?.map((program) => (
                           <SelectItem
                             key={program.id}
                             value={program.id}>
@@ -1110,16 +1110,16 @@ export default function ProgramsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="edit-form-parent">Programme parent (optionnel)</Label>
                   <Select
-                    value={formData.parent_id || ""}
-                    onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}>
+                    value={formData.parent_id || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}>
                     <SelectTrigger id="edit-form-parent">
                       <SelectValue placeholder="Sélectionner un parent" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="null">Aucun (programme principal)</SelectItem>
+                      <SelectItem value="none">Aucun (programme principal)</SelectItem>
                       {availableParentPrograms
-                        ?.filter((p) => p.type === "program") // Only programs can be parents
-                        .map((program) => (
+                        ?.filter((p) => p.type === "program")
+                        ?.map((program) => (
                           <SelectItem
                             key={program.id}
                             value={program.id}>
