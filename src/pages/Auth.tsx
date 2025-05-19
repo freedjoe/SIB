@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Logo from "@/components/logo/Logo";
+import ParticlesBg from "@/components/ui-custom/ParticlesBg";
 
 export default function Auth() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [particleType, setParticleType] = useState<"matrix" | "network">("network");
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({
     firstName: "",
@@ -55,8 +57,9 @@ export default function Auth() {
 
       toast.success(t("app.auth.loginSuccess"));
       navigate("/");
-    } catch (error: any) {
-      toast.error(error.message || t("app.auth.loginError"));
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("app.auth.loginError");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -90,27 +93,38 @@ export default function Auth() {
       }
 
       toast.success(t("app.auth.signupSuccess"));
-    } catch (error: any) {
-      toast.error(error.message || t("app.auth.signupError"));
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("app.auth.signupError");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="mx-auto flex w-full flex-col items-center space-y-6 sm:w-[350px]">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 relative overflow-hidden">
+      <ParticlesBg type={particleType} />
+      <div className="mx-auto flex w-full flex-col items-center space-y-6 sm:w-[350px] relative z-10">
         <div className="mb-4">
           <Logo />
         </div>
-        <Tabs defaultValue="login" className="w-full">
+        {/*<Button
+          variant="outline"
+          size="sm"
+          onClick={() => setParticleType((prev) => (prev === "matrix" ? "network" : "matrix"))}
+          className="absolute top-4 right-4 bg-background/70 backdrop-blur-sm">
+          {particleType === "matrix" ? "Network Style" : "Matrix Style"}
+        </Button>*/}
+        <Tabs
+          defaultValue="login"
+          className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">{t("app.auth.login")}</TabsTrigger>
             <TabsTrigger value="signup">{t("app.auth.signup")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
-            <Card>
+            <Card className="bg-background/90 backdrop-blur-sm border-opacity-50">
               <form onSubmit={handleLogin}>
                 <CardHeader>
                   <CardTitle>{t("app.auth.login")}</CardTitle>
@@ -119,12 +133,23 @@ export default function Auth() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("app.auth.email")}</Label>
-                    <Input id="email" name="email" type="text" placeholder="admin" required value={loginForm.email} onChange={handleLoginChange} />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="text"
+                      placeholder="admin"
+                      required
+                      value={loginForm.email}
+                      onChange={handleLoginChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">{t("app.auth.password")}</Label>
-                      <Button variant="link" size="sm" className="px-0">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="px-0">
                         {t("app.auth.forgotPassword")}
                       </Button>
                     </div>
@@ -140,7 +165,10 @@ export default function Auth() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}>
                     {isLoading ? t("common.loading") : t("app.auth.loginButton")}
                   </Button>
                 </CardFooter>
@@ -149,7 +177,7 @@ export default function Auth() {
           </TabsContent>
 
           <TabsContent value="signup">
-            <Card>
+            <Card className="bg-background/90 backdrop-blur-sm border-opacity-50">
               <form onSubmit={handleSignup}>
                 <CardHeader>
                   <CardTitle>{t("app.auth.signup")}</CardTitle>
@@ -159,20 +187,46 @@ export default function Auth() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">{t("app.auth.firstName")}</Label>
-                      <Input id="firstName" name="firstName" required value={signupForm.firstName} onChange={handleSignupChange} />
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        required
+                        value={signupForm.firstName}
+                        onChange={handleSignupChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">{t("app.auth.lastName")}</Label>
-                      <Input id="lastName" name="lastName" required value={signupForm.lastName} onChange={handleSignupChange} />
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        required
+                        value={signupForm.lastName}
+                        onChange={handleSignupChange}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signupEmail">{t("app.auth.email")}</Label>
-                    <Input id="signupEmail" name="email" type="email" required value={signupForm.email} onChange={handleSignupChange} />
+                    <Input
+                      id="signupEmail"
+                      name="email"
+                      type="email"
+                      required
+                      value={signupForm.email}
+                      onChange={handleSignupChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signupPassword">{t("app.auth.password")}</Label>
-                    <Input id="signupPassword" name="password" type="password" required value={signupForm.password} onChange={handleSignupChange} />
+                    <Input
+                      id="signupPassword"
+                      name="password"
+                      type="password"
+                      required
+                      value={signupForm.password}
+                      onChange={handleSignupChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">{t("app.auth.confirmPassword")}</Label>
@@ -187,7 +241,10 @@ export default function Auth() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}>
                     {isLoading ? t("common.loading") : t("app.auth.signupButton")}
                   </Button>
                 </CardFooter>
