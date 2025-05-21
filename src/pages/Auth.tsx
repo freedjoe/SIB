@@ -100,12 +100,12 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
-
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
       <ParticlesBg type={particleType} />
-      <div className="mx-auto flex w-full flex-col items-center space-y-6 sm:w-[350px] relative z-10">
-        <div className="mb-4">
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-background/20 to-background/30"></div>
+      <div className="mx-auto flex w-full flex-col items-center space-y-8 sm:w-[400px] relative z-10">
+        <div className="mb-6 animate-float">
           <Logo />
         </div>
         {/*<Button
@@ -118,17 +118,24 @@ export default function Auth() {
         <Tabs
           defaultValue="login"
           className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">{t("app.auth.login")}</TabsTrigger>
-            <TabsTrigger value="signup">{t("app.auth.signup")}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 tabs-list shadow-sm">
+            <TabsTrigger
+              value="login"
+              className="tabs-trigger font-medium">
+              {t("app.auth.login")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="signup"
+              className="tabs-trigger font-medium">
+              {t("app.auth.signup")}
+            </TabsTrigger>
           </TabsList>
-
           <TabsContent value="login">
-            <Card className="bg-background/90 backdrop-blur-sm border-opacity-50">
+            <Card className="glass-effect border-opacity-40 transition-all animate-fade-in animate-shimmer">
               <form onSubmit={handleLogin}>
                 <CardHeader>
-                  <CardTitle>{t("app.auth.login")}</CardTitle>
-                  <CardDescription>{t("app.auth.loginDescription")}</CardDescription>
+                  <CardTitle className="card-title">{t("app.auth.login")}</CardTitle>
+                  <CardDescription className="card-description">{t("app.auth.loginDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -141,6 +148,7 @@ export default function Auth() {
                       required
                       value={loginForm.email}
                       onChange={handleLoginChange}
+                      className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -161,13 +169,14 @@ export default function Auth() {
                       required
                       value={loginForm.password}
                       onChange={handleLoginChange}
+                      className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                     />
                   </div>
                 </CardContent>
                 <CardFooter>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className={`w-full ${isLoading ? "animate-pulse-subtle" : ""}`}
                     disabled={isLoading}>
                     {isLoading ? t("common.loading") : t("app.auth.loginButton")}
                   </Button>
@@ -175,13 +184,12 @@ export default function Auth() {
               </form>
             </Card>
           </TabsContent>
-
           <TabsContent value="signup">
-            <Card className="bg-background/90 backdrop-blur-sm border-opacity-50">
+            <Card className="glass-effect border-opacity-40 transition-all animate-fade-in animate-shimmer">
               <form onSubmit={handleSignup}>
                 <CardHeader>
-                  <CardTitle>{t("app.auth.signup")}</CardTitle>
-                  <CardDescription>{t("app.auth.signupDescription")}</CardDescription>
+                  <CardTitle className="card-title">{t("app.auth.signup")}</CardTitle>
+                  <CardDescription className="card-description">{t("app.auth.signupDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -193,6 +201,7 @@ export default function Auth() {
                         required
                         value={signupForm.firstName}
                         onChange={handleSignupChange}
+                        className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -203,6 +212,7 @@ export default function Auth() {
                         required
                         value={signupForm.lastName}
                         onChange={handleSignupChange}
+                        className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                       />
                     </div>
                   </div>
@@ -215,6 +225,7 @@ export default function Auth() {
                       required
                       value={signupForm.email}
                       onChange={handleSignupChange}
+                      className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -226,6 +237,7 @@ export default function Auth() {
                       required
                       value={signupForm.password}
                       onChange={handleSignupChange}
+                      className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -237,13 +249,14 @@ export default function Auth() {
                       required
                       value={signupForm.confirmPassword}
                       onChange={handleSignupChange}
+                      className="transition-all focus:shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"
                     />
                   </div>
                 </CardContent>
                 <CardFooter>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className={`w-full ${isLoading ? "animate-pulse-subtle" : ""}`}
                     disabled={isLoading}>
                     {isLoading ? t("common.loading") : t("app.auth.signupButton")}
                   </Button>
