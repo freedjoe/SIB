@@ -1,9 +1,8 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-type Theme = "light" | "dark" | "system";
-type Language = "en" | "fr" | "ar";
+export type Theme = "light" | "dark";
+export type Language = "en" | "fr" | "ar";
 
 interface SettingsContextType {
   theme: Theme;
@@ -17,28 +16,15 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
-  const [theme, setThemeState] = useState<Theme>(
-    (localStorage.getItem("theme") as Theme) || "system"
-  );
-  const [language, setLanguageState] = useState<Language>(
-    (localStorage.getItem("language") as Language) || "fr"
-  );
+  const [theme, setThemeState] = useState<Theme>((localStorage.getItem("theme") as Theme) || "dark");
+  const [language, setLanguageState] = useState<Language>((localStorage.getItem("language") as Language) || "fr");
 
   const direction = language === "ar" ? "rtl" : "ltr";
-
   useEffect(() => {
     const root = window.document.documentElement;
-    
+
     root.classList.remove("light", "dark");
-    
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
+    root.classList.add(theme);
 
     localStorage.setItem("theme", theme);
   }, [theme]);
@@ -66,8 +52,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         direction,
         setTheme,
         setLanguage,
-      }}
-    >
+      }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
+import type { Language } from "@/contexts/SettingsContext";
 import { Badge } from "@/components/ui/badge";
 
 export function AppLayout() {
@@ -31,7 +32,6 @@ export function AppLayout() {
     { value: "en", label: "English", flag: "🇺🇸" },
     { value: "ar", label: "العربية", flag: "🇩🇿" },
   ];
-
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -148,7 +148,7 @@ export function AppLayout() {
                     <DropdownMenuItem
                       key={lang.value}
                       className={cn("cursor-pointer", language === lang.value && "bg-accent")}
-                      onClick={() => setLanguage(lang.value as any)}>
+                      onClick={() => setLanguage(lang.value as Language)}>
                       <span className="mr-2">{lang.flag}</span>
                       {lang.label}
                     </DropdownMenuItem>

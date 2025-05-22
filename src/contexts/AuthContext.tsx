@@ -130,11 +130,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   const signOut = async (): Promise<void> => {
     try {
+      // Save theme and language preferences
+      const themePreference = localStorage.getItem("theme");
+      const languagePreference = localStorage.getItem("language");
+
       // Sign out from Supabase
       await supabase.auth.signOut();
 
       // Clear localStorage items
       localStorage.clear();
+
+      // Restore theme and language preferences
+      if (themePreference) localStorage.setItem("theme", themePreference);
+      if (languagePreference) localStorage.setItem("language", languagePreference);
 
       // Clear browser cache if supported
       if ("caches" in window) {
