@@ -9,7 +9,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, userData?: Record<string, any>) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, userData?: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(initialSession);
           setUser(initialSession.user);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error initializing auth:", error);
       } finally {
         setIsLoading(false);
@@ -83,19 +83,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error signing in:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign in";
       toast({
         title: "Error",
-        description: error.message || "Failed to sign in",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   };
 
-  const signUp = async (email: string, password: string, userData = {}) => {
+  const signUp = async (email: string, password: string, userData: Record<string, unknown> = {}) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -115,30 +116,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error signing up:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account";
       toast({
         title: "Error",
-        description: error.message || "Failed to create account",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   };
-
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     try {
+      // Sign out from Supabase
       await supabase.auth.signOut();
+
+      // Clear localStorage items
+      localStorage.clear();
+
+      // Clear browser cache if supported
+      if ("caches" in window) {
+        try {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+        } catch (cacheError) {
+          console.warn("Error clearing cache:", cacheError);
+        }
+      }
+
       toast({
         title: "Success",
         description: "You have been signed out",
       });
-    } catch (error: any) {
+
+      // Redirect to login page
+      window.location.href = "/auth";
+    } catch (error: unknown) {
       console.error("Error signing out:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign out";
       toast({
         title: "Error",
-        description: error.message || "Failed to sign out",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -160,15 +180,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error resetting password:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to send password reset email";
       toast({
         title: "Error",
-        description: error.message || "Failed to send password reset email",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -186,15 +207,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating password:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update password";
       toast({
         title: "Error",
-        description: error.message || "Failed to update password",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   };
 
